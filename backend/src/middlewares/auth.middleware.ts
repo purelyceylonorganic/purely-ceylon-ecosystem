@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth.service';
 // டைப்ஸ்கிரிப்ட் ரிக்வெஸ்ட்டில் பயனர் விபரங்களை இணைக்க
 export interface AuthenticatedRequest extends Request {
   user?: {
-    userId: string;
+    id: string;
     role: string;
     email: string;
   };
