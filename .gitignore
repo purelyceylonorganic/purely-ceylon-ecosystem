@@ -1,2 +1,8 @@
 .vercel
 .env*
+node_modules
+.next
+dist
+generated
+.env
+.env.local
