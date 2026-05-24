@@ -27,7 +27,7 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign(
       {
-        userId: "1",
+        userId: "65b1d74d-7eef-4d36-b65b-36b0648313eb",
         email,
         role: 'SUPER_ADMIN'
       },
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       {
-        userId: "1",
+        userId: "65b1d74d-7eef-4d36-b65b-36b0648313eb",
         email,
         role: 'SUPER_ADMIN'
       },

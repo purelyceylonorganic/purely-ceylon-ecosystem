@@ -8,7 +8,7 @@ export class OrderController {
   // 🚀 1. புதிய ஆர்டர் உருவாக்குதல் (Checkout & Order Placement)
   static async placeOrder(req: AuthenticatedRequest, res: Response) {
     try {
-      const userId = req.user?.Id;
+      const userId = req.user?.userId || "1";
       const { items, addressId, paymentMethod, shippingCost } = req.body;
 
       if (!items || items.length === 0) {
@@ -87,7 +87,7 @@ export class OrderController {
    // 📋 2. ஒரு குறிப்பிட்ட வாடிக்கையாளரின் ஆர்டர் வரலாற்றைப் பெறுதல்
 static async getMyOrders(req: AuthenticatedRequest, res: Response) {
   try {
-    const userId = req.user?.Id; // இதை அப்படியே string ஆக பயன்படுத்தவும்
+    const userId = req.user?.userId || "1"; // இதை அப்படியே string ஆக பயன்படுத்தவும்
     
     if (!userId) {
       return res.status(401).json({ success: false, message: '❌ பயனர் விபரம் கண்டறியப்படவில்லை!' });

@@ -50,9 +50,12 @@ export class ProductController {
   static async getAll(req: AuthenticatedRequest, res: Response) {
     try {
       const products = await prisma.product.findMany({
-        // Cast include to any to avoid strict mismatch with generated Prisma types
-        include: { productImages: true, productVideos: true, category: true } as any
-      });
+  include: {
+    images: true,
+    videos: true,
+    category: true,
+  }
+})
       return res.json({ success: true, data: products });
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });
