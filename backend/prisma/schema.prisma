@@ -28,6 +28,9 @@ model User {
   reviews       Review[]
   sessions      UserSession[]
   auditLogs     AuditLog[]
+
+  cart Cart?
+
 }
 
 enum Role {
@@ -73,6 +76,7 @@ model Product {
   videos      ProductVideo[]
   orderItems  OrderItem[]
   reviews     Review[]
+  cartItems CartItem[]
 }
 
 model ProductImage {
@@ -184,6 +188,28 @@ model Review {
 
   user      User     @relation(fields: [userId], references: [id])
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 // 🛡️ எண்டர்பிரைஸ் தணிக்கை பதிவுகள் (Immutable Audit Logs)

@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { getStatus } from '../controllers/appController';
-import testRoutes from './test.route';
+
 import authRoutes from './auth.routes';
 import cartRoutes from './cart.routes';
 
 const router = Router();
 
-router.get('/status', getStatus);
-router.use('/test', testRoutes);
+// Auth Routes
 router.use('/auth', authRoutes);
+
+// Cart Routes
 router.use('/cart', cartRoutes);
 
 export default router;

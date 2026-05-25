@@ -78,7 +78,7 @@ app.use('/api/v1/orders', orderRoutes);
 
 app.use('/api/v1/products', productRouter);
 
-app.use('/api', appRoutes);
+app.use('/api/v1', appRoutes);
 
 // Homepage Route
 app.get('/', (req, res) => {
