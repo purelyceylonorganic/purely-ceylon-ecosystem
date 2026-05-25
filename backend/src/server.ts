@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import appRoutes from './routes/appRoutes';
 
 import { globalErrorHandler } from './middlewares/error.middleware';
 
@@ -13,6 +14,9 @@ import orderRoutes from './routes/order.routes';
 import productRouter from './routes/product.routes';
 
 dotenv.config();
+
+console.log('EMAIL_USER =', process.env.EMAIL_USER);
+console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
 
 const app = express();
 
@@ -73,6 +77,7 @@ app.use('/api/v1/orders', orderRoutes);
 
 app.use('/api/v1/products', productRouter);
 
+app.use('/api', appRoutes);
 
 // Homepage Route
 app.get('/', (req, res) => {
