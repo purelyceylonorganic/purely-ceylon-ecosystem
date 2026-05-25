@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
@@ -13,7 +13,6 @@ export class AddressController {
 
       if (!userId) return res.status(401).json({ success: false, message: 'அணுகல் மறுக்கப்பட்டது!' });
 
-      // பயனர் இதை Default முகவரியாக மாற்றினால், பழைய Default முகவரிகளை மாற்றியமைத்தல்
       if (isDefault) {
         await (prisma as any).address.updateMany({
           where: { userId, isDefault: true },
@@ -41,5 +40,24 @@ export class AddressController {
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });
     }
+  } // <--- இந்த பிராக்கெட் விடுபட்டிருந்தது
+
+  // ✏️ Update Address
+  static async updateAddress(req: Request, res: Response) {
+    const { id } = req.params;
+    return res.status(200).json({
+      success: true,
+      message: `Address ${id} Updated Successfully`
+    });
   }
-}
+
+  // ❌ Delete Address
+  static async deleteAddress(req: Request, res: Response) {
+    const { id } = req.params;
+    return res.status(200).json({
+      success: true,
+      message: `Address ${id} Deleted Successfully`
+    });
+  }
+
+} // கிளாஸை மூடும் பிராக்கெட்

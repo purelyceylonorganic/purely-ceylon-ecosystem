@@ -19,6 +19,7 @@ const app = express();
 
 // 1. Security & Parsers
 app.use(helmet());
+app.set('trust proxy', 1);
 
 app.use(express.json({
   limit: '10mb'
@@ -54,6 +55,14 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'PCO Enterprise Backend',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 4. Routes
 app.use('/api/v1/auth', authRouter);
@@ -70,6 +79,12 @@ app.get('/', (req, res) => {
   res.send('✅ Purely Ceylon Backend Ecosystem Active 🌿');
 });
 
+app.use('*', (_req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API Route Not Found'
+  });
+});
 
 // 5. Global Error Handler
 app.use(globalErrorHandler);

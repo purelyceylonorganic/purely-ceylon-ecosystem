@@ -14,5 +14,7 @@ router.get('/my-orders', protect, OrderController.getMyOrders);
 // 📍 டெலிவரி முகவரி மேலாண்மை
 router.post('/addresses', protect, AddressController.addAddress);
 router.get('/addresses', protect, AddressController.getMyAddresses);
+router.put('/addresses/:id', protect, AddressController.updateAddress);
+router.delete('/addresses/:id', protect, AddressController.deleteAddress);
 
 export default router;
