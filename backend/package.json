@@ -23,6 +23,7 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^8.0.8",
     "stripe": "^22.1.1",
+    "uuid": "^14.0.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {

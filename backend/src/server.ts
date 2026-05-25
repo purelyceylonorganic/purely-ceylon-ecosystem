@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import appRoutes from './routes/appRoutes';
 
@@ -13,7 +15,6 @@ import authRouter from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import productRouter from './routes/product.routes';
 
-dotenv.config();
 
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);

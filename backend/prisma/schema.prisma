@@ -9,16 +9,19 @@ generator client {
 
 // 👤 பயனர் அட்டவணை (User Model)
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  passwordHash  String
-  fullName      String
-  phone         String?
-  role          Role           @default(CUSTOMER) // CUSTOMER, VENDOR, ADMIN, SUPER_ADMIN
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
+  id                 String   @id @default(uuid())
+  email              String   @unique
+  passwordHash       String
+  fullName           String
+  role               Role     @default(CUSTOMER)
+
+  isActive           Boolean  @default(false)
+
+  verificationToken  String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
   // தொடர்புகள் (Relations)
   addresses     Address[]
   orders        Order[]
