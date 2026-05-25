@@ -3,87 +3,85 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// 🛒 Add To Cart
 export const addToCart = async (
-  req: any,
+  req: Request,
   res: Response
 ) => {
   try {
-
-    const userId = req.user.userId;
+    const user = (req as any).user;
 
     const { productId, quantity } = req.body;
 
-    // Product check
+    // ✅ Product Check
     const product = await prisma.product.findUnique({
-      where: { id: productId },
+      where: {
+        id: productId
+      }
     });
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found',
+        message: 'Product not found'
       });
     }
 
-    // Find cart
+    // ✅ Find Cart
     let cart = await prisma.cart.findUnique({
-      where: { userId },
+      where: {
+        userId: user.userId
+      }
     });
 
-    // Create cart if not exists
+    // ✅ Create Cart
     if (!cart) {
       cart = await prisma.cart.create({
         data: {
-          userId,
-        },
+          userId: user.userId
+        }
       });
     }
 
-    // Existing item check
+    // ✅ Existing Item Check
     const existingItem = await prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
-        productId,
-      },
+        productId
+      }
     });
 
+    // ✅ Update Quantity
     if (existingItem) {
-
       await prisma.cartItem.update({
         where: {
-          id: existingItem.id,
+          id: existingItem.id
         },
         data: {
-          quantity: existingItem.quantity + quantity,
-        },
+          quantity: existingItem.quantity + quantity
+        }
       });
-
     } else {
-
+      // ✅ Create Item
       await prisma.cartItem.create({
         data: {
           cartId: cart.id,
           productId,
-          quantity,
-        },
+          quantity
+        }
       });
-
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: '🛒 Item added to cart',
+      message: '🛒 Item added to cart'
     });
 
   } catch (error) {
-
-    console.error(error);
+    console.log(error);
 
     return res.status(500).json({
       success: false,
-      message: 'Failed to add to cart',
+      message: 'Cart add failed'
     });
-
   }
 };
