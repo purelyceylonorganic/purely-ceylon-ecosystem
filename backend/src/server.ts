@@ -14,7 +14,10 @@ import enterpriseRouter from './routes/enterprise.routes';
 import authRouter from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import productRouter from './routes/product.routes';
-
+import checkoutRoutes from './routes/checkout.routes';
+import paymentRoutes from './routes/payment.routes';
+import invoiceRoutes from './routes/invoice.routes';
+import shippingRoutes from './routes/shipping.routes';
 
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
@@ -79,6 +82,14 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/products', productRouter);
 
 app.use('/api/v1', appRoutes);
+
+app.use('/api/v1/checkout', checkoutRoutes);
+
+app.use('/api/v1/payments', paymentRoutes);
+
+app.use('/api/v1/invoice', invoiceRoutes);
+
+app.use('/api/v1/shipping', shippingRoutes);
 
 // Homepage Route
 app.get('/', (req, res) => {

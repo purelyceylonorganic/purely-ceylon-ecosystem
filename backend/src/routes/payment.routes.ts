@@ -1,38 +1,127 @@
-import { Router, Request, Response } from 'express';
-import express from 'express';
+import express, {
+  Router,
+  Request,
+  Response
+} from 'express';
+
+import {
+  createPayment
+} from '../controllers/payment.controller';
+
 import { PaymentService } from '../services/payment.service';
-import { protect, AuthenticatedRequest } from '../middlewares/auth.middleware';
+
+import {
+  protect,
+  AuthenticatedRequest
+} from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// 💳 1. செக்கவுட் பேமெண்ட் லிங்க் உருவாக்கும் ஏபிஐ (பாதுகாக்கப்பட்டது)
-router.post('/create-checkout-session', protect, async (req: AuthenticatedRequest, res: Response) => {
-  const { orderId, totalAmount } = req.body;
-  const email = req.user?.email || '';
 
-  try {
-    const paymentUrl = await PaymentService.createStripeSession(orderId, totalAmount, email);
-    return res.json({ success: true, paymentUrl });
-  } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
+// ======================================================
+// 💳 PAYMENT ROUTES
+// ======================================================
 
-// 🛡️ 2. ஸ்ட்ரைப் நிறுவனத்திடமிருந்து சிக்னல்களைப் பெறும் நேரடி வெப்ஹூக் எண்ட்பாயிண்ட் (Public & Hardened)
+
+// 💳 CREATE PAYMENT
 router.post(
-  '/webhook/stripe',
-  express.raw({ type: 'application/json' }), // வெப்ஹூக்கிற்கு மட்டும் ராவ் டேட்டா பஃபர் தேவை
-  async (req: Request, res: Response) => {
-    const signature = req.headers['stripe-signature'] as string;
+  '/',
+  protect,
+  createPayment
+);
+
+
+// 💳 CREATE STRIPE CHECKOUT SESSION
+router.post(
+  '/create-checkout-session',
+  protect,
+  async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
 
     try {
-      await PaymentService.handleStripeWebhook(req.body, signature);
-      return res.status(200).json({ received: true });
+
+      const {
+        orderId,
+        totalAmount
+      } = req.body;
+
+      const email =
+        req.user?.email || '';
+
+      // ✅ CREATE STRIPE SESSION
+      const paymentUrl =
+        await PaymentService.createStripeSession(
+          orderId,
+          totalAmount,
+          email
+        );
+
+      return res.status(200).json({
+        success: true,
+        paymentUrl
+      });
+
     } catch (error: any) {
-      console.error(error.message);
-      return res.status(400).send(`Webhook Error: ${error.message}`);
+
+      console.log(error);
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message ||
+          '❌ Failed to create checkout session'
+      });
+
     }
+
   }
 );
+
+
+// 🛡️ STRIPE WEBHOOK
+router.post(
+  '/webhook/stripe',
+
+  express.raw({
+    type: 'application/json'
+  }),
+
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    try {
+
+      const signature =
+        req.headers[
+          'stripe-signature'
+        ] as string;
+
+      // ✅ HANDLE STRIPE WEBHOOK
+      await PaymentService.handleStripeWebhook(
+        req.body,
+        signature
+      );
+
+      return res.status(200).json({
+        received: true
+      });
+
+    } catch (error: any) {
+
+      console.error(error.message);
+
+      return res.status(400).send(
+        `Webhook Error: ${error.message}`
+      );
+
+    }
+
+  }
+);
+
 
 export default router;

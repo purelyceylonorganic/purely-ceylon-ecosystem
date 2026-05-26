@@ -112,6 +112,9 @@ model Order {
   paymentStatus PaymentStatus @default(UNPAID)
   paymentMethod String       // COD, PAYHERE, STRIPE
   trackingId    String?
+  
+  shippingStatus ShippingStatus @default(PENDING)
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -147,6 +150,14 @@ enum PaymentStatus {
   FAILED
 }
 
+enum ShippingStatus {
+  PENDING
+  PACKED
+  SHIPPED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
 
 
 
