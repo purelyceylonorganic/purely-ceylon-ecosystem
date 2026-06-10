@@ -13,7 +13,25 @@ export const addToCart = async (
 
     const user = (req as any).user;
 
+    // 🔍 Debug User Check
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        id: user.userId
+      }
+    });
+
+    console.log('Existing User:', existingUser);
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found in database'
+      });
+    }
+
     const { productId, quantity } = req.body;
+
+    // rest of your code...
 
     // ✅ Validate Quantity
     if (!quantity || quantity < 1) {
