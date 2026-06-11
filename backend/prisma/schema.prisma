@@ -13,31 +13,38 @@ model User {
   email              String   @unique
   passwordHash       String
   fullName           String
+
   role               Role     @default(CUSTOMER)
 
+  // Account Status
   isActive           Boolean  @default(false)
 
+  // Legacy Email Verification (optional)
   verificationToken  String?
+
+  // OTP Verification
+  verificationOtp    String?
+  otpExpiresAt       DateTime?
+  otpLastSentAt      DateTime?
+
+  // Security Protection
+  otpAttempts        Int      @default(0)
+  failedLoginAttempts Int     @default(0)
+
+  otpLockedUntil     DateTime?
+  accountLockedUntil DateTime?
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  // தொடர்புகள் (Relations)
-  addresses     Address[]
-  orders        Order[]
-  reviews       Review[]
-  sessions      UserSession[]
-  auditLogs     AuditLog[]
+  // Relations
+  addresses          Address[]
+  orders             Order[]
+  reviews            Review[]
+  sessions           UserSession[]
+  auditLogs          AuditLog[]
 
-  cart Cart?
-
-}
-
-enum Role {
-  CUSTOMER
-  VENDOR
-  ADMIN
-  SUPER_ADMIN
+  cart               Cart?
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)

@@ -13,6 +13,7 @@ export const registerUser = async (
   req: Request,
   res: Response
 ) => {
+  
   try {
     const { fullName, email, password } = req.body;
 
@@ -105,7 +106,7 @@ export const login = async (
 
     const token = jwt.sign(
       {
-        userId: user.id,
+        id: user.id,
         role: user.role,
       },
       process.env.JWT_SECRET as string,

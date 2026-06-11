@@ -14,7 +14,7 @@ export const checkout = async (
     // ✅ Find User Cart
     const cart = await prisma.cart.findUnique({
       where: {
-        userId: user.userId
+        userId: user.id
       },
       include: {
         items: {
@@ -52,7 +52,7 @@ export const checkout = async (
     // ✅ Create Order
     const order = await prisma.order.create({
       data: {
-        userId: user.userId,
+        userId: user.id,
         totalAmount: finalTotal,
         taxAmount,
         shippingCost,

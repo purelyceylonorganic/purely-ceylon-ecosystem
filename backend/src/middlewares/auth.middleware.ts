@@ -6,7 +6,7 @@ const JWT_SECRET =
 
 export interface AuthenticatedRequest extends Request {
   user?: {
-    userId: string;
+    id: string;
     role: string;
     email: string;
   };
@@ -34,15 +34,13 @@ export const protect = (
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as {
-      userId: string;
-      role: string;
-      email: string;
-    };
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-    console.log(decoded);
-    
-    req.user = decoded;
+req.user = {
+  id: decoded.id,
+  role: decoded.role,
+  email: decoded.email || ''
+};
 
     next();
 
