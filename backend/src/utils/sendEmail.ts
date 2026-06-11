@@ -1,32 +1,26 @@
 import nodemailer from 'nodemailer';
 
-console.log('EMAIL_USER =', process.env.EMAIL_USER);
-console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
-
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
+    pass: process.env.EMAIL_PASSWORD
+  }
 });
 
-export const sendVerificationEmail = async (
+export const sendOtpEmail = async (
   email: string,
-  token: string
+  otp: string
 ) => {
-  const url = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Verify Your Email',
+    subject: 'Purely Ceylon Verification Code',
     html: `
       <h2>Welcome to Purely Ceylon</h2>
-      <p>Click below to verify your account:</p>
-      <a href="${url}">${url}</a>
-    `,
+      <p>Your OTP:</p>
+      <h1>${otp}</h1>
+      <p>Expires in 10 minutes.</p>
+    `
   });
 };

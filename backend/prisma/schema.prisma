@@ -1,160 +1,169 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
-// 👤 பயனர் அட்டவணை (User Model)
-model User {
-  id                 String   @id @default(uuid())
-  email              String   @unique
-  passwordHash       String
-  fullName           String
+enum Role {
+  CUSTOMER
+  VENDOR
+  STAFF
+  ADMIN
+  SUPER_ADMIN
+  
+}
 
-  role               Role     @default(CUSTOMER)
+// 👤 பயனர் அட்டவணை (User Model) - இணைக்கப்பட்டது
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+  fullName     String
+
+  role Role @default(CUSTOMER)
 
   // Account Status
-  isActive           Boolean  @default(false)
+  isActive Boolean @default(false)
 
   // Legacy Email Verification (optional)
-  verificationToken  String?
+  verificationToken String?
 
   // OTP Verification
-  verificationOtp    String?
-  otpExpiresAt       DateTime?
-  otpLastSentAt      DateTime?
+  verificationOtp String?
+  otpExpiresAt    DateTime?
+  otpLastSentAt   DateTime?
 
   // Security Protection
-  otpAttempts        Int      @default(0)
-  failedLoginAttempts Int     @default(0)
+  otpAttempts         Int @default(0)
+  failedLoginAttempts Int @default(0)
 
   otpLockedUntil     DateTime?
   accountLockedUntil DateTime?
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  addresses          Address[]
-  orders             Order[]
-  reviews            Review[]
-  sessions           UserSession[]
-  auditLogs          AuditLog[]
+  addresses Address[]
+  orders    Order[]
+  reviews   Review[]
+  sessions  UserSession[]
+  auditLogs AuditLog[]
 
-  cart               Cart?
+  cart Cart?
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
 model UserSession {
-  id           String   @id @default(uuid())
-  userId       String
-  token        String   @unique
-  ipAddress    String?
-  userAgent    String?
-  isRiskFlagged Boolean  @default(false)
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
+  id            String   @id @default(uuid())
+  userId        String
+  token         String   @unique
+  ipAddress     String?
+  userAgent     String?
+  isRiskFlagged Boolean  @default(false)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // 📦 தயாரிப்புகள் (Product Catalog)
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String
-  basePrice   Float
-  sku         String   @unique
-  stock       Int      @default(0)
-  weight      String   // எ.கா: 100g, 250g
-  categoryId  String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  costPrice   Float    @default(0.0) // தயாரிப்புச் செலவு (இதை Admin மட்டுமே பார்ப்பார்)
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String
+  basePrice   Float
+  sku         String   @unique
+  stock       Int      @default(0)
+  weight      String // எ.கா: 100g, 250g
+  categoryId  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  costPrice   Float    @default(0.0) // தயாரிப்புச் செலவு (இதை Admin மட்டுமே பார்ப்பார்)
 
-  // தொடர்புகள்
-  category    Category       @relation(fields: [categoryId], references: [id])
-  images      ProductImage[]
-  videos      ProductVideo[]
-  orderItems  OrderItem[]
-  reviews     Review[]
-  cartItems CartItem[]
+  // தொடர்புகள்
+  category   Category       @relation(fields: [categoryId], references: [id])
+  images     ProductImage[]
+  videos     ProductVideo[]
+  orderItems OrderItem[]
+  reviews    Review[]
+  cartItems  CartItem[]
 }
 
 model ProductImage {
-  id        String   @id @default(uuid())
-  productId String
-  url       String
-  isPrimary Boolean  @default(false)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  productId String
+  url       String
+  isPrimary Boolean @default(false)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model ProductVideo {
-  id        String   @id @default(uuid())
-  productId String
-  url       String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  productId String
+  url       String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Category {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String    @unique
-  products  Product[]
+  id       String    @id @default(uuid())
+  name     String
+  slug     String    @unique
+  products Product[]
 }
 
 // 🛒 ஆர்டர் மற்றும் பரிவர்த்தனைகள் (Orders & Commerce Engine)
 model Order {
-  id            String        @id @default(uuid())
-  userId        String
-  totalAmount   Float
-  taxAmount     Float         // இலங்கை VAT & SSCL வரிகள்
-  shippingCost  Float
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  paymentMethod String       // COD, PAYHERE, STRIPE
-  trackingId    String?
-  
+  id            String        @id @default(uuid())
+  userId        String
+  totalAmount   Float
+  taxAmount     Float // இலங்கை VAT & SSCL வரிகள்
+  shippingCost  Float
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentMethod String // COD, PAYHERE, STRIPE
+  trackingId    String?
+
   shippingStatus ShippingStatus @default(PENDING)
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id])
-  items         OrderItem[]
-  payments      Payment[]
+  user     User        @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
 
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 }
 
 enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 enum PaymentStatus {
-  UNPAID
-  PAID
-  REFUNDED
-  FAILED
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
 }
 
 enum ShippingStatus {
@@ -166,78 +175,121 @@ enum ShippingStatus {
   DELIVERED
 }
 
-
-
-
 model Payment {
-  id            String   @id @default(uuid())
-  orderId       String
-  transactionId String   @unique
-  amount        Float
-  gateway       String
-  rawWebhookLog String?  // பாதுகாப்பு தணிக்கைக்காக
-  createdAt     DateTime @default(now())
+  id            String   @id @default(uuid())
+  orderId       String
+  transactionId String   @unique
+  amount        Float
+  gateway       String
+  rawWebhookLog String? // பாதுகாப்பு தணிக்கைக்காக
+  createdAt     DateTime @default(now())
 
-  order         Order    @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 }
 
-
-
 model Address {
-  id         String   @id @default(uuid())
-  userId     String
-  street     String
-  city       String
-  province   String   // இலங்கை மாகாணங்கள்
-  postalCode String
-  country    String   @default("Sri Lanka")
-  isDefault  Boolean  @default(false)
+  id         String  @id @default(uuid())
+  userId     String
+  street     String
+  city       String
+  province   String // இலங்கை மாகாணங்கள்
+  postalCode String
+  country    String  @default("Sri Lanka")
+  isDefault  Boolean @default(false)
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
 }
 
 model CartItem {
-  id        String   @id @default(uuid())
+  id        String @id @default(uuid())
   cartId    String
   productId String
-  quantity  Int      @default(1)
+  quantity  Int    @default(1)
 
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id])
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
 // 🛡️ எண்டர்பிரைஸ் தணிக்கை பதிவுகள் (Immutable Audit Logs)
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?
-  action     String   // எ.கா: "UPDATE_PRICE", "DELETE_USER"
-  ipAddress  String?
-  details    String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String // எ.கா: "UPDATE_PRICE", "DELETE_USER"
+  ipAddress String?
+  details   String?
+  createdAt DateTime @default(now())
 
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// 🏢 Warehouse Management
+model Warehouse {
+  id        String      @id @default(uuid())
+  name      String
+  location  String
+  inventory Inventory[]
+}
+
+// 📦 Inventory (ஒவ்வொரு வேர்ஹவுஸிலும் உள்ள பொருட்கள்)
+model Inventory {
+  id            String    @id @default(uuid())
+  warehouseId   String
+  productId     String
+  quantity      Int       @default(0)
+  minStockLevel Int       @default(10) // குறைந்தபட்ச இருப்பு எச்சரிக்கைக்காக
+  
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id])
+  transactions  InventoryTransaction[]
+  
+  @@unique([warehouseId, productId])
+}
+
+// 🔄 Inventory Transactions (இருப்பு மாற்றம் - வரவு/செலவு)
+model InventoryTransaction {
+  id          String    @id @default(uuid())
+  inventoryId String
+  type        TransactionType // Enum: STOCK_IN, STOCK_OUT, ADJUSTMENT
+  quantity    Int
+  createdAt   DateTime  @default(now())
+  
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+}
+
+// ⚠️ Stock Alerts
+model StockAlert {
+  id          String   @id @default(uuid())
+  productId   String
+  message     String
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+enum TransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
 }

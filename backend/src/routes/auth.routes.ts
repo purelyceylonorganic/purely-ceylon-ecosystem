@@ -9,7 +9,8 @@ import {
 import {
   registerUser,
   login,
-  verifyEmail
+  verifyOtp,
+  resendOtp
 } from '../controllers/auth.controller';
 
 const router = Router();
@@ -17,13 +18,14 @@ const router = Router();
 // ✅ REGISTER
 router.post('/register', registerUser);
 
-
 // ✅ LOGIN
 router.post('/login', login);
 
-// ✅ VERIFY EMAIL
-router.get('/verify-email', verifyEmail);
+// ✅ VERIFY OTP
+router.post('/verify-otp', verifyOtp);
 
+
+router.post('/resend-otp', resendOtp);
 
 // 🔒 Protected Admin Route
 router.get(
