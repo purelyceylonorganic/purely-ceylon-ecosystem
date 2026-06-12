@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, TransactionType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -10,61 +10,83 @@ const prisma = new PrismaClient();
 //
 export const addStock = async (req: Request, res: Response) => {
   try {
-    const { warehouseId, productId, quantity } = req.body;
+    const { warehouseId, productVariantId, quantity } = req.body;
 
     const qty = Number(quantity);
 
-    if (!warehouseId || !productId || !qty) {
+    if (!warehouseId || !productVariantId || qty <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields",
+        message: "warehouseId, productVariantId and quantity are required",
+      });
+    }
+
+    const warehouse = await prisma.warehouse.findUnique({
+      where: { id: warehouseId },
+    });
+
+    if (!warehouse) {
+      return res.status(404).json({
+        success: false,
+        message: "Warehouse not found",
+      });
+    }
+
+    const productVariant = await prisma.productVariant.findUnique({
+      where: { id: productVariantId },
+    });
+
+    if (!productVariant) {
+      return res.status(404).json({
+        success: false,
+        message: "Product Variant not found",
       });
     }
 
     let inventory = await prisma.inventory.findUnique({
       where: {
-        warehouseId_productId: {
+        warehouseId_productVariantId: {
           warehouseId,
-          productId,
+          productVariantId,
         },
       },
     });
 
-    // 🟢 Create if not exists
     if (!inventory) {
       inventory = await prisma.inventory.create({
         data: {
           warehouseId,
-          productId,
+          productVariantId,
           quantity: qty,
         },
       });
     } else {
-      // 🟢 Update existing stock
       inventory = await prisma.inventory.update({
-        where: { id: inventory.id },
+        where: {
+          id: inventory.id,
+        },
         data: {
           quantity: inventory.quantity + qty,
         },
       });
     }
 
-    // 🔄 Transaction log
     await prisma.inventoryTransaction.create({
       data: {
         inventoryId: inventory.id,
-        type: "STOCK_IN",
+        type: TransactionType.STOCK_IN,
         quantity: qty,
       },
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Stock added successfully",
       data: inventory,
     });
   } catch (error) {
     console.error("Add Stock Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Error adding stock",
@@ -79,22 +101,22 @@ export const addStock = async (req: Request, res: Response) => {
 //
 export const removeStock = async (req: Request, res: Response) => {
   try {
-    const { warehouseId, productId, quantity } = req.body;
+    const { warehouseId, productVariantId, quantity } = req.body;
 
     const qty = Number(quantity);
 
-    if (!warehouseId || !productId || !qty) {
+    if (!warehouseId || !productVariantId || qty <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields",
+        message: "warehouseId, productVariantId and quantity are required",
       });
     }
 
     const inventory = await prisma.inventory.findUnique({
       where: {
-        warehouseId_productId: {
+        warehouseId_productVariantId: {
           warehouseId,
-          productId,
+          productVariantId,
         },
       },
     });
@@ -113,48 +135,54 @@ export const removeStock = async (req: Request, res: Response) => {
       });
     }
 
-    const updated = await prisma.inventory.update({
-      where: { id: inventory.id },
+    const updatedInventory = await prisma.inventory.update({
+      where: {
+        id: inventory.id,
+      },
       data: {
         quantity: inventory.quantity - qty,
       },
     });
 
-    // 🔄 Transaction log
     await prisma.inventoryTransaction.create({
       data: {
         inventoryId: inventory.id,
-        type: "STOCK_OUT",
+        type: TransactionType.STOCK_OUT,
         quantity: qty,
       },
     });
 
-    // ⚠️ LOW STOCK CHECK (safe)
-    if (updated.quantity <= inventory.minStockLevel) {
-      const existingAlert = await prisma.stockAlert.findFirst({
-        where: {
-          productId,
-          isResolved: false,
-        },
-      });
+    // Low Stock Alert
+    if (
+      updatedInventory.quantity <=
+      updatedInventory.minStockLevel
+    ) {
+      const existingAlert =
+        await prisma.stockAlert.findFirst({
+          where: {
+            productId: productVariantId,
+            isResolved: false,
+          },
+        });
 
       if (!existingAlert) {
         await prisma.stockAlert.create({
           data: {
-            productId,
-            message: `Low stock alert: only ${updated.quantity} left`,
+            productId: productVariantId,
+            message: `Low stock alert: only ${updatedInventory.quantity} items left`,
           },
         });
       }
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Stock removed successfully",
-      data: updated,
+      data: updatedInventory,
     });
   } catch (error) {
     console.error("Remove Stock Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Error removing stock",
@@ -164,25 +192,30 @@ export const removeStock = async (req: Request, res: Response) => {
 
 //
 // ============================
-// 📦 GET ALL INVENTORY
+// 📦 GET INVENTORY
 // ============================
 //
-export const getInventory = async (req: Request, res: Response) => {
+export const getInventory = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const inventory = await prisma.inventory.findMany({
       include: {
         warehouse: true,
-        product: true,
+        productVariant: true,
         transactions: true,
       },
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
+      count: inventory.length,
       data: inventory,
     });
   } catch (error) {
-    console.error("Get Inventory Error:", error);
+    console.error("Inventory Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Error fetching inventory",
@@ -192,32 +225,72 @@ export const getInventory = async (req: Request, res: Response) => {
 
 //
 // ============================
-// ⚠️ LOW STOCK ITEMS
+// ⚠️ LOW STOCK
 // ============================
 //
-export const getLowStock = async (req: Request, res: Response) => {
+export const getLowStock = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const inventory = await prisma.inventory.findMany({
       include: {
-        product: true,
         warehouse: true,
+        productVariant: true,
       },
     });
 
     const lowStock = inventory.filter(
-      (item) => item.quantity <= item.minStockLevel
+      (item) =>
+        item.quantity <= item.minStockLevel
     );
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       count: lowStock.length,
       data: lowStock,
     });
   } catch (error) {
     console.error("Low Stock Error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Error fetching low stock",
+    });
+  }
+};
+
+//
+// ============================
+// 📜 STOCK TRANSACTIONS
+// ============================
+//
+export const getTransactions = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const transactions =
+      await prisma.inventoryTransaction.findMany({
+        include: {
+          inventory: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+    return res.status(200).json({
+      success: true,
+      count: transactions.length,
+      data: transactions,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching transactions",
     });
   }
 };

@@ -21,6 +21,10 @@ import shippingRoutes from './routes/shipping.routes';
 import cartRouter from './routes/cart.routes';
 import warehouseRoutes from "./routes/warehouse.routes";
 import inventoryRoutes from "./routes/inventory.routes";
+import adminRoutes from "./routes/admin.routes";
+import productVariantRoutes from "./routes/productVariant.routes";
+
+
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
 
@@ -98,6 +102,10 @@ app.use('/api/v1/shipping', shippingRoutes);
 app.use("/api/v1/warehouse", warehouseRoutes);
 
 app.use("/api/v1/inventory", inventoryRoutes);
+
+app.use("/api/v1/admin", adminRoutes);
+
+app.use("/api/v1/variants", productVariantRoutes);
 
 // Homepage Route
 app.get('/', (req, res) => {

@@ -17,12 +17,12 @@ enum Role {
 
 // 👤 பயனர் அட்டவணை (User Model) - இணைக்கப்பட்டது
 model User {
-  id           String @id @default(uuid())
-  email        String @unique
+  id           String  @id @default(uuid())
+  email        String  @unique
   passwordHash String
   fullName     String
-  phone       String?
-  role Role @default(CUSTOMER)
+  phone        String?
+  role         Role    @default(CUSTOMER)
 
   // Account Status
   isActive Boolean @default(false)
@@ -75,26 +75,38 @@ model Product {
   name        String
   slug        String   @unique
   description String
-  basePrice   Float
-  sku         String   @unique
-  stock       Int      @default(0)
-  weight      String
   categoryId  String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  costPrice   Float    @default(0.0)
 
   // relations
-  category   Category       @relation(fields: [categoryId], references: [id])
-  images     ProductImage[]
-  videos     ProductVideo[]
-  orderItems OrderItem[]
-  reviews    Review[]
-  cartItems  CartItem[]
+  category Category         @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[] // 🆕 Variants உடன் தொடர்பு
+  images   ProductImage[]
+  videos   ProductVideo[]
+  reviews  Review[]
+}
 
-  // ✅ ADD THIS (IMPORTANT)
-  inventory Inventory[]
+// 🆕 Variants மாடல் (இங்குதான் SKU மற்றும் Stock இருக்கும்)
+model ProductVariant {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  sku       String @unique
+  weight    String // எ.கா: "50g", "100g"
+  price     Float // தற்போதைய basePrice-க்கு பதில்
+  costPrice Float  @default(0.0)
+  stock     Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  inventory  Inventory[]
 }
 
 model ProductImage {
@@ -141,15 +153,16 @@ model Order {
   payments Payment[]
 }
 
+// 🛒 OrderItem (இனி Variant-ஐச் சார்ந்தது)
 model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
+  id               String @id @default(uuid())
+  orderId          String
+  productVariantId String // 🆕 productId-க்கு பதில்
+  quantity         Int
+  price            Float
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 }
 
 enum OrderStatus {
@@ -224,14 +237,15 @@ model Cart {
   items CartItem[]
 }
 
+// 🛒 CartItem (இனி Variant-ஐச் சார்ந்தது)
 model CartItem {
-  id        String @id @default(uuid())
-  cartId    String
-  productId String
-  quantity  Int    @default(1)
+  id               String @id @default(uuid())
+  cartId           String
+  productVariantId String // 🆕 productId-க்கு பதில்
+  quantity         Int    @default(1)
 
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -256,20 +270,21 @@ model Warehouse {
   inventory Inventory[]
 }
 
-// 📦 Inventory (ஒவ்வொரு வேர்ஹவுஸிலும் உள்ள பொருட்கள்)
+// 📦 Inventory மாடல் திருத்தம்
 model Inventory {
-  id            String @id @default(uuid())
-  warehouseId   String
-  productId     String
-  quantity      Int    @default(0)
-  minStockLevel Int    @default(10)
+  id               String @id @default(uuid())
+  warehouseId      String
+  productVariantId String
+  quantity         Int    @default(0)
 
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  product   Product   @relation(fields: [productId], references: [id]) // ✅ ADD THIS
+  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 
   transactions InventoryTransaction[]
 
-  @@unique([warehouseId, productId])
+  stockAlerts StockAlert[] // ✅ ADD THIS
+
+  @@unique([warehouseId, productVariantId])
 }
 
 // 🔄 Inventory Transactions (இருப்பு மாற்றம் - வரவு/செலவு)
@@ -285,11 +300,13 @@ model InventoryTransaction {
 
 // ⚠️ Stock Alerts
 model StockAlert {
-  id         String   @id @default(uuid())
-  productId  String
-  message    String
-  isResolved Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  inventoryId String?
+  message     String
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  inventory Inventory? @relation(fields: [inventoryId], references: [id])
 }
 
 enum TransactionType {

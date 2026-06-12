@@ -1,9 +1,18 @@
-import express from "express";
-import { createWarehouse, getWarehouses } from "../controllers/warehouse.controller";
+import { Router } from "express";
+import {
+  createWarehouse,
+  getAllWarehouses,
+  getWarehouseById,
+  updateWarehouse,
+  deleteWarehouse,
+} from "../controllers/warehouse.controller";
 
-const router = express.Router();
+const router = Router();
 
 router.post("/", createWarehouse);
-router.get("/", getWarehouses);
+router.get("/", getAllWarehouses);
+router.get("/:id", getWarehouseById);
+router.put("/:id", updateWarehouse);
+router.delete("/:id", deleteWarehouse);
 
 export default router;
