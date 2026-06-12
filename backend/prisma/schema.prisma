@@ -13,7 +13,6 @@ enum Role {
   STAFF
   ADMIN
   SUPER_ADMIN
-  
 }
 
 // 👤 பயனர் அட்டவணை (User Model) - இணைக்கப்பட்டது
@@ -22,7 +21,7 @@ model User {
   email        String @unique
   passwordHash String
   fullName     String
-
+  phone       String?
   role Role @default(CUSTOMER)
 
   // Account Status
@@ -79,20 +78,23 @@ model Product {
   basePrice   Float
   sku         String   @unique
   stock       Int      @default(0)
-  weight      String // எ.கா: 100g, 250g
+  weight      String
   categoryId  String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  costPrice   Float    @default(0.0) // தயாரிப்புச் செலவு (இதை Admin மட்டுமே பார்ப்பார்)
+  costPrice   Float    @default(0.0)
 
-  // தொடர்புகள்
+  // relations
   category   Category       @relation(fields: [categoryId], references: [id])
   images     ProductImage[]
   videos     ProductVideo[]
   orderItems OrderItem[]
   reviews    Review[]
   cartItems  CartItem[]
+
+  // ✅ ADD THIS (IMPORTANT)
+  inventory Inventory[]
 }
 
 model ProductImage {
@@ -256,36 +258,38 @@ model Warehouse {
 
 // 📦 Inventory (ஒவ்வொரு வேர்ஹவுஸிலும் உள்ள பொருட்கள்)
 model Inventory {
-  id            String    @id @default(uuid())
+  id            String @id @default(uuid())
   warehouseId   String
   productId     String
-  quantity      Int       @default(0)
-  minStockLevel Int       @default(10) // குறைந்தபட்ச இருப்பு எச்சரிக்கைக்காக
-  
-  warehouse     Warehouse @relation(fields: [warehouseId], references: [id])
-  transactions  InventoryTransaction[]
-  
+  quantity      Int    @default(0)
+  minStockLevel Int    @default(10)
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id]) // ✅ ADD THIS
+
+  transactions InventoryTransaction[]
+
   @@unique([warehouseId, productId])
 }
 
 // 🔄 Inventory Transactions (இருப்பு மாற்றம் - வரவு/செலவு)
 model InventoryTransaction {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   inventoryId String
   type        TransactionType // Enum: STOCK_IN, STOCK_OUT, ADJUSTMENT
   quantity    Int
-  createdAt   DateTime  @default(now())
-  
-  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  createdAt   DateTime        @default(now())
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id])
 }
 
 // ⚠️ Stock Alerts
 model StockAlert {
-  id          String   @id @default(uuid())
-  productId   String
-  message     String
-  isResolved  Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  productId  String
+  message    String
+  isResolved Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }
 
 enum TransactionType {

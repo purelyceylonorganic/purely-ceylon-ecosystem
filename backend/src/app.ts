@@ -11,6 +11,8 @@ import authRouter from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import productRouter from './routes/product.routes';
 import cartRouter from './routes/cart.routes';
+import warehouseRoutes from './routes/warehouse.routes';
+import inventoryRoutes from './routes/inventory.routes';
 
 const app = express();
 
@@ -76,6 +78,10 @@ app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/products', productRouter);
 
 app.use('/api/v1/cart', cartRouter);
+
+app.use('/api/v1/warehouses', warehouseRoutes);
+
+app.use('/api/v1/inventory', inventoryRoutes);
 
 // Homepage
 app.get('/', (_req, res) => {

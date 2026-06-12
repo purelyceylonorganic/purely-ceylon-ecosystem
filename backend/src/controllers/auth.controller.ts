@@ -1,39 +1,34 @@
-import { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { PrismaClient, Role } from '@prisma/client';
-import crypto from 'crypto';
+import { Request, Response } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { PrismaClient, Role } from "@prisma/client";
+import { sendOtpEmail } from "../utils/sendEmail";
 
-import { sendOtpEmail } from '../utils/sendEmail';
 const prisma = new PrismaClient();
 
+//
+// ============================
 // ✅ REGISTER USER
-export const registerUser = async (
-  req: Request,
-  res: Response
-) => {
-  
+// ============================
+//
+export const registerUser = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password } = req.body;
 
-    const existingUser =
-      await prisma.user.findUnique({
-        where: { email },
-      });
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists',
+        message: "User already exists",
       });
     }
 
-    const hashedPassword =
-      await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const verificationToken = crypto
-      .randomBytes(32)
-      .toString('hex');
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await prisma.user.create({
       data: {
@@ -41,360 +36,297 @@ export const registerUser = async (
         email,
         passwordHash: hashedPassword,
         role: Role.CUSTOMER,
-        isActive: false,
-        verificationToken,
+
+        verificationOtp: otp,
+        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        otpLastSentAt: new Date(),
       },
     });
 
-    await sendOtpEmail(email, verificationToken);
+    await sendOtpEmail(email, otp);
 
     return res.status(201).json({
       success: true,
-      message:
-        'Registration successful. Check your email.',
+      message: "Registration successful. Check your email for OTP.",
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
-      message: 'Registration failed',
+      message: "Registration failed",
     });
   }
 };
 
-// ✅ LOGIN
-export const login = async (
-  req: Request,
-  res: Response
-) => {
+//
+// ============================
+// ✅ LOGIN USER (FIXED FINAL)
+// ============================
+//
+export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { email },
     });
-    if (
-  user?.accountLockedUntil &&
-  user.accountLockedUntil > new Date()
-) {
-  return res.status(429).json({
-    success: false,
-    message:
-      'Account temporarily locked. Try again later.'
-  });
-}
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'பயனர் இல்லை!',
+        message: "Invalid credentials",
       });
     }
 
+    // 🔒 ACCOUNT LOCK CHECK
+    if (
+      user.accountLockedUntil &&
+      user.accountLockedUntil > new Date()
+    ) {
+      return res.status(429).json({
+        success: false,
+        message: "Account temporarily locked. Try again later.",
+      });
+    }
+
+    // 🔓 AUTO UNLOCK
+    if (
+      user.accountLockedUntil &&
+      user.accountLockedUntil <= new Date()
+    ) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          accountLockedUntil: null,
+        },
+      });
+    }
+
+    // ❌ EMAIL NOT VERIFIED
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message:
-          'முதலில் உங்கள் மின்னஞ்சலை உறுதிப்படுத்தவும்!',
+        message: "Please verify your email first!",
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      password,
-      user.passwordHash
-    );
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+    // ❌ WRONG PASSWORD
     if (!isMatch) {
+      const attempts = user.failedLoginAttempts + 1;
 
-  await prisma.user.update({
-    where: {
-      id: user.id
-    },
-    data: {
-      failedLoginAttempts: {
-        increment: 1
+      const updateData: any = {
+        failedLoginAttempts: attempts,
+      };
+
+      if (attempts >= 5) {
+        updateData.accountLockedUntil = new Date(
+          Date.now() + 15 * 60 * 1000
+        );
       }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+      });
+
+      return res.status(401).json({
+        success: false,
+        message:
+          attempts >= 5
+            ? "Account temporarily locked. Try again later."
+            : "Invalid credentials",
+      });
     }
-  });
-  await prisma.user.update({
-  where: {
-    id: user.id
-  },
-  data: {
-    failedLoginAttempts: 0,
-    accountLockedUntil: null
-  }
-});
 
-const token = jwt.sign(
-  { 
-    id: user.id, 
-    role: user.role, 
-    email: user.email 
-  }, // Payload மட்டும் ஆப்ஜெக்ட்டாக அனுப்பவும்
-  process.env.JWT_SECRET || 'purely_ceylon_secret',
-  { expiresIn: '24h' }
-);
-
-  if (
-    user.failedLoginAttempts + 1 >= 5
-  ) {
-
+    // ✅ SUCCESS LOGIN → RESET
     await prisma.user.update({
-      where: {
-        id: user.id
-      },
+      where: { id: user.id },
       data: {
-        accountLockedUntil:
-          new Date(
-            Date.now() +
-            15 * 60 * 1000
-          )
-      }
+        failedLoginAttempts: 0,
+        accountLockedUntil: null,
+      },
     });
-
-  }
-
-  return res.status(401).json({
-    success: false,
-    message:
-      'Invalid credentials'
-  });
-}
 
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
-        email: user.email
+        email: user.email,
       },
       process.env.JWT_SECRET as string,
-      {
-        expiresIn: '1d',
-      }
+      { expiresIn: "1d" }
     );
 
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return res.json({
       success: true,
-      message:
-        'Successfull login!',
+      message: "Login successful",
       token,
       role: user.role,
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       success: false,
-      message: 'Server Error',
+      message: "Server error",
     });
   }
 };
 
-
-export const verifyOtp = async (
-  req: Request,
-  res: Response
-) => {
+//
+// ============================
+// ✅ VERIFY OTP
+// ============================
+//
+export const verifyOtp = async (req: Request, res: Response) => {
   try {
-
     const { email, otp } = req.body;
 
-    if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and OTP are required'
-      });
-    }
-
     const user = await prisma.user.findUnique({
-      where: {
-        email
-      }
+      where: { email },
     });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
-    // OTP Lock Check
+    // 🔒 OTP LOCK CHECK
     if (
       user.otpLockedUntil &&
       user.otpLockedUntil > new Date()
     ) {
       return res.status(429).json({
         success: false,
-        message:
-          'Too many attempts. Try again later.'
+        message: "Too many attempts. Try again later.",
       });
     }
 
-    // OTP Check
+    // ❌ WRONG OTP
     if (user.verificationOtp !== otp) {
+      const attempts = user.otpAttempts + 1;
 
-  const attempts = user.otpAttempts + 1;
-
-  if (attempts >= 5) {
-
-    await prisma.user.update({
-      where: {
-        id: user.id
-      },
-      data: {
+      const updateData: any = {
         otpAttempts: attempts,
-        otpLockedUntil: new Date(
+      };
+
+      if (attempts >= 5) {
+        updateData.otpLockedUntil = new Date(
           Date.now() + 15 * 60 * 1000
-        )
+        );
       }
-    });
 
-    return res.status(429).json({
-      success: false,
-      message:
-        'Too many OTP attempts. Account locked for 15 minutes.'
-    });
-  }
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+      });
 
-  await prisma.user.update({
-    where: {
-      id: user.id
-    },
-    data: {
-      otpAttempts: attempts
-    }
-  });
-
-  return res.status(400).json({
-    success: false,
-    message: 'Invalid OTP'
-  });
-}
-
-    // Expiry Check
-    if (
-      !user.otpExpiresAt ||
-      user.otpExpiresAt < new Date()
-    ) {
       return res.status(400).json({
         success: false,
-        message: 'OTP Expired'
+        message:
+          attempts >= 5
+            ? "Too many OTP attempts. Account locked for 15 minutes."
+            : "Invalid OTP",
       });
     }
 
-    // Activate Account
+    // ⏳ EXPIRY CHECK
+    if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    // ✅ ACTIVATE ACCOUNT
     await prisma.user.update({
-      where: {
-        id: user.id
-      },
+      where: { id: user.id },
       data: {
         isActive: true,
         verificationOtp: null,
         otpExpiresAt: null,
         otpAttempts: 0,
-        otpLockedUntil: null
-      }
+        otpLockedUntil: null,
+      },
     });
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      message:
-        'Account verified successfully'
+      message: "Account verified successfully",
     });
-
   } catch (error) {
-
     console.error(error);
-
     return res.status(500).json({
       success: false,
-      message:
-        'OTP Verification Failed'
+      message: "OTP verification failed",
     });
-
   }
 };
 
-export const resendOtp = async (
-  req: Request,
-  res: Response
-) => {
+//
+// ============================
+// ✅ RESEND OTP
+// ============================
+//
+export const resendOtp = async (req: Request, res: Response) => {
   try {
-
     const { email } = req.body;
 
     const user = await prisma.user.findUnique({
-      where: {
-        email
-      }
+      where: { email },
     });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
-    // 60 seconds cooldown
+    // ⏳ 60 sec cooldown
     if (
       user.otpLastSentAt &&
-      Date.now() -
-      user.otpLastSentAt.getTime()
-      < 60000
+      Date.now() - user.otpLastSentAt.getTime() < 60000
     ) {
       return res.status(429).json({
         success: false,
-        message:
-          'Please wait 60 seconds before requesting another OTP'
+        message: "Wait 60 seconds before requesting OTP again",
       });
     }
 
-    const otp = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await prisma.user.update({
-      where: {
-        id: user.id
-      },
+      where: { id: user.id },
       data: {
         verificationOtp: otp,
-        otpExpiresAt: new Date(
-          Date.now() + 10 * 60 * 1000
-        ),
+        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
         otpLastSentAt: new Date(),
-        otpAttempts: 0
-      }
+        otpAttempts: 0,
+      },
     });
 
-    await sendOtpEmail(
-      user.email,
-      otp
-    );
+    await sendOtpEmail(email, otp);
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      message: 'OTP sent successfully'
+      message: "OTP sent successfully",
     });
-
   } catch (error) {
-
     console.error(error);
-
     return res.status(500).json({
       success: false,
-      message: 'Failed to resend OTP'
+      message: "Failed to resend OTP",
     });
-
   }
 };
