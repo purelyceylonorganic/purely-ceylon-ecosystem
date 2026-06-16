@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/node-cron": "^3.0.11",
     "@types/winston": "^2.4.4",
+    "axios": "^1.18.0",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -21,6 +23,7 @@
     "express-rate-limit": "^7.2.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.8",
     "pdfkit": "^0.18.0",
     "stripe": "^22.1.1",

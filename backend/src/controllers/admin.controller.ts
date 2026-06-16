@@ -18,11 +18,16 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       _sum: { totalAmount: true },
     });
 
-    const lowStockItems = await prisma.inventory.findMany({
-      where: {
-        quantity: { lte: prisma.inventory.fields.minStockLevel },
+    const inventoryItems = await prisma.inventory.findMany({
+      select: {
+        quantity: true,
+        minStockLevel: true,
       },
     });
+
+    const lowStockItems = inventoryItems.filter(
+      (item) => item.quantity <= item.minStockLevel
+    );
 
     return res.json({
       success: true,

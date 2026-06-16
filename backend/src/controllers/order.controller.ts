@@ -1,102 +1,217 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// 🚀 PLACE ORDER (திருத்தப்பட்டது)
+
+// ===============================
+// 🚀 PLACE ORDER (FINAL VERSION)
+// ===============================
 export const placeOrder = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    const { items, addressId, paymentMethod, shippingCost } = req.body;
+    const {
+      items,
+      addressId,
+      paymentMethod,
+      shippingCost = 0
+    } = req.body;
+
+    if (!user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "❌ Unauthorized user"
+      });
+    }
 
     if (!items || items.length === 0) {
-      return res.status(400).json({ success: false, message: '❌ Your cart is empty' });
+      return res.status(400).json({
+        success: false,
+        message: "❌ Cart is empty"
+      });
     }
 
-    // இங்கு user.userId என்பதற்குப் பதில் user.id என மாற்றவும்
-    if (!user?.id) {
-      return res.status(401).json({ success: false, message: '❌ Unauthorized user' });
-    }
+    let totalUSD = 0;
 
-    let totalAmount = 0;
-    const orderItemsData: { productId: string; quantity: number; price: number; }[] = [];
+    const orderItemsData: any[] = [];
 
+    // ===============================
+    // 🧠 CHECK STOCK + CALCULATE TOTAL
+    // ===============================
     for (const item of items) {
-      const product = await prisma.product.findUnique({ where: { id: item.productId } });
-      if (!product) return res.status(404).json({ success: false, message: '❌ Product not found' });
-      if (product.stock < item.quantity) return res.status(400).json({ success: false, message: `❌ Insufficient stock for ${product.name}` });
+      const variant = await prisma.productVariant.findUnique({
+        where: { id: item.productVariantId }
+      });
 
-      totalAmount += Number(product.basePrice) * item.quantity;
-      orderItemsData.push({ productId: item.productId, quantity: item.quantity, price: Number(product.basePrice) });
-    }
-
-    const taxAmount = totalAmount * 0.18;
-    const finalTotal = totalAmount + taxAmount + Number(shippingCost || 0);
-
-    const newOrder = await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: (product?.stock || 0) - item.quantity }
+      if (!variant) {
+        return res.status(404).json({
+          success: false,
+          message: "❌ Product variant not found"
         });
       }
 
+      if (variant.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `❌ Insufficient stock for ${variant.sku}`
+        });
+      }
+
+      const itemTotal = variant.price * item.quantity;
+      totalUSD += itemTotal;
+
+      orderItemsData.push({
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        price: variant.price
+      });
+    }
+
+    // ===============================
+    // 🇱🇰 TAX SYSTEM (Sri Lanka VAT)
+    // ===============================
+    const taxAmount = totalUSD * 0.18;
+
+    const finalTotal = totalUSD + taxAmount + Number(shippingCost);
+
+    // ===============================
+    // 🚀 TRANSACTION (SAFE ORDER)
+    // ===============================
+    const newOrder = await prisma.$transaction(async (tx) => {
+
+      // 1. reduce stock
+      for (const item of items) {
+        await tx.productVariant.update({
+          where: { id: item.productVariantId },
+          data: {
+            stock: {
+              decrement: item.quantity
+            }
+          }
+        });
+      }
+
+      // 2. create order
       return await tx.order.create({
         data: {
-          userId: user.id, // மாற்றப்பட்டது
+          userId: user.id,
           addressId,
-          totalAmount: finalTotal,
+
+          totalUSD,
           taxAmount,
-          shippingCost: Number(shippingCost || 0),
+          shippingCost: Number(shippingCost),
+          totalFinal: finalTotal,
+
           paymentMethod,
-          status: 'PENDING',
-          paymentStatus: paymentMethod === 'COD' ? 'UNPAID' : 'PAID',
-          items: { create: orderItemsData }
+          status: "PENDING",
+          paymentStatus:
+            paymentMethod === "COD" ? "UNPAID" : "PAID",
+
+          items: {
+            create: orderItemsData
+          }
         },
-        include: { items: true }
+        include: {
+          items: {
+            include: {
+              productVariant: true
+            }
+          }
+        }
       });
     });
 
-    return res.status(201).json({ success: true, message: '✅ Order placed successfully', orderId: newOrder.id, order: newOrder });
+    return res.status(201).json({
+      success: true,
+      message: "✅ Order placed successfully",
+      order: newOrder
+    });
+
   } catch (error: any) {
     console.log(error);
-    return res.status(500).json({ success: false, message: '❌ Failed to place order', error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "❌ Failed to place order",
+      error: error.message
+    });
   }
 };
 
-// 📦 GET MY ORDERS (திருத்தப்பட்டது)
+
+// ===============================
+// 📦 GET MY ORDERS
+// ===============================
 export const getMyOrders = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+
     const orders = await prisma.order.findMany({
-      where: { userId: user.id }, // மாற்றப்பட்டது
-      include: { items: { include: { product: true } }, payments: true },
-      orderBy: { createdAt: 'desc' }
+      where: { userId: user.id },
+      include: {
+        items: {
+          include: {
+            productVariant: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
     });
-    return res.status(200).json({ success: true, orders });
-  } catch (error: any) {
-    console.log(error);
-    return res.status(500).json({ success: false, message: '❌ Failed to fetch orders', error: error.message });
+
+    return res.json({
+      success: true,
+      orders
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get orders"
+    });
   }
 };
 
-// 📦 GET SINGLE ORDER (திருத்தப்பட்டது)
+
+// ===============================
+// 📦 GET SINGLE ORDER
+// ===============================
 export const getSingleOrder = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
 
     const order = await prisma.order.findFirst({
-      where: { id, userId: user.id }, // மாற்றப்பட்டது
-      include: { items: { include: { product: true } }, payments: true }
+      where: {
+        id,
+        userId: user.id
+      },
+      include: {
+        items: {
+          include: {
+            productVariant: true
+          }
+        }
+      }
     });
 
-    if (!order) return res.status(404).json({ success: false, message: '❌ Order not found' });
-    return res.status(200).json({ success: true, order });
-  } catch (error: any) {
-    console.log(error);
-    return res.status(500).json({ success: false, message: '❌ Failed to fetch order', error: error.message });
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "❌ Order not found"
+      });
+    }
+
+    return res.json({
+      success: true,
+      order
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch order"
+    });
   }
 };

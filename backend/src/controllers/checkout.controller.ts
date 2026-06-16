@@ -1,69 +1,101 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const checkout = async (
-  req: Request,
-  res: Response
-) => {
+export const checkout = async (req: Request, res: Response) => {
   try {
-
     const user = (req as any).user;
 
-    // ✅ Find User Cart
+    // 🌍 currency (middleware + query + default)
+    const currency =
+      (req as any).currency ||
+      (req.query.currency as string) ||
+      "USD";
+
+    // =========================
+    // 1. GET CART (VARIANT BASED)
+    // =========================
     const cart = await prisma.cart.findUnique({
-      where: {
-        userId: user.id
-      },
+      where: { userId: user.id },
       include: {
         items: {
           include: {
-            product: true
+            productVariant: true
           }
         }
       }
     });
 
-    // ✅ Empty Cart Check
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: '🛒 Cart is empty'
+        message: "🛒 Cart is empty"
       });
     }
 
-    // ✅ Calculate Total
-    let totalAmount = 0;
-
-    cart.items.forEach((item) => {
-      totalAmount +=
-        item.product.basePrice * item.quantity;
+    // =========================
+    // 2. GET CURRENCY RATE
+    // =========================
+    const rateData = await prisma.currencyRate.findUnique({
+      where: { code: currency }
     });
 
-    // ✅ Tax + Shipping
-    const taxAmount = totalAmount * 0.05;
+    if (!rateData) {
+      return res.status(400).json({
+        success: false,
+        message: "Currency not found"
+      });
+    }
 
+    // =========================
+    // 3. CALCULATE TOTALS
+    // =========================
+    let totalUSD = 0;
+
+    const orderItems = cart.items.map((item) => {
+      const price = item.productVariant.price;
+      const quantity = item.quantity;
+
+      const itemTotal = price * quantity;
+      totalUSD += itemTotal;
+
+      return {
+        productVariantId: item.productVariant.id,
+        quantity,
+        price
+      };
+    });
+
+    // =========================
+    // 4. TAX + SHIPPING (SRI LANKA STYLE)
+    // =========================
+    const taxAmount = totalUSD * 0.05; // 5% VAT
     const shippingCost = 500;
 
-    const finalTotal =
-      totalAmount + taxAmount + shippingCost;
+    const subtotal = totalUSD + taxAmount + shippingCost;
 
-    // ✅ Create Order
+    const totalFinal = subtotal * rateData.rate;
+
+    // =========================
+    // 5. CREATE ORDER (LOCKED CURRENCY)
+    // =========================
     const order = await prisma.order.create({
       data: {
         userId: user.id,
-        totalAmount: finalTotal,
+
+        totalUSD,
+        currency,
+        exchangeRate: rateData.rate,
+        totalFinal,
+
         taxAmount,
         shippingCost,
-        paymentMethod: 'COD',
+
+        paymentMethod: "COD",
 
         items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.basePrice
-          }))
+          create: orderItems
         }
       },
       include: {
@@ -71,27 +103,27 @@ export const checkout = async (
       }
     });
 
-    // ✅ Clear Cart
+    // =========================
+    // 6. CLEAR CART
+    // =========================
     await prisma.cartItem.deleteMany({
-      where: {
-        cartId: cart.id
-      }
+      where: { cartId: cart.id }
     });
 
+    // =========================
+    // 7. RESPONSE
+    // =========================
     return res.status(201).json({
       success: true,
-      message: '✅ Checkout successful',
+      message: "✅ Checkout successful",
       order
     });
 
   } catch (error) {
-
     console.log(error);
-
     return res.status(500).json({
       success: false,
-      message: '❌ Checkout failed'
+      message: "❌ Checkout failed"
     });
-
   }
 };

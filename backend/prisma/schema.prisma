@@ -88,6 +88,13 @@ model Product {
   reviews  Review[]
 }
 
+model CurrencyRate {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  rate      Float
+  updatedAt DateTime @updatedAt
+}
+
 // 🆕 Variants மாடல் (இங்குதான் SKU மற்றும் Stock இருக்கும்)
 model ProductVariant {
   id        String  @id @default(uuid())
@@ -135,34 +142,71 @@ model Category {
 model Order {
   id            String        @id @default(uuid())
   userId        String
-  totalAmount   Float
-  taxAmount     Float // இலங்கை VAT & SSCL வரிகள்
-  shippingCost  Float
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  paymentMethod String // COD, PAYHERE, STRIPE
-  trackingId    String?
+  addressId    String?
+  user          User          @relation(fields: [userId], references: [id])
 
+  // =========================
+  // 💰 PRICING (MULTI CURRENCY)
+  // =========================
+  totalUSD      Float
+  currency      String
+  exchangeRate  Float
+  totalFinal    Float
+
+  // =========================
+  // 🇱🇰 TAX SYSTEM (Sri Lanka)
+  // =========================
+  taxAmount     Float        @default(0)
+  shippingCost  Float        @default(0)
+
+  // =========================
+  // 💳 PAYMENT SYSTEM
+  // =========================
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentMethod String?       // COD, PAYHERE, STRIPE
+
+  payments      Payment[]
+
+  // =========================
+  // 📦 ORDER STATUS
+  // =========================
+  status        OrderStatus   @default(PENDING)
   shippingStatus ShippingStatus @default(PENDING)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  trackingId    String?
 
-  user     User        @relation(fields: [userId], references: [id])
-  items    OrderItem[]
-  payments Payment[]
+  // =========================
+  // 🧾 RELATIONS
+  // =========================
+  items         OrderItem[]
+
+  // =========================
+  // 🕒 TIMESTAMPS
+  // =========================
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // 🛒 OrderItem (இனி Variant-ஐச் சார்ந்தது)
 model OrderItem {
   id               String @id @default(uuid())
+
   orderId          String
-  productVariantId String // 🆕 productId-க்கு பதில்
+  order            Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  // =========================
+  // 💰 PRICE SNAPSHOT (IMPORTANT)
+  // =========================
   quantity         Int
   price            Float
 
-  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+  // =========================
+  // 🕒 OPTIONAL AUDIT (GOOD PRACTICE)
+  // =========================
+  createdAt DateTime @default(now())
 }
 
 enum OrderStatus {
@@ -313,4 +357,57 @@ enum TransactionType {
   STOCK_IN
   STOCK_OUT
   ADJUSTMENT
+}
+model Farmer {
+  id        String   @id @default(uuid())
+  fullName  String
+  farms     Farm[]
+  createdAt DateTime @default(now())
+}
+
+model Farm {
+  id        String   @id @default(uuid())
+  farmName  String
+  location  String
+
+  farmerId  String
+  farmer    Farmer @relation(fields: [farmerId], references: [id])
+
+  batches   Batch[]
+
+  createdAt DateTime @default(now())
+}
+
+model Batch {
+  id            String   @id @default(uuid())
+  batchNumber   String   @unique
+  harvestDate   DateTime
+
+  farmId        String
+  farm          Farm @relation(fields: [farmId], references: [id])
+
+  traceability  TraceabilityRecord?
+  certificates  Certificate[]
+
+  createdAt     DateTime @default(now())
+}
+
+model TraceabilityRecord {
+  id         String @id @default(uuid())
+  farmOrigin String
+  qrCode     String?
+
+  batchId    String @unique
+  batch      Batch @relation(fields: [batchId], references: [id])
+}
+
+model Certificate {
+  id              String   @id @default(uuid())
+  certificateName String
+  certificateNo   String
+
+  batchId         String
+  batch           Batch @relation(fields: [batchId], references: [id])
+
+  createdAt       DateTime @default(now())
 }

@@ -42,7 +42,9 @@ async function main() {
 
   // 2. தயாரிப்புகளை உருவாக்குதல் (இப்போது சரியான categoryId உடன்)
   const cinnamon = await prisma.product.upsert({
-    where: { sku: 'PCO-CIN-001' },
+    where: {
+  id: "some-id"
+},
     update: {},
     create: {
       sku: 'PCO-CIN-001',

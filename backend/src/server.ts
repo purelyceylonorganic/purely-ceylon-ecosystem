@@ -23,7 +23,15 @@ import warehouseRoutes from "./routes/warehouse.routes";
 import inventoryRoutes from "./routes/inventory.routes";
 import adminRoutes from "./routes/admin.routes";
 import productVariantRoutes from "./routes/productVariant.routes";
+import farmerRoutes from "./routes/farmer.routes";
+import farmRoutes from "./routes/farm.routes";
+import batchRoutes from "./routes/batch.routes";
+import traceabilityRecordRoutes from "./routes/traceability.routes";
+import certificateRoutes from "./routes/certificate.routes";
+import currencyRoutes from "./routes/currency.routes";
+import { startCurrencyJob } from "./jobs/currency.job";
 
+startCurrencyJob();
 
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
@@ -79,33 +87,27 @@ app.get('/api/health', (_req, res) => {
 });
 
 // 4. Routes
+
 app.use('/api/v1/auth', authRouter);
-
 app.use('/api/v1/enterprise', enterpriseRouter);
-
 app.use('/api/v1/orders', orderRoutes);
-
 app.use('/api/v1/products', productRouter);
-
 app.use('/api/v1', appRoutes);
-
 app.use('/api/v1/cart', cartRouter);
-
 app.use('/api/v1/checkout', checkoutRoutes);
-
 app.use('/api/v1/payments', paymentRoutes);
-
 app.use('/api/v1/invoice', invoiceRoutes);
-
 app.use('/api/v1/shipping', shippingRoutes);
-
 app.use("/api/v1/warehouse", warehouseRoutes);
-
 app.use("/api/v1/inventory", inventoryRoutes);
-
 app.use("/api/v1/admin", adminRoutes);
-
 app.use("/api/v1/variants", productVariantRoutes);
+app.use("/api/v1/farmers", farmerRoutes);
+app.use("/api/v1/farms", farmRoutes);
+app.use("/api/v1/batches", batchRoutes);
+app.use("/api/v1/traceability", traceabilityRecordRoutes);
+app.use("/api/v1/certificates", certificateRoutes);
+app.use("/api/v1/currency", currencyRoutes);
 
 // Homepage Route
 app.get('/', (req, res) => {
