@@ -31,6 +31,23 @@ export const placeOrder = async (req: Request, res: Response) => {
         message: "❌ Cart is empty"
       });
     }
+    const currency =
+  (req as any).currency ||
+  (req.query.currency as string) ||
+  "USD";
+
+const rateData = await prisma.currencyRate.findUnique({
+  where: {
+    code: currency
+  }
+});
+
+if (!rateData) {
+  return res.status(400).json({
+    success: false,
+    message: "Currency not found"
+  });
+}
 
     let totalUSD = 0;
 
@@ -73,7 +90,11 @@ export const placeOrder = async (req: Request, res: Response) => {
     // ===============================
     const taxAmount = totalUSD * 0.18;
 
-    const finalTotal = totalUSD + taxAmount + Number(shippingCost);
+    const totalWithTax =
+  totalUSD + taxAmount + Number(shippingCost);
+
+const finalTotal =
+  totalWithTax * rateData.rate;
 
     // ===============================
     // 🚀 TRANSACTION (SAFE ORDER)
@@ -95,23 +116,35 @@ export const placeOrder = async (req: Request, res: Response) => {
       // 2. create order
       return await tx.order.create({
         data: {
-          userId: user.id,
-          addressId,
+  userId: user.id,
 
-          totalUSD,
-          taxAmount,
-          shippingCost: Number(shippingCost),
-          totalFinal: finalTotal,
+  addressId,
 
-          paymentMethod,
-          status: "PENDING",
-          paymentStatus:
-            paymentMethod === "COD" ? "UNPAID" : "PAID",
+  totalUSD,
 
-          items: {
-            create: orderItemsData
-          }
-        },
+  currency,
+
+  exchangeRate: rateData.rate,
+
+  taxAmount,
+
+  shippingCost: Number(shippingCost),
+
+  totalFinal: finalTotal,
+
+  paymentMethod,
+
+  status: "PENDING",
+
+  paymentStatus:
+    paymentMethod === "COD"
+      ? "UNPAID"
+      : "PAID",
+
+  items: {
+    create: orderItemsData
+  }
+},
         include: {
           items: {
             include: {

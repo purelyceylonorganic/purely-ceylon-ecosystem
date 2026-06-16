@@ -30,6 +30,8 @@ import traceabilityRecordRoutes from "./routes/traceability.routes";
 import certificateRoutes from "./routes/certificate.routes";
 import currencyRoutes from "./routes/currency.routes";
 import { startCurrencyJob } from "./jobs/currency.job";
+import taxRoutes from "./routes/tax.routes";
+import couponRoutes from "./routes/coupon.routes";
 
 startCurrencyJob();
 
@@ -108,6 +110,9 @@ app.use("/api/v1/batches", batchRoutes);
 app.use("/api/v1/traceability", traceabilityRecordRoutes);
 app.use("/api/v1/certificates", certificateRoutes);
 app.use("/api/v1/currency", currencyRoutes);
+app.use("/api/v1/tax", taxRoutes);
+app.use("/api/v1/coupons", couponRoutes);
+
 
 // Homepage Route
 app.get('/', (req, res) => {
