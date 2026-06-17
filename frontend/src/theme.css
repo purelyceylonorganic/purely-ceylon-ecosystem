@@ -1,0 +1,11 @@
+:root {
+  --text: #6b6375;
+  --bg: #ffffff;
+  --accent: #aa3bff;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    font-size: 16px;
+  }
+}
