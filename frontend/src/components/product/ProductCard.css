@@ -1,0 +1,101 @@
+/* ===== Product Card ===== */
+
+.product-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* ===== Product Image ===== */
+
+.product-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+/* ===== Content ===== */
+
+.product-content {
+  padding: 16px;
+}
+
+/* ===== Organic Badge ===== */
+
+.organic-badge {
+  display: inline-block;
+  background: #0E4B32;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* ===== Product Name ===== */
+
+.product-name {
+  margin: 15px 0 10px;
+  color: #222;
+  font-size: 20px;
+}
+
+/* ===== Price ===== */
+
+.product-price {
+  color: #D4AF37;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* ===== Stock ===== */
+
+.product-stock {
+  margin-top: 10px;
+  color: #666;
+}
+
+/* ===== Buttons ===== */
+
+.product-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.details-btn,
+.cart-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.details-btn {
+  background: #0E4B32;
+  color: white;
+}
+
+.cart-btn {
+  background: #D4AF37;
+  color: black;
+  border: none;
+}
+
+.details-btn:hover {
+  background: #0a3a27;
+}
+
+.cart-btn:hover {
+  opacity: .9;
+}
