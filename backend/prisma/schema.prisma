@@ -15,6 +15,13 @@ enum Role {
   SUPER_ADMIN
 }
 
+enum BuyerTier {
+  BRONZE
+  SILVER
+  GOLD
+  DISTRIBUTOR
+}
+
 // 👤 பயனர் அட்டவணை (User Model) - இணைக்கப்பட்டது
 model User {
   id           String  @id @default(uuid())
@@ -71,16 +78,16 @@ model UserSession {
 
 // 📦 தயாரிப்புகள் (Product Catalog)
 model Product {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   name        String
-  slug        String   @unique
+  slug        String @unique
   description String
   categoryId  String
 
-  moq         Int      @default(1)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  moq       Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // relations
   category Category         @relation(fields: [categoryId], references: [id])
@@ -310,18 +317,22 @@ model Warehouse {
 
 // 📦 Inventory மாடல் திருத்தம்
 model Inventory {
-  id               String @id @default(uuid())
+  id String @id @default(uuid())
+
   warehouseId      String
   productVariantId String
-  quantity         Int    @default(0)
 
+  quantity      Int @default(0)
+  minStockLevel Int @default(10)
+
+  // Relations
   warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
   productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 
   transactions InventoryTransaction[]
+  stockAlerts  StockAlert[]
 
-  stockAlerts StockAlert[] // ✅ ADD THIS
-
+  // Ensure one inventory record per product per warehouse
   @@unique([warehouseId, productVariantId])
 }
 
@@ -478,6 +489,8 @@ model WholesaleBuyer {
   password   String
   isVerified Boolean @default(false)
 
+  tier BuyerTier @default(BRONZE)
+
   companyProfile CompanyProfile?
 
   rfqs       RFQ[]
@@ -502,11 +515,12 @@ model CompanyProfile {
 }
 
 model RFQ {
-  id        String @id @default(cuid())
+  id String @id @default(cuid())
 
-  buyerId   String
+  buyerId String
+  buyer   WholesaleBuyer @relation(fields: [buyerId], references: [id])
 
-  status    String @default("PENDING")
+  status String @default("PENDING")
 
   quotedPrice Float?
   quoteNote   String?
@@ -514,9 +528,10 @@ model RFQ {
 
   createdAt DateTime @default(now())
 
-  buyer WholesaleBuyer @relation(fields: [buyerId], references: [id])
-
   items RFQItem[]
+
+  bulkOrder   BulkOrder? @relation(fields: [bulkOrderId], references: [id])
+  bulkOrderId String?
 }
 
 model RFQItem {
@@ -535,21 +550,38 @@ model BulkOrder {
   buyerId String
   buyer   WholesaleBuyer @relation(fields: [buyerId], references: [id])
 
-  status String @default("CONFIRMED")
-  total  Float
+  rfqId String @unique
+
+  status String @default("PENDING")
+
+  totalAmount Float
+
+  paymentStatus String @default("UNPAID")
+
+  paymentMethod String?
+
+  paidAt DateTime?
+
+  transactionId String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
 
   items BulkOrderItem[]
 
-  createdAt DateTime @default(now())
+  RFQ RFQ[]
 }
 
 model BulkOrderItem {
   id String @id @default(cuid())
 
-  orderId String
-  order   BulkOrder @relation(fields: [orderId], references: [id])
+  bulkOrderId String
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
 
   productId String
   quantity  Int
   price     Float
+
+  totalPrice Float?
 }

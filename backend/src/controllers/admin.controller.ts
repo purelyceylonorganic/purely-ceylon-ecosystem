@@ -15,7 +15,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const totalOrders = await prisma.order.count();
 
     const totalRevenue = await prisma.order.aggregate({
-      _sum: { totalAmount: true },
+      _sum: { totalFinal: true },
     });
 
     const inventoryItems = await prisma.inventory.findMany({
@@ -35,7 +35,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         totalUsers,
         totalProducts,
         totalOrders,
-        totalRevenue: totalRevenue._sum.totalAmount || 0,
+        totalRevenue: totalRevenue._sum.totalFinal || 0,
         lowStockCount: lowStockItems.length,
       },
     });

@@ -1,15 +1,17 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { calculateTierPrice } from "../utils/tierPricing";
 
 const prisma = new PrismaClient();
 
+// ======================================
+// 📩 ADMIN SEND QUOTE
+// ======================================
 export const quoteRFQ = async (
   req: Request,
   res: Response
 ) => {
-
   try {
-
     const { id } = req.params;
 
     const {
@@ -28,13 +30,34 @@ export const quoteRFQ = async (
       });
     }
 
+    // 👤 Buyer Fetch
+    const buyer =
+      await prisma.wholesaleBuyer.findUnique({
+        where: {
+          id: rfq.buyerId
+        }
+      });
+
+    if (!buyer) {
+      return res.status(404).json({
+        success: false,
+        message: "Buyer not found"
+      });
+    }
+
+    // 💰 Tier Pricing
+    const pricing = calculateTierPrice(
+      quotedPrice,
+  buyer.tier
+);
+
+    // 📝 Update RFQ
     const updatedRFQ =
       await prisma.rFQ.update({
-
         where: { id },
 
         data: {
-          quotedPrice,
+          quotedPrice: pricing.finalPrice,
           quoteNote,
           quotedAt: new Date(),
           status: "QUOTED"
@@ -44,7 +67,21 @@ export const quoteRFQ = async (
     return res.status(200).json({
       success: true,
       message: "Quote sent successfully",
-      data: updatedRFQ
+
+      data: {
+        rfq: updatedRFQ,
+
+        tier: buyer.tier,
+
+        originalPrice:
+          pricing.originalPrice,
+
+        discount:
+          pricing.discount,
+
+        finalPrice:
+          pricing.finalPrice
+      }
     });
 
   } catch (error: any) {
@@ -57,6 +94,9 @@ export const quoteRFQ = async (
   }
 };
 
+// ======================================
+// 📋 GET PENDING RFQs
+// ======================================
 export const getPendingRFQs = async (
   req: Request,
   res: Response
@@ -72,12 +112,14 @@ export const getPendingRFQs = async (
         },
 
         include: {
-          items: true
+          items: true,
+          buyer: true
         },
 
         orderBy: {
           createdAt: "desc"
         }
+
       });
 
     return res.status(200).json({
@@ -95,6 +137,9 @@ export const getPendingRFQs = async (
   }
 };
 
+// ======================================
+// ✅ ACCEPT QUOTE
+// ======================================
 export const acceptQuote = async (
   req: Request,
   res: Response
@@ -112,6 +157,7 @@ export const acceptQuote = async (
         data: {
           status: "ACCEPTED"
         }
+
       });
 
     return res.status(200).json({
@@ -130,6 +176,9 @@ export const acceptQuote = async (
   }
 };
 
+// ======================================
+// ❌ REJECT QUOTE
+// ======================================
 export const rejectQuote = async (
   req: Request,
   res: Response
@@ -147,6 +196,7 @@ export const rejectQuote = async (
         data: {
           status: "REJECTED"
         }
+
       });
 
     return res.status(200).json({
@@ -164,4 +214,3 @@ export const rejectQuote = async (
 
   }
 };
-

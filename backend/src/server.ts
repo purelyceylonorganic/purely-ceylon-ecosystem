@@ -7,9 +7,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import appRoutes from './routes/appRoutes';
-
 import { globalErrorHandler } from './middlewares/error.middleware';
-
 import enterpriseRouter from './routes/enterprise.routes';
 import authRouter from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
@@ -34,6 +32,10 @@ import taxRoutes from "./routes/tax.routes";
 import couponRoutes from "./routes/coupon.routes";
 import rfqRoutes from "./routes/rfq.routes";
 import adminQuoteRoutes from "./routes/adminQuote.routes";
+import bulkOrderRoutes from "./routes/bulkOrder.routes";
+import { payBulkOrder } from './controllers/bulkOrder.controller';
+import router from './routes';
+
 
 startCurrencyJob();
 
@@ -57,7 +59,8 @@ app.use(cookieParser());
 // 2. CORS
 const allowedOrigins = [
   'https://purely-ceylon-store.vercel.app',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  "http://localhost:5173"   // ✅ இதை add செய்யுங்கள்
 ];
 
 app.use(cors({
@@ -116,6 +119,9 @@ app.use("/api/v1/tax", taxRoutes);
 app.use("/api/v1/coupons", couponRoutes);
 app.use("/api/v1/b2b/rfq", rfqRoutes);
 app.use("/api/v1/b2b/admin/quotes", adminQuoteRoutes);
+app.use("/api/v1/b2b/bulk-orders", bulkOrderRoutes);
+router.post("/:id/pay", payBulkOrder);
+console.log("Bulk Order Route Imported");
 
 // Homepage Route
 app.get('/', (req, res) => {

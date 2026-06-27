@@ -8,6 +8,7 @@ import {
 } from "../controllers/adminQuote.controller";
 
 const router = express.Router();
+console.log("ADMIN QUOTE ROUTES LOADED");
 
 router.get(
   "/pending-rfqs",

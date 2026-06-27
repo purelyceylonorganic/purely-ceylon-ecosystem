@@ -9,7 +9,7 @@ export class AddressController {
   static async addAddress(req: AuthenticatedRequest, res: Response) {
     try {
       const { street, city, province, postalCode, country, isDefault } = req.body;
-      const userId = req.user?.userId;
+      const userId = req.user?.id;
 
       if (!userId) return res.status(401).json({ success: false, message: 'அணுகல் மறுக்கப்பட்டது!' });
 
@@ -34,7 +34,7 @@ export class AddressController {
   static async getMyAddresses(req: AuthenticatedRequest, res: Response) {
     try {
       const addresses = await (prisma as any).address.findMany({
-        where: { userId: req.user?.userId }
+        where: { userId: req.user?.id }
       });
       return res.json({ success: true, data: addresses });
     } catch (error: any) {

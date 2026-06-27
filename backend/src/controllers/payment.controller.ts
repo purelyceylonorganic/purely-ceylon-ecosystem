@@ -47,7 +47,7 @@ export const createPayment = async (
         orderId: order.id,
         transactionId:
           'TXN-' + Date.now(),
-        amount: order.totalAmount,
+        amount: order.totalFinal,
         gateway,
       }
     });
