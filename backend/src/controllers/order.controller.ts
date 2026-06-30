@@ -3,9 +3,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
 // ===============================
-// 🚀 PLACE ORDER (FINAL VERSION)
+// 🚀 PLACE ORDER
 // ===============================
 export const placeOrder = async (req: Request, res: Response) => {
   try {
@@ -15,202 +14,227 @@ export const placeOrder = async (req: Request, res: Response) => {
       items,
       addressId,
       paymentMethod,
-      shippingCost = 0
+      shippingCost = 0,
     } = req.body;
 
     if (!user?.id) {
       return res.status(401).json({
         success: false,
-        message: "❌ Unauthorized user"
+        message: "❌ Unauthorized user",
       });
     }
 
     if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "❌ Cart is empty"
+        message: "❌ Cart is empty",
       });
     }
+
     const currency =
-  (req as any).currency ||
-  (req.query.currency as string) ||
-  "USD";
+      (req as any).currency ||
+      (req.query.currency as string) ||
+      "USD";
 
-const rateData = await prisma.currencyRate.findUnique({
-  where: {
-    code: currency
-  }
-});
+    const rateData = await prisma.currencyRate.findUnique({
+      where: {
+        code: currency,
+      },
+    });
 
-if (!rateData) {
-  return res.status(400).json({
-    success: false,
-    message: "Currency not found"
-  });
-}
+    if (!rateData) {
+      return res.status(400).json({
+        success: false,
+        message: "Currency not found",
+      });
+    }
 
     let totalUSD = 0;
-
     const orderItemsData: any[] = [];
 
     // ===============================
-    // 🧠 CHECK STOCK + CALCULATE TOTAL
+    // CHECK STOCK + CALCULATE TOTAL
     // ===============================
     for (const item of items) {
       const variant = await prisma.productVariant.findUnique({
-        where: { id: item.productVariantId }
+        where: {
+          id: item.productVariantId,
+        },
       });
 
       if (!variant) {
         return res.status(404).json({
           success: false,
-          message: "❌ Product variant not found"
+          message: "❌ Product variant not found",
         });
       }
 
       if (variant.stock < item.quantity) {
         return res.status(400).json({
           success: false,
-          message: `❌ Insufficient stock for ${variant.sku}`
+          message: `❌ Insufficient stock for ${variant.sku}`,
         });
       }
 
       const itemTotal = variant.price * item.quantity;
+
       totalUSD += itemTotal;
 
       orderItemsData.push({
         productVariantId: item.productVariantId,
         quantity: item.quantity,
-        price: variant.price
+        price: variant.price,
       });
     }
 
     // ===============================
-    // 🇱🇰 TAX SYSTEM (Sri Lanka VAT)
+    // TAX
     // ===============================
     const taxAmount = totalUSD * 0.18;
 
     const totalWithTax =
-  totalUSD + taxAmount + Number(shippingCost);
+      totalUSD + taxAmount + Number(shippingCost);
 
-const finalTotal =
-  totalWithTax * rateData.rate;
+    const finalTotal =
+      totalWithTax * rateData.rate;
 
     // ===============================
-    // 🚀 TRANSACTION (SAFE ORDER)
+    // TRANSACTION
     // ===============================
     const newOrder = await prisma.$transaction(async (tx) => {
-
-      // 1. reduce stock
+      // Reduce Stock
       for (const item of items) {
         await tx.productVariant.update({
-          where: { id: item.productVariantId },
+          where: {
+            id: item.productVariantId,
+          },
           data: {
             stock: {
-              decrement: item.quantity
-            }
-          }
+              decrement: item.quantity,
+            },
+          },
         });
       }
 
-      // 2. create order
-      return await tx.order.create({
+      // Create Order
+      const order = await tx.order.create({
         data: {
-  userId: user.id,
+          userId: user.id,
 
-  addressId,
+          addressId,
 
-  totalUSD,
+          totalUSD,
 
-  currency,
+          currency,
 
-  exchangeRate: rateData.rate,
+          exchangeRate: rateData.rate,
 
-  taxAmount,
+          taxAmount,
 
-  shippingCost: Number(shippingCost),
+          shippingCost: Number(shippingCost),
 
-  totalFinal: finalTotal,
+          totalFinal: finalTotal,
 
-  paymentMethod,
+          paymentMethod,
 
-  status: "PENDING",
+          status: "PENDING",
 
-  paymentStatus:
-    paymentMethod === "COD"
-      ? "UNPAID"
-      : "PAID",
+          paymentStatus:
+            paymentMethod === "COD"
+              ? "UNPAID"
+              : "PAID",
 
-  items: {
-    create: orderItemsData
-  }
-},
+          items: {
+            create: orderItemsData,
+          },
+        },
+
         include: {
           items: {
             include: {
-              productVariant: true
-            }
-          }
-        }
+              productVariant: true,
+            },
+          },
+        },
       });
+
+      // ✅ Clear Cart
+      await tx.cartItem.deleteMany({
+        where: {
+          cart: {
+            userId: user.id,
+          },
+        },
+      });
+
+      return order;
     });
 
     return res.status(201).json({
       success: true,
       message: "✅ Order placed successfully",
-      order: newOrder
+      order: newOrder,
     });
 
   } catch (error: any) {
-    console.log(error);
+    console.error(error);
+
     return res.status(500).json({
       success: false,
       message: "❌ Failed to place order",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
 // ===============================
-// 📦 GET MY ORDERS
+// GET MY ORDERS
 // ===============================
-export const getMyOrders = async (req: Request, res: Response) => {
+export const getMyOrders = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const user = (req as any).user;
 
     const orders = await prisma.order.findMany({
-      where: { userId: user.id },
+      where: {
+        userId: user.id,
+      },
+
       include: {
         items: {
           include: {
-            productVariant: true
-          }
-        }
+            productVariant: true,
+          },
+        },
       },
+
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
 
     return res.json({
       success: true,
-      orders
+      orders,
     });
 
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to get orders"
+      message: "Failed to get orders",
     });
   }
 };
 
-
 // ===============================
-// 📦 GET SINGLE ORDER
+// GET SINGLE ORDER
 // ===============================
-export const getSingleOrder = async (req: Request, res: Response) => {
+export const getSingleOrder = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -218,33 +242,44 @@ export const getSingleOrder = async (req: Request, res: Response) => {
     const order = await prisma.order.findFirst({
       where: {
         id,
-        userId: user.id
+        userId: user.id,
       },
+
       include: {
+        address: true,
+
         items: {
           include: {
-            productVariant: true
-          }
-        }
-      }
+            productVariant: {
+              include: {
+                product: {
+                  include: {
+                    images: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "❌ Order not found"
+        message: "❌ Order not found",
       });
     }
 
     return res.json({
       success: true,
-      order
+      order,
     });
 
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch order"
+      message: "Failed to fetch order",
     });
   }
 };

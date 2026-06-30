@@ -34,7 +34,7 @@ export class ProductController {
       // 🛡️ எண்டர்பிரைஸ் தணிக்கை பதிவு (Audit Log Execution)
       await (prisma as any).auditLog.create({
         data: {
-          userId: req.user?.userId,
+          userId: req.user?.id,
           action: 'CREATE_PRODUCT',
           details: `தயாரிப்பு சேர்க்கப்பட்டது: ${name} (SKU: ${sku})`
         }
@@ -50,12 +50,16 @@ export class ProductController {
   static async getAll(req: AuthenticatedRequest, res: Response) {
     try {
       const products = await prisma.product.findMany({
+  where: {
+    isActive: true,
+  },
   include: {
     images: true,
     videos: true,
     category: true,
-  }
-})
+    variants: true,
+  },
+});
       return res.json({ success: true, data: products });
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });
@@ -76,7 +80,7 @@ static async update(req: AuthenticatedRequest, res: Response) {
     // 🛡️ Audit Log: புதுப்பித்தல் பதிவு
     await (prisma as any).auditLog.create({
       data: {
-        userId: req.user?.userId,
+        userId: req.user?.id,
         action: 'UPDATE_PRODUCT',
         details: `தயாரிப்பு ID ${id} புதுப்பிக்கப்பட்டது.`
       }
@@ -101,7 +105,7 @@ static async delete(req: AuthenticatedRequest, res: Response) {
     // 🛡️ Audit Log: நீக்கல் பதிவு
     await (prisma as any).auditLog.create({
       data: {
-        userId: req.user?.userId,
+        userId: req.user?.id,
         action: 'DELETE_PRODUCT',
         details: `தயாரிப்பு ID ${id} செயலிழக்கப்பட்டது (Soft Delete).`
       }
@@ -113,7 +117,44 @@ static async delete(req: AuthenticatedRequest, res: Response) {
   }
 }
 
-// 🔍 5. தேடல் மற்றும் வடிகட்டி (Search & Filter)
+// 🔍 5. Single Product (Get By ID)
+static async getById(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        images: true,
+        videos: true,
+        category: true,
+        variants: true,
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: product,
+    });
+
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+// 🔍 6. தேடல் மற்றும் வடிகட்டி (Search & Filter)
 static async search(req: AuthenticatedRequest, res: Response) {
   try {
     const { name, categoryId, minPrice } = req.query;

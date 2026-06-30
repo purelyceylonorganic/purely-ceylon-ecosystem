@@ -1,78 +1,87 @@
-import { Router } from 'express';
-
+import { Router } from "express";
 import {
   placeOrder,
   getMyOrders,
-  getSingleOrder
-} from '../controllers/order.controller';
+  getSingleOrder,
+} from "../controllers/order.controller";
 
-import { AddressController } from '../controllers/address.controller';
-
-import { protect } from '../middlewares/auth.middleware';
+import { AddressController } from "../controllers/address.controller";
+import { protect } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+console.log("✅ order.routes.ts loaded");
 
 // ======================================================
-// 🔒 PROTECTED ROUTES
+// TEST ROUTE
 // ======================================================
 
+router.get("/test", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Order Routes Working",
+  });
+});
 
-// 🛒 CHECKOUT & ORDER MANAGEMENT
+// ======================================================
+// ORDER MANAGEMENT
+// ======================================================
 
-// 🚀 PLACE ORDER
+// Checkout
 router.post(
-  '/checkout',
+  "/checkout",
   protect,
   placeOrder
 );
 
-// 📦 GET MY ORDERS
+// My Orders
 router.get(
-  '/my-orders',
+  "/my-orders",
   protect,
   getMyOrders
 );
 
-// 📦 GET SINGLE ORDER
-router.get(
-  '/:id',
-  protect,
-  getSingleOrder
-);
-
-
 // ======================================================
-// 📍 ADDRESS MANAGEMENT
+// ADDRESS MANAGEMENT
 // ======================================================
 
-// ➕ ADD ADDRESS
+// Add Address
 router.post(
-  '/addresses',
+  "/addresses",
   protect,
   AddressController.addAddress
 );
 
-// 📋 GET ALL MY ADDRESSES
+// Get Addresses
 router.get(
-  '/addresses',
+  "/addresses",
   protect,
   AddressController.getMyAddresses
 );
 
-// ✏️ UPDATE ADDRESS
+// Update Address
 router.put(
-  '/addresses/:id',
+  "/addresses/:id",
   protect,
   AddressController.updateAddress
 );
 
-// 🗑️ DELETE ADDRESS
+// Delete Address
 router.delete(
-  '/addresses/:id',
+  "/addresses/:id",
   protect,
   AddressController.deleteAddress
 );
 
+// ======================================================
+// SINGLE ORDER
+// IMPORTANT: ALWAYS KEEP LAST
+// ======================================================
+
+router.get(
+  "/:id",
+  protect,
+  getSingleOrder
+);
 
 export default router;

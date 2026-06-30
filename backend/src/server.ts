@@ -35,7 +35,7 @@ import adminQuoteRoutes from "./routes/adminQuote.routes";
 import bulkOrderRoutes from "./routes/bulkOrder.routes";
 import { payBulkOrder } from './controllers/bulkOrder.controller';
 import router from './routes';
-
+import categoryRoutes from "./routes/category.routes";
 
 startCurrencyJob();
 
@@ -99,6 +99,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/enterprise', enterpriseRouter);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/products', productRouter);
+app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1', appRoutes);
 app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/checkout', checkoutRoutes);

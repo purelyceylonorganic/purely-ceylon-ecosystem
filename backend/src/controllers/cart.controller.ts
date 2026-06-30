@@ -105,15 +105,17 @@ export const getCart = async (req: Request, res: Response) => {
 
     // 📦 get cart with VARIANT relation (IMPORTANT FIX)
     const cart = await prisma.cart.findUnique({
-      where: { userId: user.id },
+  where: {
+    userId: (req as any).user.id // அல்லது லாகின் செய்த பயனரின் ஐடியை வாங்கும் உங்கள் வேரியபிள் பெயர் (e.g., userId)
+  },
+  include: {
+    items: {
       include: {
-        items: {
-          include: {
-            productVariant: true   // 🔥 THIS IS THE FIX
-          }
-        }
+        productVariant: { include: { product: { include: { images: true } } } }
       }
-    });
+    }
+  }
+});
 
     if (!cart) {
       return res.json({
@@ -141,21 +143,36 @@ export const getCart = async (req: Request, res: Response) => {
 
     // 🧠 FIXED TYPE ISSUE HERE ALSO
     const items = cart.items.map((item: any) => {
-      const price = item.productVariant.price; // 🔥 variant price
-      const quantity = item.quantity;
+  const price = item.productVariant.price;
+  const quantity = item.quantity;
 
-      const itemTotal = price * quantity;
-      totalUSD += itemTotal;
+  const itemTotal = price * quantity;
 
-      return {
-        variantId: item.productVariant.id,
-        sku: item.productVariant.sku,
-        weight: item.productVariant.weight,
-        priceUSD: price,
-        quantity,
-        itemTotalUSD: itemTotal
-      };
-    });
+  totalUSD += itemTotal;
+
+  return {
+  id: item.id,
+
+  variantId: item.productVariant.id,
+
+  productName: item.productVariant.product.name,
+
+  image:
+    item.productVariant.product.images.length > 0
+      ? item.productVariant.product.images[0].url
+      : null,
+
+  sku: item.productVariant.sku,
+
+  weight: item.productVariant.weight,
+
+  priceUSD: price,
+
+  quantity,
+
+  itemTotalUSD: itemTotal,
+};
+});
 
     const totalConverted = totalUSD * rateData.rate;
 

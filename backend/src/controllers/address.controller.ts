@@ -31,17 +31,39 @@ export class AddressController {
   }
 
   // 📋 பயனரின் அனைத்து முகவரிகளையும் பெறுதல்
-  static async getMyAddresses(req: AuthenticatedRequest, res: Response) {
-    try {
-      const addresses = await (prisma as any).address.findMany({
-        where: { userId: req.user?.id }
-      });
-      return res.json({ success: true, data: addresses });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
-    
-  } // <--- இந்த பிராக்கெட் விடுபட்டிருந்தது
+  static async getMyAddresses(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+
+    console.log("========== ADDRESS ==========");
+    console.log("USER =", req.user);
+
+    const addresses = await (prisma as any).address.findMany({
+      where: {
+        userId: req.user?.id
+      }
+    });
+
+    console.log("ADDRESSES =", addresses);
+
+    return res.json({
+      success: true,
+      data: addresses
+    });
+
+  } catch (error: any) {
+
+    console.log("ADDRESS ERROR =", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+
+  }
+}
 
   // ✏️ Update Address
   static async updateAddress(req: Request, res: Response) {
