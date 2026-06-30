@@ -1,59 +1,160 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../services/auth.service";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+
+      const response = await authService.login(email, password);
+
+      console.log("Login Response:", response);
+
+      // ✅ Save JWT Token
+      localStorage.setItem("token", response.token);
+
+      // ✅ Verify Token Saved
+      console.log(
+        "Saved Token:",
+        localStorage.getItem("token")
+      );
+
+      alert("✅ Login Successful");
+
+      // ✅ Redirect to Home Page
+      navigate("/products");
+
+    } catch (error: any) {
+      console.error(error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Login Failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FFF8EE]">
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "520px",
+        background: "#ffffff",
+        borderRadius: "20px",
+        padding: "45px",
+        boxShadow: "0 15px 40px rgba(0,0,0,.12)",
+      }}
+    >
+      <h1
+        style={{
+          textAlign: "center",
+          color: "#0E4B32",
+          fontSize: "48px",
+          marginBottom: "10px",
+        }}
+      >
+        Purely Ceylon
+      </h1>
 
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl p-8 border-t-4 border-[#0E4B32]">
+      <p
+        style={{
+          textAlign: "center",
+          color: "#777",
+          marginBottom: "35px",
+        }}
+      >
+        Welcome back to your organic world 🌿
+      </p>
 
-        {/* HEADER */}
-        <h1 className="text-3xl font-bold text-center text-[#0E4B32]">
-          Purely Ceylon
-        </h1>
+      <form onSubmit={handleLogin}>
+        <div style={{ marginBottom: "20px" }}>
+          <label>Email</label>
 
-        <p className="text-center text-gray-500 mt-2">
-          Welcome back to your organic world 🌿
-        </p>
-
-        {/* EMAIL */}
-        <div className="mt-6">
-          <label className="text-sm font-medium">Email</label>
           <input
             type="email"
-            className="w-full mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
             placeholder="Enter email"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "15px",
+              borderRadius: "10px",
+              border: "1px solid #ddd",
+              marginTop: "8px",
+              fontSize: "16px",
+            }}
           />
         </div>
 
-        {/* PASSWORD */}
-        <div className="mt-4">
-          <label className="text-sm font-medium">Password</label>
+        <div style={{ marginBottom: "30px" }}>
+          <label>Password</label>
+
           <input
             type="password"
-            className="w-full mt-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
             placeholder="Enter password"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "15px",
+              borderRadius: "10px",
+              border: "1px solid #ddd",
+              marginTop: "8px",
+              fontSize: "16px",
+            }}
           />
         </div>
 
-        {/* BUTTON */}
-        <button className="w-full mt-6 bg-[#0E4B32] text-white py-3 rounded-lg hover:bg-black transition">
-          Login
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "16px",
+            background: "#0E4B32",
+            color: "#fff",
+            border: "none",
+            borderRadius: "10px",
+            cursor: loading ? "not-allowed" : "pointer",
+            fontSize: "18px",
+            fontWeight: "bold",
+          }}
+        >
+          {loading ? "Logging in..." : "Login"}
         </button>
+      </form>
 
-        {/* FOOTER */}
-        <p className="text-center text-sm mt-4 text-gray-500">
-          Don’t have an account?{" "}
-          <a href="/register" className="text-[#D4AF37] font-semibold">
-            Register
-          </a>
-        </p>
-
-      </div>
+      <p
+        style={{
+          textAlign: "center",
+          marginTop: "25px",
+          color: "#666",
+        }}
+      >
+        Don't have an account?{" "}
+        <Link
+          to="/register"
+          style={{
+            color: "#D4A017",
+            fontWeight: "bold",
+            textDecoration: "none",
+          }}
+        >
+          Register
+        </Link>
+      </p>
     </div>
   );
 }

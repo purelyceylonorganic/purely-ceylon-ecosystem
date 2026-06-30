@@ -3,17 +3,24 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
 
 import Home from "../pages/public/Home";
-import Login from "../auth/Login";
+import  Login  from "../auth/Login";
 import Register from "../auth/Register";
+import VerifyOtp from "../auth/VerifyOtp";
 
 import ProductList from "../pages/Products/ProductList";
 import ProductDetails from "../pages/Products/ProductDetails";
+import Cart from "../pages/Checkout/Cart";
+import Checkout from "../pages/Checkout/Checkout";
+import Orders from "../pages/Orders/Orders";
+import OrderDetails from "../pages/Orders/OrderDetails";
+import Dashboard from "../pages/Profile/Dashboard";
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 🌐 Public + Layout pages */}
+
+        {/* 🌐 Public Pages */}
         <Route
           path="/"
           element={
@@ -41,7 +48,16 @@ export default function AppRoutes() {
           }
         />
 
-        {/* 🛍️ Products */}
+        <Route
+          path="/verify-otp"
+          element={
+            <MainLayout>
+              <VerifyOtp />
+            </MainLayout>
+          }
+        />
+
+        {/* 🛍️ Product Pages */}
         <Route
           path="/products"
           element={
@@ -59,6 +75,60 @@ export default function AppRoutes() {
             </MainLayout>
           }
         />
+        
+       <Route
+  path="/cart"
+  element={
+    <MainLayout>
+      <Cart />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/checkout"
+  element={
+    <MainLayout>
+      <Checkout />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/orders"
+  element={
+    <MainLayout>
+      <Orders />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/my-orders"
+  element={
+    <MainLayout>
+      <Orders />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/orders/:id"
+  element={
+    <MainLayout>
+      <OrderDetails />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/dashboard"
+  element={
+    <MainLayout>
+      <Dashboard />
+    </MainLayout>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );

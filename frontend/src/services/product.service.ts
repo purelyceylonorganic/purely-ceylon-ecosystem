@@ -7,6 +7,12 @@ export const productService = {
     return response.data;
   },
 
+  // ✅ ஒரு Product மட்டும் பெறுதல்
+async getProductById(id: string) {
+  const response = await api.get(`/products/${id}`);
+  return response.data;
+},
+
   // ✅ Product Search
   async searchProducts(
     name: string,
