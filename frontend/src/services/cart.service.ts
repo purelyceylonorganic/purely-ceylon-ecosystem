@@ -1,7 +1,9 @@
 import api from "../api/axios";
 
 export const cartService = {
-  // ✅ Add To Cart
+  // =========================
+  // 🛒 ADD TO CART
+  // =========================
   async addToCart(productVariantId: string, quantity: number) {
     const response = await api.post("/cart/add", {
       productVariantId,
@@ -11,19 +13,25 @@ export const cartService = {
     return response.data;
   },
 
-  // ✅ Get Cart
+  // =========================
+  // 👀 GET CART
+  // =========================
   async getCart() {
     const response = await api.get("/cart");
     return response.data;
   },
 
-  // ✅ Remove Item
+  // =========================
+  // ❌ REMOVE ITEM
+  // =========================
   async removeItem(itemId: string) {
     const response = await api.delete(`/cart/remove/${itemId}`);
     return response.data;
   },
 
-  // ✅ Update Quantity
+  // =========================
+  // 🔄 UPDATE QUANTITY
+  // =========================
   async updateQuantity(itemId: string, quantity: number) {
     const response = await api.put(`/cart/update/${itemId}`, {
       quantity,

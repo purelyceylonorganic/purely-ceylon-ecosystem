@@ -14,6 +14,7 @@ import Checkout from "../pages/Checkout/Checkout";
 import Orders from "../pages/Orders/Orders";
 import OrderDetails from "../pages/Orders/OrderDetails";
 import Dashboard from "../pages/Profile/Dashboard";
+import Wishlist from "../pages/Wishlist/Wishlist";
 
 export default function AppRoutes() {
   return (
@@ -129,6 +130,15 @@ export default function AppRoutes() {
     </MainLayout>
   }
 />
+<Route
+  path="/wishlist"
+  element={
+    <MainLayout>
+      <Wishlist />
+    </MainLayout>
+  }
+/>
+
       </Routes>
     </BrowserRouter>
   );

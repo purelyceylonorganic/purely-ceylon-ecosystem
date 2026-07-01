@@ -10,13 +10,14 @@ import ProductGallery from "../../components/product/ProductGallery";
 import QuantitySelector from "../../components/product/QuantitySelector";
 import StockBadge from "../../components/product/StockBadge";
 import VariantSelector from "../../components/product/VariantSelector";
+import { wishlistService } from "../../services/wishlist.service";
 
 export default function ProductDetails() {
   const { id } = useParams();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
-
+  const [addingWishlist, setAddingWishlist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -84,6 +85,32 @@ export default function ProductDetails() {
   }
 }
 
+  async function handleWishlist() {
+  if (!selectedVariant) {
+    alert("Please select a variant");
+    return;
+  }
+
+  try {
+    setAddingWishlist(true);
+
+    const response = await wishlistService.addToWishlist(
+      selectedVariant.id
+    );
+
+    alert(response.message);
+
+  } catch (err: any) {
+    console.error(err);
+
+    alert(
+      err?.response?.data?.message ??
+      "Failed to add wishlist"
+    );
+  } finally {
+    setAddingWishlist(false);
+  }
+}
   if (loading) {
     return <h2 style={{ textAlign: "center" }}>Loading Product...</h2>;
   }
@@ -203,21 +230,40 @@ export default function ProductDetails() {
         />
 
         <button
-  onClick={handleAddToCart}
-  style={{
-    marginTop: "25px",
-    padding: "15px 35px",
-    background: "#0E4B32",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontSize: "18px",
-    fontWeight: "bold",
-  }}
->
-  🛒 Add {quantity} To Cart
-</button>
+    onClick={handleWishlist}
+    disabled={addingWishlist}
+    style={{
+      width: "100%",
+      padding: "14px",
+      background: "#dc2626", // சிவப்பு நிறம்
+      color: "#fff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      fontSize: "16px",
+    }}
+  >
+    {addingWishlist ? "Adding to Wishlist..." : "❤️ Add To Wishlist"}
+  </button>
+
+  {/* 2. ADD TO CART BUTTON (இரண்டாவது பட்டன்) */}
+  <button
+    onClick={handleAddToCart}
+    style={{
+      width: "100%",
+      padding: "15px",
+      background: "#0E4B32", // உங்கள் பிராண்ட் பச்சை நிறம்
+      color: "#fff",
+      border: "none",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontSize: "16px",
+      fontWeight: "bold",
+    }}
+  >
+    🛒 Add {quantity} To Cart
+  </button>
       </div>
     </div>
   );
