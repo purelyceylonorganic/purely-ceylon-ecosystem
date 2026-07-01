@@ -55,12 +55,13 @@ model User {
   // Relations
   addresses Address[]
   orders    Order[]
-  reviews   Review[]
+  reviews   ProductReview[]
   sessions  UserSession[]
   auditLogs AuditLog[]
 
-  cart Cart?
+  cart     Cart?
   wishlist Wishlist?
+  Review   Review[]
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
@@ -95,7 +96,8 @@ model Product {
   variants ProductVariant[] // 🆕 Variants உடன் தொடர்பு
   images   ProductImage[]
   videos   ProductVideo[]
-  reviews  Review[]
+  reviews  ProductReview[]
+  Review   Review[]
 }
 
 model CurrencyRate {
@@ -121,9 +123,9 @@ model ProductVariant {
   updatedAt DateTime @updatedAt
 
   // relations
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-  inventory  Inventory[]
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  inventory     Inventory[]
   wishlistItems WishlistItem[]
 }
 
@@ -322,7 +324,6 @@ model WishlistItem {
 
   @@unique([wishlistId, productVariantId])
 }
-
 
 // 🛡️ எண்டர்பிரைஸ் தணிக்கை பதிவுகள் (Immutable Audit Logs)
 model AuditLog {
@@ -613,4 +614,21 @@ model BulkOrderItem {
   price     Float
 
   totalPrice Float?
+}
+
+model ProductReview {
+  id String @id @default(uuid())
+
+  productId String
+  userId    String
+
+  rating Int
+
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
