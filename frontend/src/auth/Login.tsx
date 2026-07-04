@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../services/auth.service";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +23,7 @@ export default function Login() {
       console.log("Login Response:", response);
 
       // ✅ Save JWT Token
-      localStorage.setItem("token", response.token);
+      login(response.token);
 
       // ✅ Verify Token Saved
       console.log(

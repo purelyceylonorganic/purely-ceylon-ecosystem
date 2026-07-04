@@ -39,4 +39,10 @@ export const cartService = {
 
     return response.data;
   },
+
+  // ✅ Cart Count
+async getCartCount() {
+  const response = await api.get("/cart");
+  return response.data.items?.length ?? 0;
+},
 };

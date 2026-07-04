@@ -9,7 +9,7 @@ import VerifyOtp from "../auth/VerifyOtp";
 
 import ProductList from "../pages/Products/ProductList";
 import ProductDetails from "../pages/Products/ProductDetails";
-import Cart from "../pages/Checkout/Cart";
+import Cart from "../pages/Cart/Cart";
 import Checkout from "../pages/Checkout/Checkout";
 import Orders from "../pages/Orders/Orders";
 import OrderDetails from "../pages/Orders/OrderDetails";

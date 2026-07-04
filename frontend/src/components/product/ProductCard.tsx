@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { Product } from "../../types/product.types";
 import "./ProductCard.css";
 import { cartService } from "../../services/cart.service";
+import { wishlistService } from "../../services/wishlist.service";
 
 type Props = {
   product: Product;
@@ -29,6 +30,32 @@ export default function ProductCard({ product }: Props) {
     alert(
       error?.response?.data?.message ||
       "Add to cart failed."
+    );
+  }
+}
+
+async function handleAddToWishlist() {
+  const variant = product.variants?.[0];
+
+  if (!variant) {
+    alert("No variant available.");
+    return;
+  }
+
+  try {
+    const response = await wishlistService.addToWishlist(
+      variant.id
+    );
+
+    alert(response.message);
+
+    window.location.reload();
+  } catch (error: any) {
+    console.error(error);
+
+    alert(
+      error?.response?.data?.message ||
+      "Add to wishlist failed."
     );
   }
 }
@@ -90,20 +117,27 @@ export default function ProductCard({ product }: Props) {
 
         {/* Buttons */}
         <div className="product-buttons">
-          <Link
-            to={`/products/${product.id}`}
-            className="details-btn"
-          >
-            View Details
-          </Link>
+  <Link
+    to={`/products/${product.id}`}
+    className="details-btn"
+  >
+    View Details
+  </Link>
 
-          <button
-  className="cart-btn"
-  onClick={handleAddToCart}
->
-  Add to Cart
-</button>
-        </div>
+  <button
+    className="cart-btn"
+    onClick={handleAddToCart}
+  >
+    🛒 Add to Cart
+  </button>
+
+  <button
+    className="cart-btn"
+    onClick={handleAddToWishlist}
+  >
+    ❤️ Wishlist
+  </button>
+</div>
       </div>
     </div>
   );

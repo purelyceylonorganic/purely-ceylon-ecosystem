@@ -2,22 +2,37 @@ import { useEffect, useState } from "react";
 import { cartService } from "../../services/cart.service";
 import { addressService } from "../../services/address.service";
 import { orderService } from "../../services/order.service";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // 🎟️ useLocation சேர்க்கப்பட்டுள்ளது
 
 export default function Checkout() {
-
   const navigate = useNavigate();
+  const location = useLocation(); // 🎟️ கார்ட் பக்கத்தில் இருந்து வரும் ஸ்டேட்டைப் பெற
 
   const [cart, setCart] = useState<any>(null);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(true);
-  
+
+  // 🎟️ கூப்பன் தரவுகளுக்கான ஸ்டேட்கள்
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
 
   useEffect(() => {
     loadData();
+    getCouponFromCart();
   }, []);
+
+  // 🎟️ கார்ட் பக்கத்தில் இருந்து வரும் கூப்பன் தகவல்களை எடுக்கும் லாஜிக்
+  function getCouponFromCart() {
+    // 1. முதலில் react-router-dom 'state' வழியாகப் பார்க்கிறது, இல்லை என்றால் LocalStorage-ல் பார்க்கிறது
+    const couponInfo = location.state || JSON.parse(localStorage.getItem("appliedCoupon") || "{}");
+    
+    if (couponInfo && couponInfo.discountPercent > 0) {
+      setCouponCode(couponInfo.couponCode || "");
+      setDiscountPercent(couponInfo.discountPercent || 0);
+    }
+  }
 
   // ✅ கார்ட் மற்றும் முகவரித் தரவுகளை ஒரே நேரத்தில் லோடு செய்தல்
   async function loadData() {
@@ -52,19 +67,23 @@ export default function Checkout() {
         quantity: item.quantity,
       }));
 
+      // 🎟️ பேக்எண்டிற்கு கூப்பன் விபரங்களையும் சேர்த்து அனுப்புகிறோம்
       const response = await orderService.placeOrder({
-  addressId: selectedAddress,
-  paymentMethod,
-  shippingCost: 0,
-  items,
-});
+        addressId: selectedAddress,
+        paymentMethod,
+        shippingCost: 0,
+        couponCode: couponCode || null, // 👈 கூப்பன் இருந்தால் குறியீடு செல்லும், இல்லை எனில் null செல்லும்
+        items,
+      });
 
-console.log("Order Response:", response);
+      console.log("Order Response:", response);
+      alert("✅ Order Placed Successfully");
 
-alert("✅ Order Placed Successfully");
+      // ஆர்டர் முடிந்ததும் லோக்கல் ஸ்டோரேஜில் உள்ள கூப்பனை நீக்குகிறோம்
+      localStorage.removeItem("appliedCoupon");
 
-// ✅ Redirect to My Orders Page
-navigate("/orders");
+      // ✅ Redirect to My Orders Page
+      navigate("/orders");
       
     } catch (err: any) {
       console.error("Checkout பிழை:", err);
@@ -94,6 +113,11 @@ navigate("/orders");
       </div>
     );
   }
+
+  // 🎟️ புதிய தள்ளுபடிக் கணக்கீடுகள்
+  const subtotal = cart.totalConverted || cart.totalUSD || 0;
+  const discountAmount = (subtotal * discountPercent) / 100;
+  const finalTotal = subtotal - discountAmount;
 
   // 3. மெயின் Checkout UI
   return (
@@ -191,11 +215,39 @@ navigate("/orders");
             ))}
           </div>
 
+          {/* 🎟️ கூப்பன் அப்ளை ஆகி இருந்தால் அதன் விவரத்தை இங்கே காட்டும் */}
+          {discountPercent > 0 && (
+            <div style={{ 
+              background: "#ecfdf5", 
+              border: "1px solid #A7F3D0", 
+              padding: "10px 15px", 
+              borderRadius: "6px", 
+              marginBottom: "15px",
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "14px"
+            }}>
+              <span style={{ color: "#065f46", fontWeight: "bold" }}>🎟️ Coupon Code: {couponCode}</span>
+              <span style={{ color: "#047857", fontWeight: "bold" }}>{discountPercent}% OFF Applied</span>
+            </div>
+          )}
+
           <hr />
           
+          {/* பில் விபரங்கள் பகுதி (Subtotal, Discount, Grand Total) */}
           <div style={{ marginTop: "20px", textAlign: "right" }}>
-            <h2 style={{ margin: "0 0 20px 0" }}>
-              Grand Total : {cart.currency || "USD"} {cart.totalConverted || cart.totalUSD}
+            <p style={{ fontSize: "15px", color: "#666", margin: "4px 0" }}>
+              Subtotal: {cart.currency || "USD"} {subtotal.toFixed(2)}
+            </p>
+            
+            {discountPercent > 0 && (
+              <p style={{ fontSize: "15px", color: "#10b981", fontWeight: "bold", margin: "4px 0" }}>
+                Coupon Discount: -{cart.currency || "USD"} {discountAmount.toFixed(2)}
+              </p>
+            )}
+
+            <h2 style={{ fontSize: "24px", color: "#333", marginTop: "10px", marginBottom: "20px" }}>
+              Grand Total : {cart.currency || "USD"} {finalTotal.toFixed(2)}
             </h2>
 
             <button
