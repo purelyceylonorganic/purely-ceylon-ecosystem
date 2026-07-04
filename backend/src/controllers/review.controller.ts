@@ -41,7 +41,7 @@ export const addReview = async (
       });
     }
 
-    const exists = await prisma.productReview.findFirst({
+    const exists = await prisma.review.findFirst({
       where: {
         productId,
         userId: user.id,
@@ -55,7 +55,7 @@ export const addReview = async (
       });
     }
 
-    const review = await prisma.productReview.create({
+    const review = await prisma.review.create({
       data: {
         productId,
         userId: user.id,
@@ -91,7 +91,7 @@ export const getProductReviews = async (
     const { productId } = req.params;
 
     const reviews =
-      await prisma.productReview.findMany({
+      await prisma.review.findMany({
 
         where: {
           productId,
@@ -139,23 +139,22 @@ export const getProductReviews = async (
   }
 };
 
-
 // =====================================
-// ⭐ DELETE REVIEW
+// ⭐ UPDATE REVIEW
 // =====================================
-export const deleteReview = async (
+export const updateReview = async (
   req: Request,
   res: Response
 ) => {
-
   try {
-
     const user = (req as any).user;
 
     const { id } = req.params;
 
+    const { rating, comment } = req.body;
+
     const review =
-      await prisma.productReview.findUnique({
+      await prisma.review.findUnique({
         where: {
           id,
         },
@@ -175,7 +174,70 @@ export const deleteReview = async (
       });
     }
 
-    await prisma.productReview.delete({
+    const updated =
+      await prisma.review.update({
+        where: {
+          id,
+        },
+        data: {
+          rating,
+          comment,
+        },
+      });
+
+    return res.json({
+      success: true,
+      message: "Review Updated Successfully",
+      review: updated,
+    });
+
+  } catch (error: any) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+};
+
+
+// =====================================
+// ⭐ DELETE REVIEW
+// =====================================
+export const deleteReview = async (
+  req: Request,
+  res: Response
+) => {
+
+  try {
+
+    const user = (req as any).user;
+
+    const { id } = req.params;
+
+    const review =
+      await prisma.review.findUnique({
+        where: {
+          id,
+        },
+      });
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found",
+      });
+    }
+
+    if (review.userId !== user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Permission denied",
+      });
+    }
+
+    await prisma.review.delete({
       where: {
         id,
       },

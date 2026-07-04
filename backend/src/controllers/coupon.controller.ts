@@ -98,8 +98,7 @@ export const validateCoupon = async (
  res.json({
   success: true,
   discount,
+  discountPercent: coupon.discountValue,
   finalAmount
- });
-
-};
-
+});
+}

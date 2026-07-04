@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   addReview,
   getProductReviews,
+  updateReview,
   deleteReview,
 } from "../controllers/review.controller";
 
@@ -21,6 +22,19 @@ router.post(
 router.get(
   "/:productId",
   getProductReviews
+);
+
+// ⭐ Update Review
+router.put(
+  "/:id",
+  protect,
+  updateReview
+);
+
+router.put(
+  "/:id",
+  protect,
+  updateReview
 );
 
 // ⭐ Delete Review

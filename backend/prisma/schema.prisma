@@ -55,13 +55,13 @@ model User {
   // Relations
   addresses Address[]
   orders    Order[]
-  reviews   ProductReview[]
   sessions  UserSession[]
   auditLogs AuditLog[]
 
   cart     Cart?
   wishlist Wishlist?
-  Review   Review[]
+  reviews   Review[] @relation("UserReviews")
+  questions Question[] @relation("UserQuestions")
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
@@ -96,8 +96,8 @@ model Product {
   variants ProductVariant[] // 🆕 Variants உடன் தொடர்பு
   images   ProductImage[]
   videos   ProductVideo[]
-  reviews  ProductReview[]
-  Review   Review[]
+  reviews   Review[] @relation("ProductReviews")
+  questions Question[] @relation("ProductQuestions")
 }
 
 model CurrencyRate {
@@ -262,18 +262,6 @@ model Address {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   orders Order[]
-}
-
-model Review {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
@@ -600,6 +588,14 @@ model BulkOrder {
 
   items BulkOrderItem[]
 
+  statusHistory BulkOrderStatusHistory[]
+
+  invoice ExportInvoice?
+
+  exportDocument ExportDocument?
+
+  shipment Shipment?
+  
   RFQ RFQ[]
 }
 
@@ -616,19 +612,128 @@ model BulkOrderItem {
   totalPrice Float?
 }
 
-model ProductReview {
-  id String @id @default(uuid())
+model BulkOrderStatusHistory {
+  id String @id @default(cuid())
 
-  productId String
-  userId    String
+  bulkOrderId String
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
 
-  rating Int
+  previousStatus String
+  currentStatus  String
 
-  comment String?
+  remarks String?
+
+  changedBy String?
+
+  createdAt DateTime @default(now())
+}
+
+model ExportInvoice {
+  id String @id @default(cuid())
+
+  invoiceNumber String @unique
+
+  bulkOrderId String @unique
+  bulkOrder BulkOrder @relation(fields: [bulkOrderId], references: [id])
+
+  invoiceDate DateTime @default(now())
+
+  subtotal Float
+  tax Float @default(0)
+  shippingCost Float @default(0)
+
+  totalAmount Float
+
+  currency String @default("USD")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExportDocument {
+
+  id String @id @default(cuid())
+
+  bulkOrderId String @unique
+  bulkOrder BulkOrder @relation(fields: [bulkOrderId], references: [id])
+
+  commercialInvoice Boolean @default(false)
+
+  packingList Boolean @default(false)
+
+  certificateOfOrigin Boolean @default(false)
+
+  billOfLading String?
+
+  customsReference String?
+
+  status String @default("PENDING")
 
   createdAt DateTime @default(now())
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Shipment {
+
+  id String @id @default(cuid())
+
+  shipmentNumber String @unique
+
+  bulkOrderId String @unique
+  bulkOrder BulkOrder @relation(fields:[bulkOrderId], references:[id])
+
+  shippingLine String
+
+  containerNumber String?
+
+  vesselName String?
+
+  trackingNumber String?
+
+  portOfLoading String
+
+  destinationPort String
+
+  etd DateTime?
+
+  eta DateTime?
+
+  status String @default("BOOKED")
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id               String   @id @default(uuid())
+  rating           Int
+  comment          String?
+
+  userId           String
+  productId        String
+
+  // 👈 கீழே உள்ள இரண்டு வரிகளிலும் @relation("...") பெயர் சேர்க்கப்பட்டுள்ளது
+  user             User     @relation("UserReviews", fields: [userId], references: [id])
+  product          Product  @relation("ProductReviews", fields: [productId], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Question {
+  id          String   @id @default(uuid())
+
+  question    String
+  answer      String?
+
+  userId      String
+  productId   String
+
+  user         User    @relation("UserQuestions", fields: [userId], references: [id])
+  product      Product @relation("ProductQuestions", fields: [productId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

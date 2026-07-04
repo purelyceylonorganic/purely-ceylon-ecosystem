@@ -37,6 +37,11 @@ import { payBulkOrder } from './controllers/bulkOrder.controller';
 import router from './routes';
 import categoryRoutes from "./routes/category.routes";
 import reviewRoutes from "./routes/review.routes";
+import wishlistRoutes from "./routes/wishlist.routes";
+import questionRoutes from "./routes/question.routes";
+import exportInvoiceRoutes from "./routes/exportInvoice.routes";
+import exportDocumentRoutes from "./routes/exportDocument.routes";
+import shipmentRoutes from "./routes/shipment.routes";
 
 startCurrencyJob();
 
@@ -123,9 +128,12 @@ app.use("/api/v1/coupons", couponRoutes);
 app.use("/api/v1/b2b/rfq", rfqRoutes);
 app.use("/api/v1/b2b/admin/quotes", adminQuoteRoutes);
 app.use("/api/v1/b2b/bulk-orders", bulkOrderRoutes);
+app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
-
-router.post("/:id/pay", payBulkOrder);
+app.use("/api/v1/questions", questionRoutes);
+app.use("/api/v1/b2b/export-invoices",exportInvoiceRoutes);
+app.use("/api/v1/b2b/export-documents", exportDocumentRoutes);
+app.use("/api/v1/shipments", shipmentRoutes);
 
 console.log("Bulk Order Route Imported");
 
