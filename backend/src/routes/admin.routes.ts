@@ -5,6 +5,8 @@ import {
   getAllOrders,
   getAllProducts,
 } from "../controllers/admin.controller";
+import { authorizeRoles } from "../middlewares/role.middleware";
+import { ROLES } from "../constants/roles";
 
 const router = Router();
 
@@ -13,6 +15,13 @@ router.get("/dashboard", getDashboardStats);
 
 // 👤 Users
 router.get("/users", getAllUsers);
+
+router.use(
+  authorizeRoles(
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  )
+);
 
 // 📦 Orders
 router.get("/orders", getAllOrders);

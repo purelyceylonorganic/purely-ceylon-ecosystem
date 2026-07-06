@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { calculateVolumeDiscount } from "../utils/volumeDiscount";
 import { calculateEnterprisePrice } from "../utils/enterprisePricing";
+import { sendPaymentReceivedNotification } from "../services/notification";
+import { createAuditLog } from "../services/audit";
+import { AUDIT_ACTIONS } from "../constants/auditActions";
+import { MODULES } from "../constants/modules";
 
 const prisma = new PrismaClient();
 
@@ -87,7 +91,6 @@ export const convertRFQToBulkOrder = async (req: Request, res: Response) => {
           throw new Error(`Product not found: ${item.productId}`);
         }
 
-        // ✅ திருத்தம் செய்யப்பட்டது: Product Pricing Module செய்யும் வரை தற்காலிகமாக 10 என வைக்கப்பட்டுள்ளது
         const actualBasePrice = 10;
 
         // 5️⃣ Enterprise Pricing (Tier-based)
@@ -143,6 +146,22 @@ export const convertRFQToBulkOrder = async (req: Request, res: Response) => {
       return order;
     });
 
+    // ✅ Safe Audit Log Call after creation
+    try {
+      await createAuditLog({
+        userId: buyer.id,
+        userEmail: buyer.email,
+        action: AUDIT_ACTIONS.BULK_ORDER_CREATED,
+        module: MODULES.BULK_ORDER,
+        entityId: bulkOrder.id,
+        description: "RFQ converted into Bulk Order",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (Bulk Order Created):", auditError);
+    }
+
     return res.status(201).json({
       success: true,
       message: "Bulk Order created successfully under Purely Ceylon Organic (Pvt) Ltd compliance architecture",
@@ -182,19 +201,30 @@ export const getMyBulkOrders = async (req: Request, res: Response) => {
 };
 
 // ======================================
-// 🔍 GET SINGLE BULK ORDER
+// 🔍 GET SINGLE BULK ORDER (With Ownership Validation)
 // ======================================
 export const getBulkOrderById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const user = (req as any).user; // 🚀 லாக்-இன் செய்த பயனர் விவரங்கள் (JWT-லிருந்து)
 
-    const order = await prisma.bulkOrder.findUnique({
-      where: { id },
+    // 💡 findUnique-க்கு பதிலாக findFirst பயன்படுத்த வேண்டும் (ஏனெனில் பல நிபந்தனைகள் உள்ளன)
+    const order = await prisma.bulkOrder.findFirst({
+      where: { 
+        id,
+        // பயனர் BUYER ஆக இருந்தால், அவருடைய சொந்த buyerId ஆக இருக்க வேண்டும்.
+        // ஒருவேளை ADMIN / SUPER_ADMIN ஆக இருந்தால், அவர்கள் எல்லார் ஆர்டரையும் பார்க்கலாம் (undefined)
+        buyerId: user.role === "BUYER" ? user.id : undefined
+      },
       include: { items: true }
     });
 
+    // 🔒 ஆர்டர் இல்லை என்றாலோ அல்லது வேறு பையரின் ஆர்டர் என்றாலோ 404/403 காட்டும்
     if (!order) {
-      return res.status(404).json({ success: false, message: "Bulk Order not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Bulk Order not found or Unauthorized" 
+      });
     }
 
     return res.status(200).json({ success: true, data: order });
@@ -238,7 +268,6 @@ export const updateBulkOrderStatus = async (req: Request, res: Response) => {
 
     const updatedAt = new Date();
 
-    // ✅ திருத்தம் செய்யப்பட்டது: bulkOrder-ல் இருந்து remarks நீக்கப்பட்டு, statusHistory-ல் மட்டும் சேமிக்கப்படுகிறது
     const [updatedOrder] = await prisma.$transaction([
       prisma.bulkOrder.update({
         where: { id },
@@ -258,6 +287,23 @@ export const updateBulkOrderStatus = async (req: Request, res: Response) => {
         }
       })
     ]);
+
+    // ✅ Safe Audit Log Call after status update
+    try {
+      const actor = (req as any).user; 
+      await createAuditLog({
+        userId: actor?.id,
+        userEmail: actor?.email,
+        action: AUDIT_ACTIONS.BULK_ORDER_STATUS_UPDATED,
+        module: MODULES.BULK_ORDER,
+        entityId: id,
+        description: `${order.status} → ${status}`,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (Status Updated):", auditError);
+    }
 
     return res.status(200).json({
       success: true,
@@ -298,12 +344,41 @@ export const payBulkOrder = async (req: Request, res: Response) => {
       where: { id },
       data: {
         paymentStatus: "PAID",
-        status: "PAYMENT_RECEIVED", 
+        status: "PAYMENT_RECEIVED",
         paymentMethod,
         transactionId,
         paidAt: new Date()
+      },
+      include: {
+        buyer: true
       }
     });
+
+    // 🔔 Email Notification
+    try {
+      await sendPaymentReceivedNotification(
+        updated.buyer.email,
+        updated.buyer.name
+      );
+    } catch (error) {
+      console.error("Notification Error:", error);
+    }
+
+    // ✅ Safe Audit Log Call after payment confirmation
+    try {
+      await createAuditLog({
+        userId: updated.buyer.id,
+        userEmail: updated.buyer.email,
+        action: AUDIT_ACTIONS.PAYMENT_RECEIVED,
+        module: MODULES.PAYMENT,
+        entityId: id,
+        description: "Bulk Order payment completed",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (Payment Received):", auditError);
+    }
 
     return res.status(200).json({
       success: true,

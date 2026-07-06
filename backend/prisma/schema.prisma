@@ -22,14 +22,16 @@ enum BuyerTier {
   DISTRIBUTOR
 }
 
-// 👤 பயனர் அட்டவணை (User Model) - இணைக்கப்பட்டது
+// 👤 பயனர் அட்டவணை (User Model) - திருத்தப்பட்டது
 model User {
-  id           String  @id @default(uuid())
-  email        String  @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   passwordHash String
   fullName     String
   phone        String?
-  role         Role    @default(CUSTOMER)
+  
+  // 🚀 சரி செய்யப்பட்டது: ஒரே ஒரு role புலம், சரியான UserRole enum உடன்
+  role         UserRole @default(CUSTOMER)
 
   // Account Status
   isActive Boolean @default(false)
@@ -46,7 +48,7 @@ model User {
   otpAttempts         Int @default(0)
   failedLoginAttempts Int @default(0)
 
-  otpLockedUntil     DateTime?
+  otpLockedUntil      DateTime?
   accountLockedUntil DateTime?
 
   createdAt DateTime @default(now())
@@ -58,10 +60,10 @@ model User {
   sessions  UserSession[]
   auditLogs AuditLog[]
 
-  cart     Cart?
-  wishlist Wishlist?
-  reviews   Review[] @relation("UserReviews")
-  questions Question[] @relation("UserQuestions")
+  cart      Cart?
+  wishlist  Wishlist?
+  reviews   Review[]      @relation("UserReviews")
+  questions Question[]    @relation("UserQuestions")
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
@@ -78,6 +80,18 @@ model UserSession {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// 🔑 பயனர் பாத்திரங்கள் (User Roles)
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EXPORT_MANAGER
+  FINANCE
+  WAREHOUSE_MANAGER
+  FARM_MANAGER
+  BUYER
+  CUSTOMER
+}
+
 // 📦 தயாரிப்புகள் (Product Catalog)
 model Product {
   id          String @id @default(uuid())
@@ -92,12 +106,12 @@ model Product {
   updatedAt DateTime @updatedAt
 
   // relations
-  category Category         @relation(fields: [categoryId], references: [id])
-  variants ProductVariant[] // 🆕 Variants உடன் தொடர்பு
-  images   ProductImage[]
-  videos   ProductVideo[]
-  reviews   Review[] @relation("ProductReviews")
-  questions Question[] @relation("ProductQuestions")
+  category  Category         @relation(fields: [categoryId], references: [id])
+  variants  ProductVariant[] // 🆕 Variants உடன் தொடர்பு
+  images    ProductImage[]
+  videos    ProductVideo[]
+  reviews   Review[]         @relation("ProductReviews")
+  questions Question[]       @relation("ProductQuestions")
 }
 
 model CurrencyRate {
@@ -311,18 +325,6 @@ model WishlistItem {
   createdAt DateTime @default(now())
 
   @@unique([wishlistId, productVariantId])
-}
-
-// 🛡️ எண்டர்பிரைஸ் தணிக்கை பதிவுகள் (Immutable Audit Logs)
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?
-  action    String // எ.கா: "UPDATE_PRICE", "DELETE_USER"
-  ipAddress String?
-  details   String?
-  createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 // 🏢 Warehouse Management
@@ -595,7 +597,7 @@ model BulkOrder {
   exportDocument ExportDocument?
 
   shipment Shipment?
-  
+
   RFQ RFQ[]
 }
 
@@ -633,13 +635,13 @@ model ExportInvoice {
 
   invoiceNumber String @unique
 
-  bulkOrderId String @unique
-  bulkOrder BulkOrder @relation(fields: [bulkOrderId], references: [id])
+  bulkOrderId String    @unique
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
 
   invoiceDate DateTime @default(now())
 
-  subtotal Float
-  tax Float @default(0)
+  subtotal     Float
+  tax          Float @default(0)
   shippingCost Float @default(0)
 
   totalAmount Float
@@ -651,11 +653,10 @@ model ExportInvoice {
 }
 
 model ExportDocument {
-
   id String @id @default(cuid())
 
-  bulkOrderId String @unique
-  bulkOrder BulkOrder @relation(fields: [bulkOrderId], references: [id])
+  bulkOrderId String    @unique
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
 
   commercialInvoice Boolean @default(false)
 
@@ -675,13 +676,12 @@ model ExportDocument {
 }
 
 model Shipment {
-
   id String @id @default(cuid())
 
   shipmentNumber String @unique
 
-  bulkOrderId String @unique
-  bulkOrder BulkOrder @relation(fields:[bulkOrderId], references:[id])
+  bulkOrderId String    @unique
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
 
   shippingLine String
 
@@ -707,33 +707,56 @@ model Shipment {
 }
 
 model Review {
-  id               String   @id @default(uuid())
-  rating           Int
-  comment          String?
+  id      String  @id @default(uuid())
+  rating  Int
+  comment String?
 
-  userId           String
-  productId        String
+  userId    String
+  productId String
 
   // 👈 கீழே உள்ள இரண்டு வரிகளிலும் @relation("...") பெயர் சேர்க்கப்பட்டுள்ளது
-  user             User     @relation("UserReviews", fields: [userId], references: [id])
-  product          Product  @relation("ProductReviews", fields: [productId], references: [id])
+  user    User    @relation("UserReviews", fields: [userId], references: [id])
+  product Product @relation("ProductReviews", fields: [productId], references: [id])
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Question {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  question    String
-  answer      String?
+  question String
+  answer   String?
 
-  userId      String
-  productId   String
+  userId    String
+  productId String
 
-  user         User    @relation("UserQuestions", fields: [userId], references: [id])
-  product      Product @relation("ProductQuestions", fields: [productId], references: [id])
+  user    User    @relation("UserQuestions", fields: [userId], references: [id])
+  product Product @relation("ProductQuestions", fields: [productId], references: [id])
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  userEmail String?
+
+  action String
+
+  module String
+
+  entityId String?
+
+  description String?
+
+  ipAddress String?
+
+  userAgent String?
+
+  createdAt DateTime @default(now())
 }

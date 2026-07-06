@@ -3,20 +3,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-
 // 💳 CREATE PAYMENT
 export const createPayment = async (
   req: Request,
   res: Response
 ) => {
   try {
-
     const user = (req as any).user;
-
-    const {
-      orderId,
-      gateway
-    } = req.body;
+    const { orderId, gateway } = req.body;
 
     // ✅ Find Order
     const order = await prisma.order.findFirst({
@@ -45,37 +39,31 @@ export const createPayment = async (
     const payment = await prisma.payment.create({
       data: {
         orderId: order.id,
-        transactionId:
-          'TXN-' + Date.now(),
+        transactionId: 'TXN-' + Date.now(),
         amount: order.totalFinal,
         gateway,
       }
     });
 
-    // ✅ Update Order Payment Status
-    await prisma.order.update({
+    // ✅ Update Order Payment Status & Include Wholesale Buyer Details
+    const updatedOrder = await prisma.order.update({
       where: {
         id: order.id
       },
       data: {
         paymentStatus: 'PAID'
+      },
+      include: {
+        // குறிப்பு: உங்கள் Schema-வில் 'user' அல்லது 'wholesaleBuyer' என இருப்பதை உறுதி செய்யவும்
+        user: true 
       }
     });
 
-    return res.status(200).json({
-      success: true,
-      message: '💳 Payment successful',
-      payment
-    });
-
   } catch (error) {
-
     console.log(error);
-
     return res.status(500).json({
       success: false,
       message: '❌ Payment failed'
     });
-
   }
 };

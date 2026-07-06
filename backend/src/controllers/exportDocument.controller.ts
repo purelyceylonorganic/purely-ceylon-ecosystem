@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { createAuditLog } from "../services/audit";
+import { AUDIT_ACTIONS } from "../constants/auditActions";
+import { MODULES } from "../constants/modules";
 
 const prisma = new PrismaClient();
 
@@ -30,6 +33,20 @@ export const createExportDocument = async (req: Request, res: Response) => {
         status: "READY"
       }
     });
+
+    // ✅ Safe Audit Log Call after document creation
+    try {
+      await createAuditLog({
+        action: AUDIT_ACTIONS.EXPORT_DOCUMENT_GENERATED,
+        module: MODULES.EXPORT,
+        entityId: document.id,
+        description: "Export document generated",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (Export Document Generated):", auditError);
+    }
 
     return res.status(201).json({
       success: true,

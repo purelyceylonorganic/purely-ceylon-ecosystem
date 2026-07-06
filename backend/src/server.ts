@@ -42,7 +42,11 @@ import questionRoutes from "./routes/question.routes";
 import exportInvoiceRoutes from "./routes/exportInvoice.routes";
 import exportDocumentRoutes from "./routes/exportDocument.routes";
 import shipmentRoutes from "./routes/shipment.routes";
-
+import addressRoutes from "./routes/address.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
+import reportRoutes from "./routes/report.routes";
+import {verifyEmailConnection} from "./services/notification/email.service";
+import {swaggerUi,swaggerSpec} from "./config/swagger";
 startCurrencyJob();
 
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
@@ -134,8 +138,26 @@ app.use("/api/v1/questions", questionRoutes);
 app.use("/api/v1/b2b/export-invoices",exportInvoiceRoutes);
 app.use("/api/v1/b2b/export-documents", exportDocumentRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
-
-console.log("Bulk Order Route Imported");
+app.use("/api/v1/address", addressRoutes);
+app.use("/api/v1/dashboard",dashboardRoutes);
+app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
+app.use("/api/v1/reports",reportRoutes);
+app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
+app.get('/api/v1/verify-email-connection', async (_req, res) => {
+  try {
+    await verifyEmailConnection();
+    res.status(200).json({
+      success: true,
+      message: 'Email server connection verified successfully.'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify email server connection.'
+    });
+  }
+});
+console.log("Dashboard Route Imported");
 
 // Homepage Route
 app.get('/', (req, res) => {

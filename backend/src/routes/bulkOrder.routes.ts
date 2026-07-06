@@ -7,9 +7,16 @@ import {
   payBulkOrder,
   getBulkOrderHistory // ✅ இம்போர்ட் சேர்க்கப்பட்டது
 } from "../controllers/bulkOrder.controller";
+import { authorizeRoles } from "../middlewares/role.middleware";
+import { ROLES } from "../constants/roles";
 
 const router = express.Router();
 
+router.use(
+  authorizeRoles(
+    ROLES.BUYER
+  )
+);
 // ===============================
 // 🔄 RFQ → BULK ORDER
 // ===============================

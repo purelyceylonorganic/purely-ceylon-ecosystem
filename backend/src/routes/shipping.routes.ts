@@ -15,13 +15,21 @@ import {
   restrictTo,
   AuthenticatedRequest
 } from '../middlewares/auth.middleware';
+import { ROLES } from '../constants/roles';
+import { authorizeRoles } from '../middlewares/role.middleware';
 
 const router = Router();
 
-
+router.use(
+  authorizeRoles(
+    ROLES.EXPORT_MANAGER,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  )
+);
 // ======================================================
 // 🚚 SHIPPING ROUTES
-// ======================================================
+// =================================================......
 
 
 // 🔓 CALCULATE SHIPPING RATES

@@ -14,10 +14,18 @@ import {
   protect,
   AuthenticatedRequest
 } from '../middlewares/auth.middleware';
+import { authorizeRoles } from "../middlewares/role.middleware";
+import { ROLES } from "../constants/roles";
 
 const router = Router();
 
-
+router.use(
+  authorizeRoles(
+    ROLES.FINANCE,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  )
+);
 // ======================================================
 // 💳 PAYMENT ROUTES
 // ======================================================

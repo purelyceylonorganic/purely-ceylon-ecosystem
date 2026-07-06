@@ -150,12 +150,11 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    const token = jwt.sign(
-      {
-        id: user.id,
-        role: user.role,
-        email: user.email,
-      },
+    const token = jwt.sign({
+    id: user.id,
+    email: user.email,
+    role: user.role
+},
       process.env.JWT_SECRET as string,
       { expiresIn: "1d" }
     );
@@ -170,8 +169,12 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: "Login successful",
       token,
-      role: user.role,
-    });
+  user: {
+    id: user.id,
+    email: user.email,
+    role: user.role // 👈 இது இருக்கிறதா என்று உறுதி செய்யவும்!
+  }
+});
   } catch (error) {
     console.error(error);
     return res.status(500).json({

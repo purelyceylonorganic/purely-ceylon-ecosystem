@@ -1,16 +1,18 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { validateMOQ } from "../utils/moqValidator";
+import { sendRFQSubmittedNotification } from "../services/notification";
+import { createAuditLog } from "../services/audit";
+import { AUDIT_ACTIONS } from "../constants/auditActions";
+import { MODULES } from "../constants/modules";
 
 const prisma = new PrismaClient();
-
 
 // ===============================
 // 📩 CREATE RFQ
 // ===============================
 export const createRFQ = async (req: Request, res: Response) => {
   try {
-
     const buyer = (req as any).user;
 
     console.log("JWT User:", buyer);
@@ -60,6 +62,32 @@ export const createRFQ = async (req: Request, res: Response) => {
       },
     });
 
+    // ✅ Safe Notification using DB records
+    try {
+      await sendRFQSubmittedNotification(
+        buyer.email,
+        wholesaleBuyer.name || "Wholesale Buyer"
+      );
+    } catch (notifError) {
+      console.error("Notification Error (RFQ):", notifError);
+    }
+
+    // ✅ Safe Audit Log
+    try {
+      await createAuditLog({
+        userId: wholesaleBuyer.id,
+        userEmail: wholesaleBuyer.email,
+        action: AUDIT_ACTIONS.RFQ_CREATED,
+        module: MODULES.RFQ,
+        entityId: rfq.id,
+        description: "Wholesale RFQ submitted",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (RFQ Created):", auditError);
+    }
+
     return res.status(201).json({
       success: true,
       message: "RFQ created successfully",
@@ -74,13 +102,11 @@ export const createRFQ = async (req: Request, res: Response) => {
   }
 };
 
-
 // ===============================
 // 📄 GET ALL RFQs (BUYER)
 // ===============================
 export const getMyRFQs = async (req: Request, res: Response) => {
   try {
-
     const buyer = (req as any).user;
 
     const wholesaleBuyer = await prisma.wholesaleBuyer.findUnique({
@@ -121,33 +147,35 @@ export const getMyRFQs = async (req: Request, res: Response) => {
   }
 };
 
-
 // ===============================
-// 🔍 GET SINGLE RFQ
+// 🔍 GET SINGLE RFQ (With Admin Override)
 // ===============================
 export const getRFQById = async (req: Request, res: Response) => {
   try {
-
-    const buyer = (req as any).user;
+    const user = (req as any).user;
     const { id } = req.params;
 
-    const wholesaleBuyer = await prisma.wholesaleBuyer.findUnique({
-      where: {
-        email: buyer.email,
-      },
-    });
+    let buyerFilter: string | undefined = undefined;
 
-    if (!wholesaleBuyer) {
-      return res.status(404).json({
-        success: false,
-        message: "Wholesale buyer not found",
+    // லாக்-இன் செய்தவர் BUYER ஆக இருந்தால் மட்டும் ஓனர்ஷிப் செக் செய்கிறோம்
+    if (user.role === "BUYER") {
+      const wholesaleBuyer = await prisma.wholesaleBuyer.findUnique({
+        where: { email: user.email },
       });
+
+      if (!wholesaleBuyer) {
+        return res.status(404).json({
+          success: false,
+          message: "Wholesale buyer not found",
+        });
+      }
+      buyerFilter = wholesaleBuyer.id;
     }
 
     const rfq = await prisma.rFQ.findFirst({
       where: {
         id,
-        buyerId: wholesaleBuyer.id,
+        buyerId: buyerFilter, // 🚀 BUYER எனில் சொந்த ID, ADMIN எனில் undefined (எல்லா RFQ-ம் தெரியும்)
       },
       include: {
         items: true,
@@ -157,7 +185,7 @@ export const getRFQById = async (req: Request, res: Response) => {
     if (!rfq) {
       return res.status(404).json({
         success: false,
-        message: "RFQ not found",
+        message: "RFQ not found or Unauthorized",
       });
     }
 
@@ -174,13 +202,11 @@ export const getRFQById = async (req: Request, res: Response) => {
   }
 };
 
-
 // ===============================
 // ❌ CANCEL RFQ
 // ===============================
 export const cancelRFQ = async (req: Request, res: Response) => {
   try {
-
     const buyer = (req as any).user;
     const { id } = req.params;
 
@@ -217,6 +243,22 @@ export const cancelRFQ = async (req: Request, res: Response) => {
         status: "CANCELLED",
       },
     });
+
+    // ✅ Safe Audit Log Call after DB update (As per standards)
+    try {
+      await createAuditLog({
+        userId: wholesaleBuyer.id,
+        userEmail: wholesaleBuyer.email,
+        action: AUDIT_ACTIONS.RFQ_CANCELLED,
+        module: MODULES.RFQ,
+        entityId: updated.id,
+        description: "RFQ cancelled",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || undefined
+      });
+    } catch (auditError) {
+      console.error("Audit Log Error (RFQ Cancelled):", auditError);
+    }
 
     return res.status(200).json({
       success: true,

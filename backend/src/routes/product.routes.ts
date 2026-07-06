@@ -8,6 +8,15 @@ router.get('/search', ProductController.search);
 
 router.get("/:id", ProductController.getById);
 
+// ✅ GET ALL PRODUCTS (TASK 9)
+/**
+ * @swagger
+ * /products:
+ * get:
+ * summary: Get All Products
+ * tags:
+ * - Products
+ */
 router.get('/', ProductController.getAll);
 
 router.post(

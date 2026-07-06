@@ -6,8 +6,18 @@ import {
   updateWarehouse,
   deleteWarehouse,
 } from "../controllers/warehouse.controller";
+import { authorizeRoles } from "../middlewares/role.middleware";
+import { ROLES } from "../constants/roles";
 
 const router = Router();
+
+router.use(
+  authorizeRoles(
+    ROLES.WAREHOUSE_MANAGER,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  )
+);
 
 router.post("/", createWarehouse);
 router.get("/", getAllWarehouses);
