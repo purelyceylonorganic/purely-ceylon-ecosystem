@@ -4,6 +4,7 @@ import { addressService } from "../../services/address.service";
 import { useCart } from "../../context/CartContext";         
 import { useWishlist } from "../../context/WishlistContext"; 
 import { Link } from "react-router-dom";
+import AddressManager from "../../components/address/AddressManager";
 
 export default function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -11,7 +12,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   // Contexts மூலம் ஸ்டேட்களைப் பெறுகிறோம்
-  const { cartCount, cart } = useCart() as any; // cart ஆப்ஜெக்ட் Context-இல் இருந்தால் நேரடியாகப் பயன்படுத்தலாம்
+  const { cartCount, cart } = useCart() as any; 
   const { wishlistCount } = useWishlist();
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function Dashboard() {
       setLoading(true);
       const [orderRes, addressRes] = await Promise.all([
         orderService.getMyOrders(),
-        addressService.getAddresses(),
+        addressService.getMyAddresses(),
       ]);
 
       setOrders(orderRes.orders ?? orderRes.data ?? []);
@@ -170,12 +171,20 @@ export default function Dashboard() {
         <div style={previewBoxStyle}>
           <p style={{ margin: "5px 0", fontSize: "16px" }}><strong>Items :</strong> {cartCount}</p>
           <p style={{ margin: "5px 0 20px 0", fontSize: "16px" }}>
-            {/* Context-இல் totalConverted இருந்தால் அதைக் காட்டும், இல்லையெனில் 0 */}
             <strong>Total :</strong> USD {cart?.totalConverted ?? 0}
           </p>
           <Link to="/checkout">
             <button style={primaryButtonStyle}>Proceed To Checkout</button>
           </Link>
+        </div>
+      </div>
+
+      {/* 🏠 TASK 5: ADDRESS MANAGEMENT (புதிதாக சேர்க்கப்பட்டுள்ளது) */}
+      <div style={{ marginTop: 50 }}>
+        <h2 style={{ fontSize: "24px", marginBottom: "15px", color: "#333" }}>🏠 Saved Addresses</h2>
+        <div style={previewBoxStyle}>
+          {/* AddressManager காம்போனன்ட் இங்கு பயன்படுத்தப்பட்டுள்ளது */}
+          <AddressManager />
         </div>
       </div>
 

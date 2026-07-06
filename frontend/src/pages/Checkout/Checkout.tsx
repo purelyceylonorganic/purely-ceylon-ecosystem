@@ -39,7 +39,7 @@ export default function Checkout() {
     try {
       setLoading(true);
       const cartRes = await cartService.getCart();
-      const addressRes = await addressService.getAddresses();
+      const addressRes = await addressService.getMyAddresses();
 
       setCart(cartRes);
       setAddresses(addressRes.data || []);
