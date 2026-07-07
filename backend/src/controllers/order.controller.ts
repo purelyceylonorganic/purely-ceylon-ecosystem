@@ -101,7 +101,7 @@ export const placeOrder = async (req: Request, res: Response) => {
     // ===============================
     // TRANSACTION
     // ===============================
-    const newOrder = await prisma.$transaction(async (tx) => {
+    const newOrder = await prisma.$transaction(async (tx: any) => {
       // Reduce Stock
       for (const item of items) {
         await tx.productVariant.update({

@@ -114,7 +114,7 @@ export const getProductReviews = async (
     const average =
       reviews.length > 0
         ? reviews.reduce(
-            (sum, item) => sum + item.rating,
+            (sum: any, item: any) => sum + item.rating,
             0
           ) / reviews.length
         : 0;

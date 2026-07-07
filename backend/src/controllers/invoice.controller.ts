@@ -88,7 +88,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
     doc.fontSize(14).text("ORDER ITEMS");
     doc.moveDown();
 
-    order.items.forEach((item) => {
+    order.items.forEach((item: any) => {
       doc.fontSize(12).text(
         `${item.productVariant?.sku || "Unknown SKU"} | Qty: ${item.quantity} | Price: ${item.price}`
       );

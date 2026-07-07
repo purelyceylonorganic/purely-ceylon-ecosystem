@@ -1,13 +1,13 @@
 import express from 'express';
-import { sendVerificationEmail } from '../utils/sendEmail';
+import { sendOtpEmail } from "../utils/sendEmail";
 
 const router = express.Router();
 
 router.get('/test-email', async (req, res) => {
   try {
-    await sendVerificationEmail(
+    await sendOtpEmail(
       'musab.nawfer@gmail.com',
-      'sample-token-123'
+      'sample-otp-123'
     );
 
     res.status(200).json({

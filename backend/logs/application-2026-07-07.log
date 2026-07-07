@@ -1,0 +1,5 @@
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-07 15:05:46"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-07 15:05:47"}
+{"level":"info","message":{"ip":"::1","method":"HEAD","url":"/api/health"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-07 15:07:25"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-07 15:10:00"}
+{"level":"info","message":"Gracefully shutting down...","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-07 15:10:33"}

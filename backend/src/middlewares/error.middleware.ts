@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { LoggerService } from '../services/logger.service';
+import { logError } from "../utils/errorLogger";
 
 export const globalErrorHandler = async (
   err: any,
@@ -17,6 +18,8 @@ export const globalErrorHandler = async (
     err.stack
   );
 
+  logError(err, "Global Error Handler");
+  
   return res.status(statusCode).json({
     success: false,
     status: statusCode,

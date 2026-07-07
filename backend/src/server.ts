@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import "./config/env";
+
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -45,32 +47,51 @@ import shipmentRoutes from "./routes/shipment.routes";
 import addressRoutes from "./routes/address.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import reportRoutes from "./routes/report.routes";
-import {verifyEmailConnection} from "./services/notification/email.service";
-import {swaggerUi,swaggerSpec} from "./config/swagger";
-startCurrencyJob();
+import { verifyEmailConnection } from "./services/notification/email.service";
+import { swaggerUi, swaggerSpec } from "./config/swagger";
+import permissionRoutes from "./routes/permission.routes";
+import { requestLogger } from "./middlewares/logger.middleware";
+import { logger } from "./config/logger";
+import healthRoutes from "./routes/health.routes";
+import { startAllJobs } from "./jobs";
+import compression from "compression";
 
+
+process.on("uncaughtException", (err) => {
+  logger.error("💥 Uncaught Exception:", err);
+  // ப்ரொடக்‌ஷனில் இருந்தால் ப்ராசஸை பாதுகாப்பாக நிறுத்தலாம்: process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("⚠️ Unhandled Rejection (Promise):", reason instanceof Error ? reason : new Error(String(reason)));
+});
+// Jobs & Logs Initializations
+startAllJobs();
 console.log('EMAIL_USER =', process.env.EMAIL_USER);
 console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
+console.log("Dashboard Route Imported");
 
+// 🟢 1. Initialize Express App FIRST
 const app = express();
 
+// 🟢 2. Request Logger (இப்போது பிழை வராது)
+app.use(requestLogger);
 
-// 1. Security & Parsers
+// 3. Security & Parsers
 app.use(helmet());
 app.set('trust proxy', 1);
-
+app.use(compression());
 app.use(express.json({
   limit: '10mb'
 }));
 
 app.use(cookieParser());
 
-
-// 2. CORS
+// 4. CORS Setup
 const allowedOrigins = [
   'https://purely-ceylon-store.vercel.app',
   'http://localhost:3000',
-  "http://localhost:5173"   // ✅ இதை add செய்யுங்கள்
+  'http://localhost:5173'
 ];
 
 app.use(cors({
@@ -84,8 +105,7 @@ app.use(cors({
   credentials: true
 }));
 
-
-// 3. Rate Limiter
+// 5. Rate Limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -94,6 +114,7 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 
+// Health Check
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
     success: true,
@@ -103,8 +124,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// 4. Routes
-
+// 6. API Routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/enterprise', enterpriseRouter);
 app.use('/api/v1/orders', orderRoutes);
@@ -135,13 +155,17 @@ app.use("/api/v1/b2b/bulk-orders", bulkOrderRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/questions", questionRoutes);
-app.use("/api/v1/b2b/export-invoices",exportInvoiceRoutes);
+app.use("/api/v1/b2b/export-invoices", exportInvoiceRoutes);
 app.use("/api/v1/b2b/export-documents", exportDocumentRoutes);
 app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/address", addressRoutes);
-app.use("/api/v1/dashboard",dashboardRoutes);
-app.use("/api/docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
-app.use("/api/v1/reports",reportRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/v1/reports", reportRoutes);
+app.use("/api/v1/permissions", permissionRoutes);
+app.use("/api/health", healthRoutes);
+
+
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
 app.get('/api/v1/verify-email-connection', async (_req, res) => {
   try {
@@ -157,13 +181,13 @@ app.get('/api/v1/verify-email-connection', async (_req, res) => {
     });
   }
 });
-console.log("Dashboard Route Imported");
 
 // Homepage Route
 app.get('/', (req, res) => {
   res.send('✅ Purely Ceylon Backend Ecosystem Active 🌿');
 });
 
+// 404 Handler
 app.use('*', (_req, res) => {
   res.status(404).json({
     success: false,
@@ -171,19 +195,33 @@ app.use('*', (_req, res) => {
   });
 });
 
-// 5. Global Error Handler
+// 7. Global Error Handler (இது எப்போதுமே ரூட்டிங்கிற்கு அடுத்து கடைசியில் வர வேண்டும்)
 app.use(globalErrorHandler);
 
-
-// 6. Server Start
+// 8. Server Start
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Purely Ceylon Enterprise Server running on port ${PORT}`);
+  // 🛰️ Server instance-ஐ வேரியபிளில் சேமிக்கிறோம்
+  const server = app.listen(PORT, () => {
+    logger.info(`Server running on ${PORT}`);
+  });
+
+  // 🛑 Task 2 — SIGINT (e.g., Ctrl+C in Terminal)
+  process.on("SIGINT", () => {
+    logger.info("Gracefully shutting down...");
+    server.close(() => {
+      logger.info("Server Closed");
+      process.exit(0);
+    });
+  });
+
+  // 🛑 Task 2 — SIGTERM (e.g., Cloud production shutdown signal)
+  process.on("SIGTERM", () => {
+    logger.info("SIGTERM Received");
+    server.close(() => process.exit(0));
   });
 }
-
 
 // FINAL EXPORT
 export default app;

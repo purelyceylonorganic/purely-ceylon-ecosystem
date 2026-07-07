@@ -155,22 +155,46 @@ static async getById(req: AuthenticatedRequest, res: Response) {
 }
 
 // 🔍 6. தேடல் மற்றும் வடிகட்டி (Search & Filter)
-static async search(req: AuthenticatedRequest, res: Response) {
+static async search(
+  req: AuthenticatedRequest,
+  res: Response
+) {
   try {
-    const { name, categoryId, minPrice } = req.query;
-    
+    const { name, categoryId } = req.query;
+
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
-        name: { contains: name as string, mode: 'insensitive' },
-        categoryId: categoryId ? (categoryId as string) : undefined,
-        basePrice: { gte: minPrice ? parseFloat(minPrice as string) : 0 }
-      }
+
+        name: name
+          ? {
+              contains: name as string,
+              mode: "insensitive",
+            }
+          : undefined,
+
+        categoryId: categoryId
+          ? (categoryId as string)
+          : undefined,
+      },
+
+      include: {
+        images: true,
+        videos: true,
+        category: true,
+        variants: true,
+      },
     });
-    
-    return res.json({ success: true, data: products });
+
+    return res.json({
+      success: true,
+      data: products,
+    });
   } catch (error: any) {
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 }
 }

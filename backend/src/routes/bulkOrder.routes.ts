@@ -5,64 +5,73 @@ import {
   getBulkOrderById,
   updateBulkOrderStatus,
   payBulkOrder,
-  getBulkOrderHistory // ✅ இம்போர்ட் சேர்க்கப்பட்டது
+  getBulkOrderHistory,
 } from "../controllers/bulkOrder.controller";
-import { authorizeRoles } from "../middlewares/role.middleware";
-import { ROLES } from "../constants/roles";
+
+import { protect } from "../middlewares/auth.middleware";
+import { authorizePermissions } from "../middlewares/permission.middleware";
+import { verifyBulkOrderOwnership } from "../middlewares/resourceOwnership.middleware";
+import { PERMISSIONS } from "../constants/permissions";
 
 const router = express.Router();
 
-router.use(
-  authorizeRoles(
-    ROLES.BUYER
-  )
-);
-// ===============================
-// 🔄 RFQ → BULK ORDER
-// ===============================
+// =======================================
+// RFQ → BULK ORDER CONVERSION
+// =======================================
 router.post(
   "/convert/:rfqId",
+  protect,
   convertRFQToBulkOrder
 );
 
-// ===============================
-// 📦 GET MY ORDERS
-// ===============================
+// =======================================
+// GET MY BULK ORDERS
+// =======================================
 router.get(
   "/",
+  protect,
+  authorizePermissions(PERMISSIONS.BULK_ORDER_VIEW),
   getMyBulkOrders
 );
 
-// ===============================
-// 🔍 GET SINGLE ORDER
-// ===============================
+// =======================================
+// GET SINGLE BULK ORDER
+// =======================================
 router.get(
   "/:id",
+  protect,
+  verifyBulkOrderOwnership,
   getBulkOrderById
 );
 
-// ===============================
-// 📜 GET ORDER HISTORY
-// ===============================
-// ✅ நீங்கள் குறிப்பிட்டபடி இங்கிருந்தே ஹிஸ்டரி ரூட் சரியாக சேர்க்கப்பட்டுள்ளது
+// =======================================
+// BULK ORDER STATUS HISTORY
+// =======================================
 router.get(
   "/:id/history",
+  protect,
+  verifyBulkOrderOwnership,
   getBulkOrderHistory
 );
 
-// ===============================
-// 🔄 UPDATE STATUS
-// ===============================
+// =======================================
+// UPDATE BULK ORDER STATUS
+// =======================================
 router.patch(
   "/:id/status",
+  protect,
+  authorizePermissions(PERMISSIONS.BULK_ORDER_UPDATE),
   updateBulkOrderStatus
 );
 
-// ===============================
-// 💳 PAY BULK ORDER
-// ===============================
+// =======================================
+// PAY BULK ORDER
+// =======================================
 router.post(
   "/:id/pay",
+  protect,
+  verifyBulkOrderOwnership,
+  authorizePermissions(PERMISSIONS.BULK_ORDER_PAYMENT), // ✅ Task 10 Protection சேர்க்கப்பட்டது
   payBulkOrder
 );
 

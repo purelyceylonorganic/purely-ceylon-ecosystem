@@ -1,0 +1,9 @@
+import { PERMISSIONS } from "../constants/permissions";
+
+export const WAREHOUSE_MANAGER_PERMISSIONS = [
+
+  PERMISSIONS.ORDER_VIEW,
+
+  PERMISSIONS.BULK_ORDER_UPDATE
+
+];

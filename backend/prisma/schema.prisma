@@ -8,11 +8,14 @@ generator client {
 }
 
 enum Role {
-  CUSTOMER
-  VENDOR
-  STAFF
-  ADMIN
   SUPER_ADMIN
+  ADMIN
+  EXPORT_MANAGER
+  FINANCE
+  WAREHOUSE_MANAGER
+  FARM_MANAGER
+  BUYER
+  CUSTOMER
 }
 
 enum BuyerTier {

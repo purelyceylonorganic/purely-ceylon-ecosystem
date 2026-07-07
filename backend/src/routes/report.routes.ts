@@ -1,19 +1,34 @@
 import express from "express";
-
-import{
-
-getSalesSummary,
-getShipmentReport,
-getBuyerReport
-
+import {
+  getSalesSummary,
+  getShipmentReport,
+  getBuyerReport
 } from "../controllers/report.controller";
+import { protect } from "../middlewares/auth.middleware";
+import { authorizePermissions } from "../middlewares/permission.middleware";
+import { PERMISSIONS } from "../constants/permissions";
 
-const router=express.Router();
+const router = express.Router();
 
-router.get("/sales",getSalesSummary);
+router.get(
+  "/sales",
+  protect,
+  authorizePermissions(PERMISSIONS.REPORT_VIEW), // 👈 Permission Guard
+  getSalesSummary
+);
 
-router.get("/shipment",getShipmentReport);
+router.get(
+  "/shipment",
+  protect,
+  authorizePermissions(PERMISSIONS.REPORT_VIEW), // 👈 Permission Guard
+  getShipmentReport
+);
 
-router.get("/buyers",getBuyerReport);
+router.get(
+  "/buyers",
+  protect,
+  authorizePermissions(PERMISSIONS.REPORT_VIEW), // 👈 Permission Guard
+  getBuyerReport
+);
 
 export default router;

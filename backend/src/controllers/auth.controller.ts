@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { ROLES } from "../constants/roles";
 import { sendOtpEmail } from "../utils/sendEmail";
+import { logger } from "../config/logger"; // 👈 Winston Logger இம்போர்ட் செய்யப்பட்டது
 
 const prisma = new PrismaClient();
 
@@ -27,7 +29,6 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await prisma.user.create({
@@ -35,7 +36,7 @@ export const registerUser = async (req: Request, res: Response) => {
         fullName,
         email,
         passwordHash: hashedPassword,
-        role: Role.CUSTOMER,
+        role: ROLES.CUSTOMER, // 👈 Role இம்போர்ட் எரரைத் தவிர்க்க நேரடியாக ஸ்ட்ரிங்காக மாற்றப்பட்டுள்ளது
 
         verificationOtp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -50,7 +51,7 @@ export const registerUser = async (req: Request, res: Response) => {
       message: "Registration successful. Check your email for OTP.",
     });
   } catch (error) {
-    console.error(error);
+    logger.error("Registration failed", error);
     return res.status(500).json({
       success: false,
       message: "Registration failed",
@@ -60,7 +61,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 //
 // ============================
-// ✅ LOGIN USER (FIXED FINAL)
+// ✅ LOGIN USER (WITH LOGGING)
 // ============================
 //
 export const login = async (req: Request, res: Response) => {
@@ -71,7 +72,14 @@ export const login = async (req: Request, res: Response) => {
       where: { email },
     });
 
+    // ❌ USER NOT FOUND
     if (!user) {
+      // ⚠️ Task 8: Login Failed Logger
+      logger.warn({
+        event: "LOGIN_FAILED",
+        email,
+      });
+
       return res.status(404).json({
         success: false,
         message: "Invalid credentials",
@@ -83,6 +91,13 @@ export const login = async (req: Request, res: Response) => {
       user.accountLockedUntil &&
       user.accountLockedUntil > new Date()
     ) {
+      // ⚠️ Task 8: Login Failed (Locked Account)
+      logger.warn({
+        event: "LOGIN_FAILED",
+        email,
+        reason: "Account Locked",
+      });
+
       return res.status(429).json({
         success: false,
         message: "Account temporarily locked. Try again later.",
@@ -105,6 +120,13 @@ export const login = async (req: Request, res: Response) => {
 
     // ❌ EMAIL NOT VERIFIED
     if (!user.isActive) {
+      // ⚠️ Task 8: Login Failed (Unverified)
+      logger.warn({
+        event: "LOGIN_FAILED",
+        email,
+        reason: "Email unverified",
+      });
+
       return res.status(403).json({
         success: false,
         message: "Please verify your email first!",
@@ -116,7 +138,6 @@ export const login = async (req: Request, res: Response) => {
     // ❌ WRONG PASSWORD
     if (!isMatch) {
       const attempts = user.failedLoginAttempts + 1;
-
       const updateData: any = {
         failedLoginAttempts: attempts,
       };
@@ -132,6 +153,12 @@ export const login = async (req: Request, res: Response) => {
         data: updateData,
       });
 
+      // ⚠️ Task 8: Login Failed Logger
+      logger.warn({
+        event: "LOGIN_FAILED",
+        email,
+      });
+
       return res.status(401).json({
         success: false,
         message:
@@ -141,7 +168,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ SUCCESS LOGIN → RESET
+    // ✅ SUCCESS LOGIN → RESET ATTEMPTS
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -150,11 +177,18 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    const token = jwt.sign({
-    id: user.id,
-    email: user.email,
-    role: user.role
-},
+    // 💡 Task 8: Login Success Logger
+    logger.info({
+      event: "LOGIN_SUCCESS",
+      email: user.email,
+    });
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
       process.env.JWT_SECRET as string,
       { expiresIn: "1d" }
     );
@@ -169,14 +203,14 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       message: "Login successful",
       token,
-  user: {
-    id: user.id,
-    email: user.email,
-    role: user.role // 👈 இது இருக்கிறதா என்று உறுதி செய்யவும்!
-  }
-});
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
-    console.error(error);
+    logger.error("Login Server Error", error);
     return res.status(500).json({
       success: false,
       message: "Server error",
@@ -218,7 +252,6 @@ export const verifyOtp = async (req: Request, res: Response) => {
     // ❌ WRONG OTP
     if (user.verificationOtp !== otp) {
       const attempts = user.otpAttempts + 1;
-
       const updateData: any = {
         otpAttempts: attempts,
       };
@@ -268,7 +301,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
       message: "Account verified successfully",
     });
   } catch (error) {
-    console.error(error);
+    logger.error("OTP Verification Error", error);
     return res.status(500).json({
       success: false,
       message: "OTP verification failed",
@@ -326,7 +359,7 @@ export const resendOtp = async (req: Request, res: Response) => {
       message: "OTP sent successfully",
     });
   } catch (error) {
-    console.error(error);
+    logger.error("Resend OTP Error", error);
     return res.status(500).json({
       success: false,
       message: "Failed to resend OTP",

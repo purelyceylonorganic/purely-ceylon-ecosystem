@@ -82,7 +82,7 @@ export const convertRFQToBulkOrder = async (req: Request, res: Response) => {
 
     // 4️⃣ Resolve pricing concurrently
     const bulkOrderItems = await Promise.all(
-      rfq.items.map(async (item) => {
+      rfq.items.map(async (item: any) => {
         const product = await prisma.product.findUnique({
           where: { id: item.productId }
         });
@@ -120,7 +120,7 @@ export const convertRFQToBulkOrder = async (req: Request, res: Response) => {
     const totalAmount = bulkOrderItems.reduce((sum, item) => sum + item.lineTotal, 0);
 
     // 8️⃣ Atomic Transaction for Conversion
-    const bulkOrder = await prisma.$transaction(async (tx) => {
+    const bulkOrder = await prisma.$transaction(async (tx: any) => {
       const order = await tx.bulkOrder.create({
         data: {
           buyerId: rfq.buyerId,

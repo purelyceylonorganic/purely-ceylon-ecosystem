@@ -26,7 +26,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     });
 
     const lowStockItems = inventoryItems.filter(
-      (item) => item.quantity <= item.minStockLevel
+      (item: any) => item.quantity <= item.minStockLevel
     );
 
     return res.json({

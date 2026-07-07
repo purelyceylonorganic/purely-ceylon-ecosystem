@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { ROLE_PERMISSIONS } from "../constants/rolePermissions";
+import { ROLES } from "../constants/roles";
+import { hasPermission } from "../utils/permission.helper";
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -16,16 +17,16 @@ export const authorizePermissions =
       });
     }
 
+    // Super Admin Override
+    if (req.user.role === ROLES.SUPER_ADMIN) {
+      return next();
+    }
+
     const role = req.user.role;
 
-    const rolePermissions =
-  ROLE_PERMISSIONS[
-    role as keyof typeof ROLE_PERMISSIONS
-  ] || [];
-
     const allowed = permissions.every(permission =>
-  (rolePermissions as string[]).includes(permission)
-);
+      hasPermission(role, permission)
+    );
 
     if (!allowed) {
       return res.status(403).json({
@@ -35,4 +36,4 @@ export const authorizePermissions =
     }
 
     next();
-  };
+};

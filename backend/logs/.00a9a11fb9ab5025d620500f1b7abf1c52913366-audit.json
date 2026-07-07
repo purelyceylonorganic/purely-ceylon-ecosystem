@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "C:\\purely-ceylon-ecosystem\\backend\\logs\\.00a9a11fb9ab5025d620500f1b7abf1c52913366-audit.json",
+    "files": [
+        {
+            "date": 1783416935663,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-07.log",
+            "hash": "e6dcb76d870e85c64027060ff953a900fcb971e697ee54fe4d982efe244d8917"
+        }
+    ],
+    "hashType": "sha256"
+}

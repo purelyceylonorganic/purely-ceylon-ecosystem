@@ -160,7 +160,7 @@ export const removeStock = async (req: Request, res: Response) => {
       const existingAlert =
         await prisma.stockAlert.findFirst({
           where: {
-            productId: productVariantId,
+            inventoryId: inventory.id,
             isResolved: false,
           },
         });
@@ -168,7 +168,7 @@ export const removeStock = async (req: Request, res: Response) => {
       if (!existingAlert) {
         await prisma.stockAlert.create({
           data: {
-            productId: productVariantId,
+            inventoryId: inventory.id,
             message: `Low stock alert: only ${updatedInventory.quantity} items left`,
           },
         });
@@ -241,7 +241,7 @@ export const getLowStock = async (
     });
 
     const lowStock = inventory.filter(
-      (item) =>
+      (item: any) =>
         item.quantity <= item.minStockLevel
     );
 

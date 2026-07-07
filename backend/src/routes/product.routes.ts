@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { ProductController } from '../controllers/product.controller';
-import { protect, restrictTo } from '../middlewares/auth.middleware';
+import { protect } from '../middlewares/auth.middleware';
+import { authorizePermissions } from '../middlewares/permission.middleware'; // 👈 புதிய இறக்குமதி
+import { PERMISSIONS } from '../constants/permissions'; // 👈 புதிய இறக்குமதி
 
 const router = Router();
 
@@ -19,24 +21,25 @@ router.get("/:id", ProductController.getById);
  */
 router.get('/', ProductController.getAll);
 
+// 🔒 பழைய restrictTo-க்கு பதிலாக புதிய Permission Check:
 router.post(
   '/',
   protect,
-  restrictTo('ADMIN', 'SUPER_ADMIN'),
+  authorizePermissions(PERMISSIONS.PRODUCT_CREATE),
   ProductController.create
 );
 
 router.put(
   '/:id',
   protect,
-  restrictTo('ADMIN', 'SUPER_ADMIN'),
+  authorizePermissions(PERMISSIONS.PRODUCT_UPDATE),
   ProductController.update
 );
 
 router.delete(
   '/:id',
   protect,
-  restrictTo('ADMIN', 'SUPER_ADMIN'),
+  authorizePermissions(PERMISSIONS.PRODUCT_DELETE),
   ProductController.delete
 );
 

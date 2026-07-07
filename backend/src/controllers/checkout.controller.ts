@@ -53,7 +53,7 @@ export const checkout = async (req: Request, res: Response) => {
     // =========================
     let totalUSD = 0;
 
-    const orderItems = cart.items.map((item) => {
+    const orderItems = cart.items.map((item: any) => {
       const price = item.productVariant.price;
       const quantity = item.quantity;
 

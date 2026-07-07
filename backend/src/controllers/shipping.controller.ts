@@ -71,7 +71,7 @@ export const trackOrder = async (
           user: true,
           items: {
             include: {
-              product: true
+              productVariant: true
             }
           }
         }
