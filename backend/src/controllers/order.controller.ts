@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { generateTrackingId } from "../services/dhlSimulator"; // 👈 1. இங்கு இம்போர்ட் செய்யப்பட்டுள்ளது
 
 const prisma = new PrismaClient();
 
@@ -134,6 +135,10 @@ export const placeOrder = async (req: Request, res: Response) => {
           shippingCost: Number(shippingCost),
 
           totalFinal: finalTotal,
+
+          trackingId: generateTrackingId(), // 👈 2. டிராக்கிங் ஐடி இங்கே இணைக்கப்பட்டுள்ளது
+
+          shippingStatus: "PENDING",        // 👈 3. ஷிப்பிங் ஸ்டேட்டஸ் இங்கே இணைக்கப்பட்டுள்ளது
 
           paymentMethod,
 
@@ -280,6 +285,157 @@ export const getSingleOrder = async (
     return res.status(500).json({
       success: false,
       message: "Failed to fetch order",
+    });
+  }
+};
+
+export const updateOrderStatusController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+
+    const { id } = req.params;
+    const { status } = req.body;
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status },
+    });
+
+    return res.json({
+      success: true,
+      message: "Order status updated",
+      order,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update order status",
+    });
+  }
+};
+
+export const getAllOrders = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: {
+        user: true,
+        address: true,
+        items: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders",
+    });
+  }
+};
+
+export const updateShippingController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      shippingStatus,
+      trackingId,
+    } = req.body;
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: {
+        shippingStatus,
+        trackingId,
+      },
+    });
+
+    return res.json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update shipping",
+    });
+  }
+};
+
+export const getDashboardStats = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    // 1. மொத்த ஆர்டர்களின் எண்ணிக்கை
+    const totalOrders = await prisma.order.count();
+
+    // 2. மொத்த வாடிக்கையாளர்களின் எண்ணிக்கை
+    const totalCustomers = await prisma.user.count({
+      where: {
+        role: "CUSTOMER",
+      },
+    });
+
+    // 3. பணம் செலுத்தப்பட்ட (PAID) ஆர்டர்களின் மொத்த வருவாய்
+    const revenue = await prisma.order.aggregate({
+      _sum: {
+        totalFinal: true,
+      },
+      where: {
+        paymentStatus: "PAID",
+      },
+    });
+
+    // 4. காத்திருப்பிலுள்ள (PENDING) ஆர்டர்களின் எண்ணிக்கை
+    const pendingOrders = await prisma.order.count({
+      where: {
+        status: "PENDING",
+      },
+    });
+
+    // 5. டெலிவரி செய்யப்பட்ட (DELIVERED) ஆர்டர்களின் எண்ணிக்கை
+    const deliveredOrders = await prisma.order.count({
+      where: {
+        status: "DELIVERED",
+      },
+    });
+
+    // 6. Return Data
+    return res.json({
+      success: true,
+      stats: {
+        totalOrders,
+        totalCustomers,
+        totalRevenue: revenue._sum.totalFinal || 0,
+        pendingOrders,
+        deliveredOrders,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Dashboard stats failed",
     });
   }
 };

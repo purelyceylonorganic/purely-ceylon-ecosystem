@@ -27,14 +27,14 @@ enum BuyerTier {
 
 // 👤 பயனர் அட்டவணை (User Model) - திருத்தப்பட்டது
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String  @id @default(uuid())
+  email        String  @unique
   passwordHash String
   fullName     String
   phone        String?
-  
+
   // 🚀 சரி செய்யப்பட்டது: ஒரே ஒரு role புலம், சரியான UserRole enum உடன்
-  role         UserRole @default(CUSTOMER)
+  role UserRole @default(CUSTOMER)
 
   // Account Status
   isActive Boolean @default(false)
@@ -51,7 +51,7 @@ model User {
   otpAttempts         Int @default(0)
   failedLoginAttempts Int @default(0)
 
-  otpLockedUntil      DateTime?
+  otpLockedUntil     DateTime?
   accountLockedUntil DateTime?
 
   createdAt DateTime @default(now())
@@ -65,8 +65,8 @@ model User {
 
   cart      Cart?
   wishlist  Wishlist?
-  reviews   Review[]      @relation("UserReviews")
-  questions Question[]    @relation("UserQuestions")
+  reviews   Review[]   @relation("UserReviews")
+  questions Question[] @relation("UserQuestions")
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
@@ -251,33 +251,42 @@ enum ShippingStatus {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  orderId       String
-  transactionId String   @unique
-  amount        Float
-  gateway       String
-  rawWebhookLog String? // பாதுகாப்பு தணிக்கைக்காக
-  createdAt     DateTime @default(now())
+  id String @id @default(uuid())
+
+  orderId String
+
+  transactionId String @unique
+
+  amount Float
+
+  gateway String
+
+  status String @default("PENDING")
+
+  currency String @default("USD")
+
+  rawWebhookLog String?
+
+  createdAt DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
 }
 
 model Address {
-  id String @id @default(uuid())
-
-  userId String
-
+  id         String   @id @default(uuid()) // அல்லது @default(autoincrement()) உங்கள் பழைய கோடில் உள்ளபடி
+  userId     String
+  fullName   String // 👈 இதைப் புதிதாகச் சேர்க்கவும்
+  phone      String // 👈 இதைப் புதிதாகச் சேர்க்கவும்
   street     String
   city       String
-  province   String
-  postalCode String
+  province   String?
+  postalCode String?
+  country    String   @default("Sri Lanka")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  country String @default("Sri Lanka")
-
-  isDefault Boolean @default(false)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  user   User    @relation(fields: [userId], references: [id])
   orders Order[]
 }
 
@@ -761,5 +770,14 @@ model AuditLog {
 
   userAgent String?
 
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }

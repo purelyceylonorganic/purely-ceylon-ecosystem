@@ -9,6 +9,26 @@
             "date": 1783416935663,
             "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-07.log",
             "hash": "e6dcb76d870e85c64027060ff953a900fcb971e697ee54fe4d982efe244d8917"
+        },
+        {
+            "date": 1783474702375,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-08.log",
+            "hash": "6d85315cc030ec9f21239e13556b01d9942724a450132735dbf915acc6be87d6"
+        },
+        {
+            "date": 1783559275193,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-09.log",
+            "hash": "ed98540abb52232c70c59a1c83a373e84a3a68e92e24f05cf13f8d9f76289459"
+        },
+        {
+            "date": 1783698971581,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-10.log",
+            "hash": "ca8f52cfadd9dab3bcc352113c9733291d7e0f98fd1d168973e7fe6f8b4c7d06"
+        },
+        {
+            "date": 1783859892482,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\error-2026-07-12.log",
+            "hash": "3d9f99243e2f48947cb942b9fff06f0b65e64ac77a13654c18e3b7b1b7ed3abd"
         }
     ],
     "hashType": "sha256"

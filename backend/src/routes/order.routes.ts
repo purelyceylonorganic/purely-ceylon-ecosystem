@@ -3,14 +3,17 @@ import {
   placeOrder,
   getMyOrders,
   getSingleOrder,
+  updateOrderStatusController,
+  getAllOrders,
+  updateShippingController,
+  getDashboardStats,
 } from "../controllers/order.controller";
 
 import { AddressController } from "../controllers/address.controller";
 import { protect } from "../middlewares/auth.middleware";
+import { generateInvoice } from "../controllers/invoice.controller";
 
 const router = Router();
-
-console.log("✅ order.routes.ts loaded");
 
 // ======================================================
 // TEST ROUTE
@@ -77,11 +80,40 @@ router.delete(
 // SINGLE ORDER
 // IMPORTANT: ALWAYS KEEP LAST
 // ======================================================
+router.put(
+  "/:id/shipping",
+  protect,
+  updateShippingController
+);
+
+router.put(
+  "/:id/status",
+  protect,
+  updateOrderStatusController
+);
+
+router.get(
+  "/admin/all",
+  protect,
+  getAllOrders
+);
+
+router.get(
+  "/:orderId/invoice",
+  protect,
+  generateInvoice
+);
 
 router.get(
   "/:id",
   protect,
   getSingleOrder
+);
+
+router.get(
+  "/admin/dashboard",
+  protect,
+  getDashboardStats
 );
 
 export default router;

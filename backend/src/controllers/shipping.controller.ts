@@ -117,3 +117,48 @@ export const trackOrder = async (
 
   }
 };
+
+export const calculateShipping = async (
+ req: Request,
+ res: Response
+) => {
+
+ const { country } = req.body;
+
+ let shippingCost = 20;
+ let estimatedDays = 7;
+
+ switch(country){
+
+   case "Sri Lanka":
+     shippingCost = 15;
+     estimatedDays = 3;
+     break;
+
+   case "India":
+     shippingCost = 25;
+     estimatedDays = 5;
+     break;
+
+   case "UAE":
+     shippingCost = 35;
+     estimatedDays = 6;
+     break;
+
+   case "UK":
+     shippingCost = 50;
+     estimatedDays = 10;
+     break;
+
+   case "USA":
+     shippingCost = 60;
+     estimatedDays = 12;
+     break;
+ }
+
+ return res.json({
+   success:true,
+   shippingCost,
+   estimatedDays
+ });
+};

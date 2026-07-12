@@ -3,16 +3,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// 💳 CREATE PAYMENT
-export const createPayment = async (
-  req: Request,
-  res: Response
-) => {
+// 💳 CREATE PAYMENT (உறுதிப்படுத்தப்பட்ட ஒருங்கிணைந்த கன்ட்ரோலர்)
+export const createPayment = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { orderId, gateway } = req.body;
+    const { orderId, gateway, paymentMethod } = req.body;
 
-    // ✅ Find Order
+    // input-ல் எந்தப் பெயர் வந்தாலும் பயன்படுத்திக் கொள்ளும் வசதி
+    const selectedGateway = gateway || paymentMethod || 'UNKNOWN_GATEWAY';
+
+    // ✅ 1. Find Order (ஆர்டர் இருக்கிறதா என சரிபார்த்தல்)
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
@@ -27,7 +27,7 @@ export const createPayment = async (
       });
     }
 
-    // ✅ Already Paid Check
+    // ✅ 2. Already Paid Check (ஏற்கனவே பணம் செலுத்தப்பட்டதா என சரிபார்த்தல்)
     if (order.paymentStatus === 'PAID') {
       return res.status(400).json({
         success: false,
@@ -35,18 +35,19 @@ export const createPayment = async (
       });
     }
 
-    // ✅ Create Payment Record
-    const payment = await prisma.payment.create({
+    // ✅ 3. Create Payment Record (பணம் செலுத்தியதற்கான தரவை உருவாக்குதல்)
+    const transactionId = 'TXN-' + Date.now();
+    await prisma.payment.create({
       data: {
         orderId: order.id,
-        transactionId: 'TXN-' + Date.now(),
+        transactionId: transactionId,
         amount: order.totalFinal,
-        gateway,
+        gateway: selectedGateway,
       }
     });
 
-    // ✅ Update Order Payment Status & Include Wholesale Buyer Details
-    const updatedOrder = await prisma.order.update({
+    // ✅ 4. Update Order Payment Status (ஆர்டர் நிலையை மாற்றுதல்)
+    await prisma.order.update({
       where: {
         id: order.id
       },
@@ -54,16 +55,28 @@ export const createPayment = async (
         paymentStatus: 'PAID'
       },
       include: {
-        // குறிப்பு: உங்கள் Schema-வில் 'user' அல்லது 'wholesaleBuyer' என இருப்பதை உறுதி செய்யவும்
-        user: true 
+        user: true // schema-வில் wholesaleBuyer என இருந்தால் அதை மாற்றிக்கொள்ளவும்
       }
     });
 
-  } catch (error) {
-    console.log(error);
+    // ✅ 5. Unified Success Response (ஒருங்கிணைக்கப்பட்ட பதில்)
+    return res.status(200).json({
+      success: true,
+      message: '🎉 Payment successfully processed',
+      data: {
+        orderId: order.id,
+        transactionId,
+        amount: order.totalFinal,
+        paymentMethod: selectedGateway,
+        paymentUrl: '/payment-success'
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Payment Error:', error);
     return res.status(500).json({
       success: false,
-      message: '❌ Payment failed'
+      message: error.message || '❌ Payment failed internal server error'
     });
   }
 };

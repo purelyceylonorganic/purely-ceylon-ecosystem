@@ -134,7 +134,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
     // ❤️ FOOTER
     // ===============================
     doc.fontSize(12).text(
-      "Thank you for shopping with Purely Ceylon 🌿",
+      "Thank you for shopping with Purely Ceylon",
       {
         align: "center"
       }

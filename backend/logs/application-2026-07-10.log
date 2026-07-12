@@ -1,0 +1,225 @@
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:26:23"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:26:23"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:26:28"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:30:00"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:32:49"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:32:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:32:53"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:35:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:40:00"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:40:57"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:41:01"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:42:36"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:42:37"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:46"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:46"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:46"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:46"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:45:47"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:11"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:12"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:13"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:32"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:34"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:34"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:34"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:34"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:34"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-report/pdf"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:47:47"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-report/pdf"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:49:31"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:50:00"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:51:56"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:55:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:20"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:56:31"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 21:57:58"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:00:00"}
+{"level":"info","message":"📄 Checking Expired RFQs","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:00:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:05:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:10:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:15:00"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:17:18"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:17:18"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:18:02"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:18:02"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:20:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:49"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:25:50"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:30:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:35:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:40:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:45:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:32"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:32"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:33"}
+{"level":"info","message":"Gracefully shutting down...","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:46:43"}
+{"level":"info","message":"✅ All Background Jobs Started Successfully","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:01"}
+{"level":"info","message":"Server running on 5000","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:01"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:07"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:08"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:08"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:08"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:08"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:08"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:09"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:09"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:09"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:47:09"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:50:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:23"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:23"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-customers"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:52:24"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/wishlist"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/address"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/cart"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:54:27"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:55:00"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-pdf"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:57:43"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/favicon.ico"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 22:57:48"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:00"}
+{"level":"info","message":"📄 Checking Expired RFQs","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:00"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/orders/admin/dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/revenue-dashboard"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"OPTIONS","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/monthly-sales"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-products"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/v1/admin/top-analytics"},"service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:00:18"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:05:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:10:00"}
+{"level":"info","message":"📧 Processing Email Queue","service":"purely-ceylon-backend-ecosystem","timestamp":"2026-07-10 23:15:00"}

@@ -55,6 +55,7 @@ import { logger } from "./config/logger";
 import healthRoutes from "./routes/health.routes";
 import { startAllJobs } from "./jobs";
 import compression from "compression";
+import customerDashboardRoutes from "./routes/customerDashboard.routes";
 
 
 process.on("uncaughtException", (err) => {
@@ -163,6 +164,7 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/v1/reports", reportRoutes);
 app.use("/api/v1/permissions", permissionRoutes);
+app.use("/api/v1/customer/dashboard", customerDashboardRoutes);
 app.use("/api/health", healthRoutes);
 
 
