@@ -26,6 +26,45 @@ export default function AddressManager() {
     }
   }
 
+  // ==========================================
+  // ✏️ HANDLER: EDIT ADDRESS
+  // ==========================================
+  const handleEdit = (address: Address) => {
+    // குறிப்பு: உங்களின் எடிட் மோடல் அல்லது எடிட் ஸ்டேட் லாஜிக்கை இங்கே இணைக்கலாம்
+    console.log("Editing Address:", address);
+    alert(`Editing functionality for ${address.street}`);
+  };
+
+  // ==========================================
+  // ❌ HANDLER: DELETE ADDRESS & REFRESH
+  // ==========================================
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("இந்த முகவரியை நிச்சயமாக நீக்க வேண்டுமா?")) return;
+
+    try {
+      await addressService.deleteAddress(id);
+      /* ✅ Step 9 — Context Refresh */
+      await loadAddresses();
+    } catch (error) {
+      console.error("Failed to delete address:", error);
+      alert("முகவரியை நீக்க முடியவில்லை!");
+    }
+  };
+
+  // ==========================================
+  // 📍 HANDLER: SET DEFAULT ADDRESS & REFRESH
+  // ==========================================
+  const handleMakeDefault = async (id: string) => {
+    try {
+      await addressService.setDefaultAddress(id);
+      /* ✅ Step 9 — Context Refresh */
+      await loadAddresses();
+    } catch (error) {
+      console.error("Failed to set default address:", error);
+      alert("முதன்மை முகவரியாக மாற்ற முடியவில்லை!");
+    }
+  };
+
   if (loading) {
     return <h3 style={{ textAlign: "center", color: "#666" }}>Loading Addresses...</h3>;
   }
@@ -61,27 +100,34 @@ export default function AddressManager() {
               <p style={{ margin: "5px 0", marginBottom: "12px" }}>{address.country}</p>
             </div>
 
-            {/* ✅ STEP 15.8 — Default Badge */}
-            {address.isDefault && (
-              <span style={{ background: "#0E4B32", color: "#fff", padding: "6px 12px", borderRadius: "20px", fontWeight: "bold", fontSize: "12px", display: "inline-block" }}>
-                🏠 Default
-              </span>
-            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+              {/* ✅ STEP 15.8 — Default Badge */}
+              {address.isDefault ? (
+                <span style={{ background: "#0E4B32", color: "#fff", padding: "6px 12px", borderRadius: "20px", fontWeight: "bold", fontSize: "12px", display: "inline-block" }}>
+                  🏠 Default
+                </span>
+              ) : (
+                /* ⭐ Step 8 — Set Default Button (கார்டு default ஆக இல்லாத போது மட்டும் காட்டும்) */
+                <button onClick={() => handleMakeDefault(address.id)} style={{ background: "#f3f4f6", color: "#1f2937", border: "1px solid #d1d5db", padding: "6px 12px", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "12px" }}>
+                  ⭐ Set Default
+                </button>
+              )}
 
-            {/* ✅ STEP 15.9 & 15.10 — Edit / Delete Buttons (UI only) */}
-            <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
-              <button onClick={() => alert("Edit Functionality Coming Soon!")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", cursor: "pointer" }}>
-                Edit
-              </button>
-              <button onClick={() => alert("Delete Functionality Coming Soon!")} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", cursor: "pointer" }}>
-                Delete
-              </button>
+              {/* 🛠️ Step 8 — Edit & Delete UI Buttons */}
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={() => handleEdit(address)} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}>
+                  ✏️ Edit
+                </button>
+                <button onClick={() => handleDelete(address.id)} style={{ background: "#dc2626", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}>
+                  🗑️ Delete
+                </button>
+              </div>
             </div>
           </div>
         ))
       )}
 
-      {/* ✅ STEP 15.6 — Refresh Address List on Close */}
+      /* ✅ STEP 15.6 — Refresh Address List on Close */
       <AddAddressModal
         open={openModal}
         onClose={() => {

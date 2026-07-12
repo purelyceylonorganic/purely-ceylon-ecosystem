@@ -14,11 +14,15 @@
     "axios": "^1.18.0",
     "framer-motion": "^12.40.0",
     "idb": "^8.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.79.0",
+    "react-hot-toast": "^2.6.0",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.0"
+    "react-router-dom": "^7.18.0",
+    "recharts": "^3.9.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

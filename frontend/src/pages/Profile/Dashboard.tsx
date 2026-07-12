@@ -3,13 +3,15 @@ import { orderService } from "../../services/order.service";
 import { addressService } from "../../services/address.service";
 import { useCart } from "../../context/CartContext";         
 import { useWishlist } from "../../context/WishlistContext"; 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; 
 import AddressManager from "../../components/address/AddressManager";
 
 export default function Dashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate(); 
 
   // Contexts மூலம் ஸ்டேட்களைப் பெறுகிறோம்
   const { cartCount, cart } = useCart() as any; 
@@ -126,6 +128,9 @@ export default function Dashboard() {
           <Link to="/cart"><button style={buttonStyle}>🛒 View Cart</button></Link>
           <Link to="/wishlist"><button style={buttonStyle}>❤️ Wishlist</button></Link>
           <Link to="/orders"><button style={buttonStyle}>📦 My Orders</button></Link>
+          <button onClick={() => navigate("/addresses")} style={buttonStyle}>
+            📍 My Addresses
+          </button>
         </div>
       </div>
 
@@ -179,11 +184,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🏠 TASK 5: ADDRESS MANAGEMENT (புதிதாக சேர்க்கப்பட்டுள்ளது) */}
+      {/* 🏠 TASK 5: ADDRESS MANAGEMENT */}
       <div style={{ marginTop: 50 }}>
         <h2 style={{ fontSize: "24px", marginBottom: "15px", color: "#333" }}>🏠 Saved Addresses</h2>
         <div style={previewBoxStyle}>
-          {/* AddressManager காம்போனன்ட் இங்கு பயன்படுத்தப்பட்டுள்ளது */}
           <AddressManager />
         </div>
       </div>
@@ -196,6 +200,9 @@ export default function Dashboard() {
           <Link to="/wishlist"><button style={buttonStyle}>❤️ Wishlist</button></Link>
           <Link to="/cart"><button style={buttonStyle}>🛒 Cart</button></Link>
           <Link to="/checkout"><button style={buttonStyle}>💳 Checkout</button></Link>
+          <button onClick={() => navigate("/addresses")} style={buttonStyle}>
+            📍 My Addresses
+          </button>
         </div>
       </div>
 
@@ -226,7 +233,7 @@ const numberStyle = {
   fontSize: "36px",
   margin: 0,
   color: "#0E4B32",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
 };
 
 const labelStyle = {
@@ -242,7 +249,7 @@ const buttonStyle = {
   color: "#0E4B32",
   borderRadius: "8px",
   cursor: "pointer",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
   fontSize: "14px",
 };
 
@@ -253,7 +260,7 @@ const secondaryButtonStyle = {
   color: "#555",
   borderRadius: "8px",
   cursor: "pointer",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
   fontSize: "14px",
 };
 
@@ -264,6 +271,6 @@ const primaryButtonStyle = {
   color: "#fff",
   borderRadius: "8px",
   cursor: "pointer",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
   fontSize: "15px",
 };

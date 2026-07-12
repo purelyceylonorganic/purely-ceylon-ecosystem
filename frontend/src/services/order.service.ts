@@ -41,5 +41,45 @@ export const orderService = {
   async deleteAddress(id: string) {
     const response = await api.delete(`/orders/addresses/${id}`);
     return response.data;
-  },
+   },
+   
+   // ✅ Admin - Get All Orders
+async getAllOrders() {
+  const response = await api.get("/orders/admin/all");
+  return response.data;
+},
+
+// ✅ Admin - Update Order Status
+async updateOrderStatus(id: string, status: string) {
+  const response = await api.put(`/orders/${id}/status`, {
+    status,
+  });
+
+  return response.data;
+},
+
+async updateShipping(
+  id: string,
+  data: {
+    shippingStatus: string;
+    trackingId: string;
+  }
+) {
+  const response = await api.put(
+    `/orders/${id}/shipping`,
+    data
+  );
+
+  return response.data;
+},
+
+async getDashboardStats() {
+  const response =
+    await api.get(
+      "/orders/admin/dashboard"
+    );
+
+  return response.data;
+},
+
 };

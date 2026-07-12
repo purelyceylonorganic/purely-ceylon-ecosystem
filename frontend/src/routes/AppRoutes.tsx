@@ -15,6 +15,14 @@ import Orders from "../pages/Orders/Orders";
 import OrderDetails from "../pages/Orders/OrderDetails";
 import Dashboard from "../pages/Profile/Dashboard";
 import Wishlist from "../pages/Wishlist/Wishlist";
+import Addresses from "../pages/Profile/Addresses";
+import AdminOrders from "../pages/admin/AdminOrders";
+import AdminOrderDetails from "../pages/admin/AdminOrderDetails";
+import OrderTracking from "../pages/Orders/OrderTracking";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import RevenueDashboard from "../pages/admin/RevenueDashboard";
+import PaymentSuccess from "../pages/payment/PaymentSuccess";
+import CustomerDashboard from "../pages/customer/CustomerDashboard";
 
 export default function AppRoutes() {
   return (
@@ -137,6 +145,48 @@ export default function AppRoutes() {
       <Wishlist />
     </MainLayout>
   }
+/>
+<Route
+  path="/addresses"
+  element={
+    <MainLayout>
+      <Addresses />
+    </MainLayout>
+  }
+/>
+<Route
+  path="/admin/orders"
+  element={<AdminOrders />}
+/>
+
+<Route
+  path="/admin/orders/:id"
+  element={<AdminOrderDetails />}
+/>
+
+<Route
+  path="/tracking/:id"
+  element={<OrderTracking />}
+/>
+
+<Route
+  path="/admin/dashboard"
+  element={<AdminDashboard />}
+/>
+
+<Route
+  path="/admin/revenue"
+  element={<RevenueDashboard />}
+/>
+
+<Route
+ path="/payment-success"
+ element={<PaymentSuccess />}
+/>
+
+<Route
+ path="/customer-dashboard"
+ element={<CustomerDashboard />}
 />
 
       </Routes>
