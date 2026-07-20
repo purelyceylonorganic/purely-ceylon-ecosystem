@@ -1,11 +1,20 @@
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children }: any) {
-  const token = localStorage.getItem("token");
+type ProtectedRouteProps = {
+  children: React.ReactNode;
+};
 
+export default function ProtectedRoute({
+  children,
+}: ProtectedRouteProps) {
+  const { token } = useAuth();
+
+  // User login செய்யவில்லை
   if (!token) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  return children;
+  // Login செய்துள்ளார்
+  return <>{children}</>;
 }

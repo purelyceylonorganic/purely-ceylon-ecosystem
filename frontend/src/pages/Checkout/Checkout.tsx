@@ -131,22 +131,32 @@ export default function Checkout() {
       const discountAmount = (subtotal * discountPercent) / 100;
       const finalTotal = subtotal - discountAmount + shippingCost;
 
-      // 🚀 Step 6a: முதலில் வழக்கம்போல ஆர்டரை உருவாக்குதல் (Order Service)
-      const orderResponse = await orderService.placeOrder({
+      // 🚀 Step 6a: முதலில் வழக்கம்போல் ஆர்டரை உருவாக்குதல் (Order Service)
+      const orderPayload: any = {
         addressId: selectedAddress,
         paymentMethod,
-        shippingCost: shippingCost,
+        shippingCost,
         totalAmount: finalTotal,
         couponCode: couponCode || null,
         items,
-      });
+      };
 
-      // API Response அமைப்பைப் பொறுத்து `id` அல்லது `order.id` ஐப் பெறுகிறோம்
-      const orderId = orderResponse.data?.id || orderResponse.id || orderResponse.data?.order?.id;
+      const orderResponse = await orderService.placeOrder(orderPayload);
 
-      if (!orderId) {
-        throw new Error("Failed to retrieve Order ID from system");
-      }
+      // ✅ Get Order ID from Backend Response
+const orderId =
+  orderResponse?.order?.id ??
+  orderResponse?.id ??
+  null;
+
+// Debug
+console.log("Order Response:", orderResponse);
+console.log("Order ID:", orderId);
+
+if (!orderId) {
+  console.error("Invalid Order Response:", orderResponse);
+  throw new Error("Failed to retrieve Order ID from system");
+}
 
       toast.success("Order Placed Successfully! 🎉");
       localStorage.removeItem("appliedCoupon");

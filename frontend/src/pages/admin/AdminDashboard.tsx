@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { orderService } from "../../services/order.service";
@@ -13,6 +14,30 @@ import {
 } from "recharts";
 import RevenueChart from "../../components/admin/RevenueChart";
 
+// ==========================================
+// 🧩 SUB-COMPONENTS
+// ==========================================
+function Card({ title, value }: any) {
+  return (
+    <div
+      style={{
+        padding: "25px",
+        background: "#fff",
+        borderRadius: "10px",
+        border: "1px solid #eee",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.01)",
+      }}
+    >
+      <h4 style={{ margin: "0 0 10px 0", color: "#4a5568", fontSize: "15px", fontWeight: "500" }}>
+        {title}
+      </h4>
+      <h2 style={{ margin: "0", color: "#2d3748", fontSize: "24px", fontWeight: "bold" }}>
+        {value}
+      </h2>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   // ==========================================
   // ⏳ STATES
@@ -20,14 +45,13 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [monthlySales, setMonthlySales] = useState<any[]>([]); 
   const [topAnalytics, setTopAnalytics] = useState<any>(null);
-  const [topProducts, setTopProducts] = useState<any[]>([]); // State for Bar Chart
+  const [topProducts, setTopProducts] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
 
   // ==========================================
   // ⚙️ API LOADERS
   // ==========================================
 
-  // 1. 📈 Monthly Revenue Chart Data
   const loadMonthlySales = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -47,7 +71,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 2. 🏆 Top Selling Products (Bar Chart Data)
   const loadTopProducts = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -71,7 +94,6 @@ export default function AdminDashboard() {
       try {
         setLoading(true);
 
-        // Fetch core statistical metrics
         try {
           const response = await orderService.getDashboardStats();
           setStats(response.stats || response.data?.data || response.data);
@@ -81,7 +103,6 @@ export default function AdminDashboard() {
           if (resStats.data.success) setStats(resStats.data.data);
         }
 
-        // Fetch parallel chart metrics & analytics
         await Promise.all([
           loadMonthlySales(),
           loadTopProducts()
@@ -131,36 +152,22 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "1200px",
-        margin: "30px auto",
-        padding: "20px",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
+    <div style={{ maxWidth: "1200px", margin: "30px auto", padding: "20px", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* 📈 Header Actions */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-        <h1 style={{ color: "#0E4B32", fontSize: "26px", margin: 0 }}>
-          📊 Admin Revenue Dashboard
-        </h1>
-        <button 
-          onClick={handleExportPDF}
-          style={{ padding: "12px 20px", background: "#0E4B32", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-        >
-          📄 Export PDF Report
-        </button>
+        <h1 style={{ color: "#0E4B32", fontSize: "26px", margin: 0 }}>📊 Admin Revenue Dashboard</h1>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Link to="/admin/products/create" style={{ background: "#059669", color: "#fff", padding: "12px 20px", borderRadius: "6px", fontWeight: "bold", textDecoration: "none" }}>
+            + Create Product
+          </Link>        
+          <button onClick={handleExportPDF} style={{ padding: "12px 20px", background: "#0E4B32", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
+            📄 Export PDF Report
+          </button>
+        </div>
       </div>
 
       {/* 🗂️ Metrics Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-          marginBottom: "35px"
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "35px" }}>
         <Card title="Total Revenue" value={`USD ${stats.revenue ?? stats.totalRevenue ?? 0}`} />
         <Card title="Total Orders" value={stats.orders ?? stats.totalOrders ?? 0} />
         <Card title="Customers" value={stats.customers ?? stats.totalCustomers ?? 0} />
@@ -170,27 +177,14 @@ export default function AdminDashboard() {
       {/* 🧱 Two-Column Layout Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "30px" }}>
         
-        {/* Left Panel: Analytical Charts & Table */}
+        {/* Left Panel */}
         <div>
-          {/* 📈 Revenue Chart */}
           <div style={{ marginBottom: "30px" }}>
-            <RevenueChart data={monthlySales} />
+            <RevenueChart data={monthlySales} darkMode={false} />
           </div>
 
-          {/* 🏆 Top Selling Products Bar Chart */}
-          <div
-            style={{
-              background: "#fff",
-              padding: "25px",
-              borderRadius: "12px",
-              marginBottom: "30px",
-              border: "1px solid #eee",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.01)"
-            }}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#2d3748" }}>
-              🏆 Top Selling Products
-            </h3>
+          <div style={{ background: "#fff", padding: "25px", borderRadius: "12px", marginBottom: "30px", border: "1px solid #eee", boxShadow: "0 2px 8px rgba(0,0,0,0.01)" }}>
+            <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#2d3748" }}>🏆 Top Selling Products</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topProducts}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
@@ -202,7 +196,6 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Recent Orders Table */}
           <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #eee", boxShadow: "0 2px 8px rgba(0,0,0,0.01)" }}>
             <h3 style={{ margin: "0 0 20px 0", color: "#2d3748" }}>Recent Orders</h3>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
@@ -215,51 +208,32 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {stats.recentOrders && stats.recentOrders.length > 0 ? (
+                {stats.recentOrders?.length > 0 ? (
                   stats.recentOrders.map((order: any) => (
                     <tr key={order.id} style={{ borderBottom: "1px solid #edf2f7" }}>
-                      <td style={{ padding: "14px 8px", fontSize: "14px", color: "#2b6cb0", fontWeight: "500" }}>
-                        #{order.id.slice(0, 8).toUpperCase()}
-                      </td>
-                      <td style={{ padding: "14px 8px", fontSize: "14px", color: "#4a5568" }}>
-                        {order.user?.fullName || "Guest Customer"}
-                      </td>
-                      <td style={{ padding: "14px 8px", fontSize: "14px", fontWeight: "bold" }}>
-                        USD {order.totalFinal}
-                      </td>
+                      <td style={{ padding: "14px 8px", fontSize: "14px", color: "#2b6cb0", fontWeight: "500" }}>#{order.id.slice(0, 8).toUpperCase()}</td>
+                      <td style={{ padding: "14px 8px", fontSize: "14px", color: "#4a5568" }}>{order.user?.fullName || "Guest Customer"}</td>
+                      <td style={{ padding: "14px 8px", fontSize: "14px", fontWeight: "bold" }}>USD {order.totalFinal}</td>
                       <td style={{ padding: "14px 8px" }}>
-                        <span style={{
-                          background: order.status === "DELIVERED" ? "#e6fffa" : "#fffaf0",
-                          color: order.status === "DELIVERED" ? "#319795" : "#dd6b20",
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          fontWeight: "bold"
-                        }}>
+                        <span style={{ background: order.status === "DELIVERED" ? "#e6fffa" : "#fffaf0", color: order.status === "DELIVERED" ? "#319795" : "#dd6b20", padding: "4px 8px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold" }}>
                           {order.status}
                         </span>
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={4} style={{ padding: "20px", textAlign: "center", color: "#718096" }}>
-                      No recent orders found.
-                    </td>
-                  </tr>
+                  <tr><td colSpan={4} style={{ padding: "20px", textAlign: "center", color: "#718096" }}>No recent orders found.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Right Panel: Informational Ranking Lists */}
+        {/* Right Panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-          
-          {/* Top Products Rankings */}
           <div style={{ background: "#fff", padding: "20px", borderRadius: "10px", border: "1px solid #eee", boxShadow: "0 2px 8px rgba(0,0,0,0.01)" }}>
             <h3 style={{ margin: "0 0 15px 0", color: "#2d3748" }}>🏆 Top Selling Items</h3>
-            {topAnalytics?.topProducts && topAnalytics.topProducts.length > 0 ? (
+            {topAnalytics?.topProducts?.length > 0 ? (
               <ol style={{ paddingLeft: "20px", margin: 0, lineHeight: "2.5", color: "#4a5568" }}>
                 {topAnalytics.topProducts.map((item: any, idx: number) => (
                   <li key={item.productVariantId || idx}>
@@ -269,68 +243,28 @@ export default function AdminDashboard() {
                 ))}
               </ol>
             ) : (
-              <ol style={{ paddingLeft: "20px", margin: 0, lineHeight: "2.5", color: "#4a5568" }}>
-                <li>Ceylon Cinnamon</li>
-                <li>Black Pepper</li>
-                <li>Clove</li>
-                <li>Cardamom</li>
-                <li>Nutmeg</li>
-              </ol>
+              <p style={{ color: "#718096", fontSize: "14px" }}>No data available.</p>
             )}
           </div>
 
-          {/* Top Customers Rankings */}
           <div style={{ background: "#fff", padding: "20px", borderRadius: "10px", border: "1px solid #eee", boxShadow: "0 2px 8px rgba(0,0,0,0.01)" }}>
             <h3 style={{ margin: "0 0 15px 0", color: "#2d3748" }}>👥 Top Customers</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-              {topAnalytics?.topCustomers && topAnalytics.topCustomers.length > 0 ? (
-                topAnalytics.topCustomers.map((customer: any) => {
-                  const totalSpent = customer.orders?.reduce((sum: number, o: any) => sum + (o.totalFinal || 0), 0) || 0;
-                  return (
-                    <div key={customer.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: "10px" }}>
-                      <div><strong>{customer.fullName || "Unnamed"}</strong></div>
-                      <div style={{ color: "#0E4B32", fontWeight: "bold" }}>USD {totalSpent}</div>
-                    </div>
-                  );
-                })
-              ) : (
-                <>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: "10px" }}>
-                    <div><strong>MUHAMMADU</strong></div>
-                    <div style={{ color: "#0E4B32", fontWeight: "bold" }}>$17,700</div>
+            {topAnalytics?.topCustomers?.length > 0 ? (
+              topAnalytics.topCustomers.map((customer: any) => {
+                const totalSpent = customer.orders?.reduce((sum: number, o: any) => sum + (o.totalFinal || 0), 0) || 0;
+                return (
+                  <div key={customer.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #edf2f7", paddingBottom: "10px", marginBottom: "10px" }}>
+                    <div><strong>{customer.fullName || "Unnamed"}</strong></div>
+                    <div style={{ color: "#0E4B32", fontWeight: "bold" }}>USD {totalSpent}</div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div><strong>Customer 2</strong></div>
-                    <div style={{ color: "#0E4B32", fontWeight: "bold" }}>$8,500</div>
-                  </div>
-                </>
-              )}
-            </div>
+                );
+              })
+            ) : (
+              <p style={{ color: "#718096", fontSize: "14px" }}>No data available.</p>
+            )}
           </div>
-
         </div>
       </div>
-    </div>
-  );
-}
-
-function Card({ title, value }: any) {
-  return (
-    <div
-      style={{
-        padding: "25px",
-        background: "#fff",
-        borderRadius: "10px",
-        border: "1px solid #eee",
-        boxShadow: "0 2px 5px rgba(0,0,0,0.01)",
-      }}
-    >
-      <h4 style={{ margin: "0 0 10px 0", color: "#4a5568", fontSize: "15px", fontWeight: "500" }}>
-        {title}
-      </h4>
-      <h2 style={{ margin: "0", color: "#2d3748", fontSize: "24px", fontWeight: "bold" }}>
-        {value}
-      </h2>
     </div>
   );
 }

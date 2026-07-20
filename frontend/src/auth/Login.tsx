@@ -33,8 +33,15 @@ export default function Login() {
 
       alert("✅ Login Successful");
 
-      // ✅ Redirect to Home Page
-      navigate("/products");
+      login(response.token);
+
+const role = response.user.role;
+
+if (role === "SUPER_ADMIN" || role === "ADMIN") {
+  navigate("/admin/dashboard");
+} else {
+  navigate("/products");
+}
 
     } catch (error: any) {
       console.error(error);
@@ -117,6 +124,21 @@ export default function Login() {
               fontSize: "16px",
             }}
           />
+
+          {/* Forgot Password Link - சேர்க்கப்பட்டது */}
+          <div style={{ marginTop: "10px", textAlign: "right" }}>
+            <Link
+              to="/forgot-password"
+              style={{
+                fontSize: "14px",
+                color: "#0E4B32",
+                textDecoration: "none",
+                fontWeight: "bold",
+              }}
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
         <button

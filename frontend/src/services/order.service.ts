@@ -1,8 +1,66 @@
 import api from "../api/axios";
 
+
+// =========================
+// Order Types
+// =========================
+
+export interface OrderAddress {
+  fullName: string;
+  phone?: string;
+  street: string;
+  city: string;
+  province?: string;
+  postalCode?: string;
+  country: string;
+}
+
+export interface ProductVariant {
+  sku?: string;
+  weight?: string;
+}
+
+export interface Product {
+  id?: string;
+  name?: string;
+}
+
+export interface OrderItem {
+  product?: Product;
+  productVariant?: ProductVariant;
+  quantity: number;
+  price: number;
+}
+
+export interface Order {
+  id: string;
+  _id?: string;
+
+  createdAt?: string;
+
+  status: string;
+
+  paymentStatus?: string;
+
+  total?: number;
+
+  totalFinal?: number;
+
+  address?: OrderAddress;
+
+  items: OrderItem[];
+}
+
+export interface PlaceOrderRequest {
+  addressId: string;
+  paymentMethod: string;
+  notes?: string;
+}
+
+
 export const orderService = {
   // ✅ Place Order
-  async placeOrder(data: any) {
+  async placeOrder(data: PlaceOrderRequest) {
     const response = await api.post("/orders/checkout", data);
     return response.data;
   },

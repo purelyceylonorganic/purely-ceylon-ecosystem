@@ -62,10 +62,10 @@ export default function ProductDetails() {
       setError("");
 
       const productRes = await productService.getProductById(productId);
-      setProduct(productRes.data);
+      setProduct(productRes);
 
-      if (productRes.data.variants?.length > 0) {
-        setSelectedVariant(productRes.data.variants[0]);
+      if(productRes.variants?.length > 0) {
+        setSelectedVariant(productRes.variants[0]);
       }
 
       // Reviews லோட் செய்தல்
