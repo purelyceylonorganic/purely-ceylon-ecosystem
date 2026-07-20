@@ -32,12 +32,14 @@ model User {
   passwordHash String
   fullName     String
   phone        String?
+  profileImage String?
 
   // 🚀 சரி செய்யப்பட்டது: ஒரே ஒரு role புலம், சரியான UserRole enum உடன்
   role UserRole @default(CUSTOMER)
 
   // Account Status
-  isActive Boolean @default(false)
+  isActive   Boolean @default(false)
+  isVerified Boolean @default(false)
 
   // Legacy Email Verification (optional)
   verificationToken String?
@@ -54,6 +56,9 @@ model User {
   otpLockedUntil     DateTime?
   accountLockedUntil DateTime?
 
+  passwordResetToken  String?
+  passwordResetExpire DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -63,10 +68,11 @@ model User {
   sessions  UserSession[]
   auditLogs AuditLog[]
 
-  cart      Cart?
-  wishlist  Wishlist?
-  reviews   Review[]   @relation("UserReviews")
-  questions Question[] @relation("UserQuestions")
+  cart       Cart?
+  wishlist   Wishlist?
+  reviews    Review[]             @relation("UserReviews")
+  questions  Question[]           @relation("UserQuestions")
+  savedCards SavedPaymentMethod[]
 }
 
 // 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
@@ -95,6 +101,13 @@ enum UserRole {
   CUSTOMER
 }
 
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  ARCHIVED
+}
+
 // 📦 தயாரிப்புகள் (Product Catalog)
 model Product {
   id          String @id @default(uuid())
@@ -103,10 +116,12 @@ model Product {
   description String
   categoryId  String
 
-  moq       Int      @default(1)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  moq         Int           @default(1)
+  isActive    Boolean       @default(true)
+  status      ProductStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   // relations
   category  Category         @relation(fields: [categoryId], references: [id])
@@ -147,11 +162,13 @@ model ProductVariant {
 }
 
 model ProductImage {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   productId String
   url       String
-  isPrimary Boolean @default(false)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  publicId  String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model ProductVideo {
@@ -780,4 +797,25 @@ model Notification {
   type      String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model SavedPaymentMethod {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Stripe மற்றும் Card தகவல்கள்
+  brand                 String
+  cardLast4             String
+  stripePaymentMethodId String? // Stripe Tokenization-க்காக இது அவசியம்
+
+  // தேவைப்பட்டால் இந்த தகவல்களை வைத்துக்கொள்ளலாம்
+  cardHolderName String?
+  expiryMonth    Int?
+  expiryYear     Int?
+
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

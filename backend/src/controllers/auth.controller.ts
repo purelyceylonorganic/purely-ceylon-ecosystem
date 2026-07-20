@@ -5,6 +5,8 @@ import { PrismaClient } from "@prisma/client";
 import { ROLES } from "../constants/roles";
 import { sendOtpEmail } from "../utils/sendEmail";
 import { logger } from "../config/logger"; // 👈 Winston Logger இம்போர்ட் செய்யப்பட்டது
+import crypto from "crypto";
+import { sendResetPasswordEmail } from "../utils/sendEmail";
 
 const prisma = new PrismaClient();
 
@@ -364,5 +366,121 @@ export const resendOtp = async (req: Request, res: Response) => {
       success: false,
       message: "Failed to resend OTP",
     });
+  }
+};
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message:
+          "If an account exists, a password reset email has been sent.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const expire = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        passwordResetToken: token,
+        passwordResetExpire: expire,
+      },
+    });
+
+    await sendResetPasswordEmail(
+      user.email,
+      user.fullName,
+      token
+    );
+
+    return res.json({
+      success: true,
+      message:
+        "Password reset link has been sent to your email.",
+    });
+
+  } catch (error) {
+
+    logger.error("Forgot Password Error", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+
+  }
+};
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters.",
+      });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpire: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset link.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+  where: {
+    id: user.id,
+  },
+  data: {
+    passwordHash: hashedPassword,
+    passwordResetToken: null,
+    passwordResetExpire: null,
+    isVerified: true, // இதைச் சேர்ப்பது கட்டாயம்!
+  },
+});
+
+    logger.info({
+      event: "PASSWORD_RESET_SUCCESS",
+      email: user.email,
+    });
+
+    return res.json({
+      success: true,
+      message: "Password updated successfully.",
+    });
+
+  } catch (error) {
+
+    logger.error("Reset Password Error", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+
   }
 };

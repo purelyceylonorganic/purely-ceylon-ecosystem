@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -28,7 +28,7 @@ async function main() {
       email: "admin@purelyceylon.com",
       fullName: "PCO Admin Management",
       passwordHash: adminPassword,
-      role: Role.ADMIN,
+      role: "ADMIN",
       phone: "+94771234567",
       isActive: true,
     },
@@ -42,7 +42,7 @@ async function main() {
       email: "matale.farmer@purelyceylon.com",
       fullName: "மாத்தளை ஆர்கானிக் விவசாயக் கூட்டுறவு",
       passwordHash: farmerPassword,
-      role: Role.VENDOR,
+      role: "CUSTOMER",
       phone: "+94662233444",
       isActive: true,
     },

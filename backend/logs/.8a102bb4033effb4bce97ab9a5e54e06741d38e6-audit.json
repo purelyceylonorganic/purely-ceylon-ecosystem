@@ -29,6 +29,46 @@
             "date": 1783859892493,
             "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-12.log",
             "hash": "3517b65a6793ba2a942553a966e1838897fc2083f157ba76c2b9defc2e879477"
+        },
+        {
+            "date": 1783929445664,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-13.log",
+            "hash": "3db1cf736c1d1512866a1f8793d23b23f265059abcbd9be9e1e5e857b956f750"
+        },
+        {
+            "date": 1784017207815,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-14.log",
+            "hash": "e72c3206731debdc35d83427b828a6d3e98dc15e580b5f3ffa82ae4151519388"
+        },
+        {
+            "date": 1784085857134,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-15.log",
+            "hash": "db12ceaa2e176c0a839fbbc1d5e13a8c39699e69f5236c02f7eab05de54efd8f"
+        },
+        {
+            "date": 1784188212358,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-16.log",
+            "hash": "22ba7a1d8f7adc634c1c0adf28bf95a9ed9adb4ea1a6953395fc0dfc70bdae66"
+        },
+        {
+            "date": 1784256176579,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-17.log",
+            "hash": "19118db1b49d25980944abece0990aa1367922b8deabb763de624fa7a415ef6b"
+        },
+        {
+            "date": 1784313000151,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-18.log",
+            "hash": "831dbdceb90720e44590d165c5b6466a8c45fb582de2a3a849a140805a03953a"
+        },
+        {
+            "date": 1784419424799,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-19.log",
+            "hash": "2a1ace29f1e424929789799624c79a2e7662158fa4c316e96812261896e9ad2b"
+        },
+        {
+            "date": 1784533755225,
+            "name": "C:\\purely-ceylon-ecosystem\\backend\\logs\\application-2026-07-20.log",
+            "hash": "e8bf3a0f324988b61c6e7fab6bc0397ccc874d558dac5cfbe2238e6ee428ec0c"
         }
     ],
     "hashType": "sha256"

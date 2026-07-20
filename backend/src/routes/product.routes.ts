@@ -3,6 +3,12 @@ import { ProductController } from '../controllers/product.controller';
 import { protect } from '../middlewares/auth.middleware';
 import { authorizePermissions } from '../middlewares/permission.middleware'; // 👈 புதிய இறக்குமதி
 import { PERMISSIONS } from '../constants/permissions'; // 👈 புதிய இறக்குமதி
+import { validate } from "../middlewares/validate.middleware";
+
+import {
+  createProductSchema,
+} from "../validators/product.validator";
+
 
 const router = Router();
 
@@ -19,13 +25,32 @@ router.get("/:id", ProductController.getById);
  * tags:
  * - Products
  */
+
+router.get(
+  "/public",
+  ProductController.getPublic
+);
+
 router.get('/', ProductController.getAll);
 
 // 🔒 பழைய restrictTo-க்கு பதிலாக புதிய Permission Check:
+router.put(
+  "/restore/:id",
+  protect,
+  ProductController.restore
+);
+
+router.put(
+  "/bulk-status",
+  protect,
+  ProductController.bulkUpdateStatus
+);
+
 router.post(
-  '/',
+  "/",
   protect,
   authorizePermissions(PERMISSIONS.PRODUCT_CREATE),
+  validate(createProductSchema),
   ProductController.create
 );
 

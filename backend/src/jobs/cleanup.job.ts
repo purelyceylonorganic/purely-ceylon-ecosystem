@@ -1,13 +1,77 @@
 import cron from "node-cron";
 import { logger } from "../config/logger";
 
-export const startCleanupJob = () => {
-  cron.schedule("0 3 * * *", async () => {
-    try {
-      logger.info("🧹 Cleaning Temporary Files");
-      // Job logic goes here
-    } catch (error) {
-      logger.error("💥 Error in Cleanup Job:", error);
-    }
-  });
+
+let cleanupRunning=false;
+
+
+export const startCleanupJob=()=>{
+
+
+cron.schedule(
+
+"0 3 * * *",
+
+async()=>{
+
+
+if(cleanupRunning){
+
+logger.warn(
+"Cleanup skipped"
+);
+
+return;
+
+}
+
+
+try{
+
+
+cleanupRunning=true;
+
+
+logger.info(
+"🧹 Cleanup Started"
+);
+
+
+// Remove:
+// expired OTP
+// temp files
+// old logs
+
+
+logger.info(
+"✅ Cleanup Completed"
+);
+
+
+}
+catch(error){
+
+logger.error(
+"💥 Cleanup Failed",
+error
+);
+
+}
+finally{
+
+cleanupRunning=false;
+
+}
+
+
+},
+
+{
+timezone:"Asia/Colombo"
+}
+
+
+);
+
+
 };

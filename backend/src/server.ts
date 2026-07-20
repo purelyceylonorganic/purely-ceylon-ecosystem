@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import "./config/env";
-
+import path from "path";
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -29,7 +29,6 @@ import batchRoutes from "./routes/batch.routes";
 import traceabilityRecordRoutes from "./routes/traceability.routes";
 import certificateRoutes from "./routes/certificate.routes";
 import currencyRoutes from "./routes/currency.routes";
-import { startCurrencyJob } from "./jobs/currency.job";
 import taxRoutes from "./routes/tax.routes";
 import couponRoutes from "./routes/coupon.routes";
 import rfqRoutes from "./routes/rfq.routes";
@@ -56,6 +55,11 @@ import healthRoutes from "./routes/health.routes";
 import { startAllJobs } from "./jobs";
 import compression from "compression";
 import customerDashboardRoutes from "./routes/customerDashboard.routes";
+import invoicePdfRoutes from "./routes/invoicePdf.routes";
+import profileRoutes from "./routes/profile.routes";
+import paymentMethodRoutes from "./routes/paymentMethod.routes";
+import productImageRoutes from "./routes/productImage.routes";
+import uploadRoutes from "./routes/upload.routes";
 
 
 process.on("uncaughtException", (err) => {
@@ -67,9 +71,14 @@ process.on("unhandledRejection", (reason) => {
   logger.error("⚠️ Unhandled Rejection (Promise):", reason instanceof Error ? reason : new Error(String(reason)));
 });
 // Jobs & Logs Initializations
-startAllJobs();
-console.log('EMAIL_USER =', process.env.EMAIL_USER);
-console.log('EMAIL_PASSWORD =', process.env.EMAIL_PASSWORD);
+
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+  logger.error("❌ Email credentials are missing in environment variables!");
+  // தேவைப்பட்டால் சர்வரை ஆரம்பிக்காமல் நிறுத்தலாம்: process.exit(1);
+} else {
+  logger.info("✅ Email credentials loaded successfully.");
+}
+
 console.log("Dashboard Route Imported");
 
 // 🟢 1. Initialize Express App FIRST
@@ -79,7 +88,13 @@ const app = express();
 app.use(requestLogger);
 
 // 3. Security & Parsers
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin",
+    },
+  })
+);
 app.set('trust proxy', 1);
 app.use(compression());
 app.use(express.json({
@@ -125,6 +140,15 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(process.cwd(), "uploads"))
+);
+
 // 6. API Routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/enterprise', enterpriseRouter);
@@ -165,7 +189,12 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/v1/reports", reportRoutes);
 app.use("/api/v1/permissions", permissionRoutes);
 app.use("/api/v1/customer/dashboard", customerDashboardRoutes);
+app.use("/api/v1/invoice", invoicePdfRoutes);
 app.use("/api/health", healthRoutes);
+app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/payment-methods",paymentMethodRoutes);
+app.use("/api/v1/product-images", productImageRoutes);
+app.use("/api/v1/upload", uploadRoutes);
 
 
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
@@ -204,25 +233,26 @@ app.use(globalErrorHandler);
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
-  // 🛰️ Server instance-ஐ வேரியபிளில் சேமிக்கிறோம்
+
   const server = app.listen(PORT, () => {
-    logger.info(`Server running on ${PORT}`);
+
+    logger.info(
+      `🚀 Server running on port ${PORT}`
+    );
+
+
+    // Start Background Workers
+    startAllJobs();
+
+
+    logger.info(
+      "⚙️ Background Jobs Started"
+    );
+
+
   });
 
-  // 🛑 Task 2 — SIGINT (e.g., Ctrl+C in Terminal)
-  process.on("SIGINT", () => {
-    logger.info("Gracefully shutting down...");
-    server.close(() => {
-      logger.info("Server Closed");
-      process.exit(0);
-    });
-  });
 
-  // 🛑 Task 2 — SIGTERM (e.g., Cloud production shutdown signal)
-  process.on("SIGTERM", () => {
-    logger.info("SIGTERM Received");
-    server.close(() => process.exit(0));
-  });
 }
 
 // FINAL EXPORT
