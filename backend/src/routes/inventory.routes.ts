@@ -4,6 +4,7 @@ import {
   removeStock,
   getInventory,
   getLowStock,
+  getTransactions,
 } from "../controllers/inventory.controller";
 
 const router = express.Router();
@@ -14,16 +15,14 @@ const router = express.Router();
 // ============================
 //
 
-// ➕ Add stock
 router.post("/add-stock", addStock);
 
-// ➖ Remove stock
 router.post("/remove-stock", removeStock);
 
-// 📦 Get all inventory
 router.get("/", getInventory);
 
-// ⚠️ Low stock items
 router.get("/low-stock", getLowStock);
+
+router.get("/transactions", getTransactions);
 
 export default router;

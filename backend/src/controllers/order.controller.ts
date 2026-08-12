@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { generateTrackingId } from "../services/dhlSimulator"; // 👈 1. இங்கு இம்போர்ட் செய்யப்பட்டுள்ளது
+import { createAdminOrder, 
+addProductToOrder, 
+getOrderDetails,
+updateOrderItemQuantity,
+removeProductFromOrder,
+confirmOrder, } from "../services/order.service";
 
 const prisma = new PrismaClient();
 
@@ -436,6 +442,179 @@ export const getDashboardStats = async (
     return res.status(500).json({
       success: false,
       message: "Dashboard stats failed",
+    });
+  }
+};
+
+export const createAdminOrderController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { customerId, addressId } = req.body;
+
+    if (!customerId || !addressId) {
+      return res.status(400).json({
+        success: false,
+        message: "customerId and addressId are required",
+      });
+    }
+
+    const order = await createAdminOrder(customerId, addressId);
+
+    return res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      data: order,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const addProductToOrderController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderId, productVariantId, quantity } = req.body;
+
+    if (!orderId || !productVariantId || !quantity) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId, productVariantId and quantity are required",
+      });
+    }
+
+    const item = await addProductToOrder(
+      orderId,
+      productVariantId,
+      Number(quantity)
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Product added to order",
+      data: item,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getOrderDetailsController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await getOrderDetails(orderId);
+
+    return res.status(200).json({
+      success: true,
+      data: order,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateOrderItemQuantityController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderItemId, quantity } = req.body;
+
+    if (!orderItemId || quantity === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "orderItemId and quantity are required",
+      });
+    }
+
+    const order = await updateOrderItemQuantity(
+      orderItemId,
+      Number(quantity)
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Order item quantity updated successfully",
+      data: order,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const removeProductFromOrderController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderItemId } = req.body;
+
+    if (!orderItemId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderItemId is required",
+      });
+    }
+
+    const order = await removeProductFromOrder(orderItemId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Product removed successfully",
+      data: order,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const confirmOrderController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId is required",
+      });
+    }
+
+    const order = await confirmOrder(orderId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Order confirmed successfully",
+      data: order,
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
     });
   }
 };

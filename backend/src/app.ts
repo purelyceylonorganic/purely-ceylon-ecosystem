@@ -16,6 +16,7 @@ import inventoryRoutes from './routes/inventory.routes';
 import notificationRoutes from "./routes/notification.routes";
 import shippingRoutes from "./routes/shipping.routes";
 import paymentRoutes from "./routes/payment.routes";
+import customerRoutes from "./routes/customer.routes";
 
 const app = express();
 
@@ -53,11 +54,16 @@ app.use(cors({
 // Rate Limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests'
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again later.",
+  },
 });
 
-app.use('/api/', apiLimiter);
+app.use("/api/", apiLimiter);
 
 
 // Health Check
@@ -91,6 +97,8 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/shipping', shippingRoutes);
 
 app.use('/api/v1/payments', paymentRoutes);
+
+app.use("/api/v1/customers", customerRoutes);
 
 // Homepage
 app.get('/', (_req, res) => {

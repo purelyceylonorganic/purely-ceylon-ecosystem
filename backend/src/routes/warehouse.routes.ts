@@ -7,9 +7,12 @@ import {
   deleteWarehouse,
 } from "../controllers/warehouse.controller";
 import { authorizeRoles } from "../middlewares/role.middleware";
+import { protect } from "../middlewares/auth.middleware";
 import { ROLES } from "../constants/roles";
 
 const router = Router();
+
+router.use(protect);
 
 router.use(
   authorizeRoles(

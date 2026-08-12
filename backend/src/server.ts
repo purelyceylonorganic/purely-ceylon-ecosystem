@@ -60,6 +60,8 @@ import profileRoutes from "./routes/profile.routes";
 import paymentMethodRoutes from "./routes/paymentMethod.routes";
 import productImageRoutes from "./routes/productImage.routes";
 import uploadRoutes from "./routes/upload.routes";
+import customerRoutes from "./routes/customer.routes";
+import adminRFQRoutes from "./routes/adminRFQ.routes";
 
 
 process.on("uncaughtException", (err) => {
@@ -124,11 +126,16 @@ app.use(cors({
 // 5. Rate Limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: '❌ மிகவும் அதிகமான கோரிக்கைகள். சிறிது நேரம் கழித்து முயற்சிக்கவும்!'
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again later.",
+  },
 });
 
-app.use('/api/', apiLimiter);
+app.use("/api/", apiLimiter);
 
 // Health Check
 app.get('/api/health', (_req, res) => {
@@ -195,8 +202,12 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/payment-methods",paymentMethodRoutes);
 app.use("/api/v1/product-images", productImageRoutes);
 app.use("/api/v1/upload", uploadRoutes);
-
-
+app.use("/api/v1/customers", customerRoutes);
+app.use("/api/v1/b2b/admin", adminRFQRoutes);
+app.use(
+  "/api/v1/b2b/admin",
+  adminQuoteRoutes
+);
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
 app.get('/api/v1/verify-email-connection', async (_req, res) => {
   try {

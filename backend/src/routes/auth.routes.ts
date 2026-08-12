@@ -6,18 +6,30 @@ import {
 } from '../middlewares/auth.middleware';
 import {
   registerUser,
-  login, // <- இங்கிருக்கும் பெயர் கீழே பயன்படுத்தப்பட்டுள்ளது
+  login, 
   verifyOtp,
   resendOtp,
   forgotPassword,
   resetPassword,
+  registerWithPhone,
+  verifyPhoneOtp,
+   resendPhoneOtp,
+   forgotPasswordWithPhone,
+verifyPhonePasswordResetOtp,
+resetPasswordWithPhone,
+addEmail,
+  verifyProfileEmail,
+  resendProfileEmailOtp,
+  changePassword,
 } from '../controllers/auth.controller';
 
 const router = Router();
 
 // ✅ REGISTER
 router.post('/register', registerUser);
-
+router.post('/register-with-phone', registerWithPhone);
+router.post('/verify-phone-otp', verifyPhoneOtp);
+router.post("/resend-phone-otp", resendPhoneOtp);
 // ✅ LOGIN (TASK 8)
 /**
  * @swagger
@@ -50,5 +62,51 @@ router.get(
     });
   }
 );
+// =====================================================
+// PHONE PASSWORD RESET
+// =====================================================
+
+router.post(
+  "/forgot-password-phone",
+  forgotPasswordWithPhone
+);
+
+router.post(
+  "/verify-phone-password-reset-otp",
+  verifyPhonePasswordResetOtp
+);
+
+router.post(
+  "/reset-password-phone",
+  resetPasswordWithPhone
+);
+
+router.post(
+  "/change-password",
+  protect,
+  changePassword
+);
+// =====================================================
+// 🔐 PROFILE EMAIL VERIFICATION
+// =====================================================
+
+router.post(
+  "/profile/add-email",
+  protect,
+  addEmail
+);
+
+router.post(
+  "/profile/verify-email",
+  protect,
+  verifyProfileEmail
+);
+
+router.post(
+  "/profile/resend-email-otp",
+  protect,
+  resendProfileEmailOtp
+);
+
 
 export default router;

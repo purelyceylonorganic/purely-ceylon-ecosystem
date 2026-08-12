@@ -14,6 +14,13 @@ const router = Router();
 
 router.get('/search', ProductController.search);
 
+router.get(
+  "/public",
+  ProductController.getPublic
+);
+
+router.get('/', ProductController.getAll);
+
 router.get("/:id", ProductController.getById);
 
 // ✅ GET ALL PRODUCTS (TASK 9)
@@ -26,14 +33,18 @@ router.get("/:id", ProductController.getById);
  * - Products
  */
 
-router.get(
-  "/public",
-  ProductController.getPublic
-);
 
-router.get('/', ProductController.getAll);
+
+
 
 // 🔒 பழைய restrictTo-க்கு பதிலாக புதிய Permission Check:
+
+router.patch(
+  "/:id/featured",
+  protect,
+  ProductController.toggleFeatured
+);
+
 router.put(
   "/restore/:id",
   protect,
@@ -67,5 +78,7 @@ router.delete(
   authorizePermissions(PERMISSIONS.PRODUCT_DELETE),
   ProductController.delete
 );
+
+
 
 export default router;

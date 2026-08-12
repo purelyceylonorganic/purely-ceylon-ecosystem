@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube, FaShoppingCart, FaEye } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
 import { productService } from "../../services/product.service";
 import type { Product } from "../../types/product.types";
 
@@ -9,45 +9,32 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-// 2. Mock API Call
   const loadProducts = async () => {
-  try {
-
-    const response =
-      await productService.getPublicProducts({
+    try {
+      const response = await productService.getPublicProducts({
         page: 1,
-        limit: 12,
+        limit: 8,
       });
 
-    setProducts(response.products);
+      setProducts(response.products);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  } catch (error) {
-
-    console.error(error);
-
-  } finally {
-
-    setLoading(false);
-
-  }
-};
-
-  
   useEffect(() => {
     loadProducts();
   }, []);
 
-
   if (loading) {
-  return (
-    <div className="flex justify-center items-center h-screen">
-      Loading...
-    </div>
-  );
-}
-  
-
-  
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   const animationProps = {
     initial: { opacity: 0, y: 50 },
@@ -93,22 +80,89 @@ export default function Home() {
       {/* 6 & 10. FEATURED PRODUCTS (Background: Light Gray) */}
       <section className="py-20 bg-gray-100">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-[#0E4B32] mb-12">Featured Products</h2>
+          {/* Task 3.9 & 3.10 — Section Header & View All Button */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+            <div>
+              <h2 className="text-5xl font-bold text-[#0E4B32]">Featured Products</h2>
+              <p className="text-gray-500 mt-3">Handpicked Premium Organic Products from Sri Lanka</p>
+            </div>
+            <Link
+              to="/shop"
+              className="bg-[#0E4B32] text-white px-6 py-3 rounded-full hover:bg-green-800 transition"
+            >
+              View All →
+            </Link>
+          </div>
+
           {products.length === 0 ? (
             <div className="text-center py-20 text-gray-500">No Products Available</div>
           ) : (
-            <div className="grid md:grid-cols-4 gap-8">
+            /* Task 3.8 — Responsive Grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {products.map((p) => (
-                <motion.div {...animationProps} key={p.id} className="bg-white p-4 rounded-2xl shadow-sm">
-                  <div className="h-48 bg-gray-200 rounded-xl mb-4"></div>
-                  <h3 className="font-bold">{p.name}</h3>
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-[#0E4B32] font-bold">{p.price}</p>
-                    <span className="text-yellow-500">★ {p.rating}</span>
+                <motion.div 
+                  {...animationProps} 
+                  key={p.id} 
+                  /* Task 3.1 — Product Card Hover Effect */
+                  className="bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 flex flex-col justify-between p-4"
+                >
+                  <div>
+                    {/* Task 3.2 & 3.3 — Image Wrapper, Zoom Effect & Featured Badge */}
+                    <div className="relative overflow-hidden rounded-xl mb-4">
+                      {p.featured && (
+                        <div className="absolute top-3 left-3 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full font-semibold z-10">
+                          Featured
+                        </div>
+                      )}
+                      <img
+                        src={
+                          p.images?.find(img => img.isPrimary)?.url ||
+                          "/placeholder.png"
+                        }
+                        alt={p.name}
+                        className="w-full h-56 object-cover transition-transform duration-500 hover:scale-110"
+                      />
+                    </div>
+
+                    {/* Task 3.7 — Card Footer Order: Category -> Name -> Price -> Stock -> Buttons */}
+                    {/* Category */}
+                    <p className="text-sm text-gray-500 mb-1">
+                      {p.category?.name}
+                    </p>
+
+                    {/* Product Name */}
+                    <h3 className="font-semibold text-lg line-clamp-2">
+                      {p.name}
+                    </h3>
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <button className="flex-1 bg-gray-100 py-2 rounded-lg"><FaEye /></button>
-                    <button className="flex-1 bg-[#0E4B32] text-white py-2 rounded-lg flex justify-center"><FaShoppingCart /></button>
+
+                  <div className="mt-4">
+                    {/* Price Design */}
+                    <p className="text-2xl font-bold text-[#0E4B32]">
+                      ${p.variants?.[0]?.price ?? 0}
+                    </p>
+
+                    {/* Task 3.4 — Stock Badge */}
+                    <div className="mt-1 mb-4">
+                      {(p.variants?.[0]?.stock ?? 0) > 0 ? (
+                        <span className="text-green-600 text-sm">In Stock</span>
+                      ) : (
+                        <span className="text-red-600 text-sm">Out of Stock</span>
+                      )}
+                    </div>
+
+                    {/* Task 3.6 — Button Design */}
+                    <div className="flex gap-2">
+                      <Link
+                        to={`/products/${p.id}`}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-3 flex justify-center items-center text-gray-700 transition font-semibold"
+                      >
+                        👁 View Product
+                      </Link>
+                      <button className="flex-1 bg-[#0E4B32] text-white rounded-lg py-3 font-semibold hover:bg-green-800 transition">
+                        🛒 Add to Cart
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -121,8 +175,8 @@ export default function Home() {
       <section className="bg-[#0E4B32] py-20 text-center text-white">
         <h2 className="text-3xl font-bold mb-6">Stay Updated</h2>
         <div className="max-w-md mx-auto flex gap-2 px-6">
-          <input className="w-full p-4 rounded-full text-black" placeholder="Email Address" />
-          <button className="bg-[#D4AF37] px-8 rounded-full font-bold text-black">Subscribe</button>
+          <input className="w-full p-4 rounded-full text-black outline-none" placeholder="Email Address" />
+          <button className="bg-[#D4AF37] px-8 rounded-full font-bold text-black hover:bg-yellow-500 transition">Subscribe</button>
         </div>
       </section>
 

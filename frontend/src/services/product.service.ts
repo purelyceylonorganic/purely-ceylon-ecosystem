@@ -43,16 +43,15 @@ async getPublicProducts(params: {
   },
 
   // Search Products
-  async searchProducts(params: {
-    name?: string;
-    categoryId?: string;
-  }): Promise<Product[]> {
-    const response = await api.get("/products/search", {
-      params,
-    });
+  async searchProducts(keyword: string = "") {
+  const response = await api.get("/products/search", {
+    params: {
+      name: keyword,
+    },
+  });
 
-    return response.data.data;
-  },
+  return response.data.data;
+},
 
   // Create Product
   async createProduct(data: any) {
@@ -65,6 +64,18 @@ async getPublicProducts(params: {
     const response = await api.put(`/products/${id}`, data);
     return response.data;
   },
+
+  // Toggle Featured Product
+async toggleFeatured(id: string) {
+
+  const response =
+    await api.patch(
+      `/products/${id}/featured`
+    );
+
+  return response.data;
+
+},
 
   // Delete Product
   async deleteProduct(id: string) {

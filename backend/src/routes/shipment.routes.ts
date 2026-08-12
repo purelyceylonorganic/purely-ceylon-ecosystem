@@ -21,8 +21,4 @@ router.get(
     getShipmentByBulkOrder
 );
 
-router.post("/", createShipment);
-
-router.get("/bulk-order/:bulkOrderId", getShipmentByBulkOrder);
-
 export default router;

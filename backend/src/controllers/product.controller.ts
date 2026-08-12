@@ -415,4 +415,51 @@ static async getPublic(req: AuthenticatedRequest, res: Response) {
 
 }
 
+
+static async toggleFeatured(
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+
+    const { id } = req.params;
+
+    const product =
+      await prisma.product.findUnique({
+        where: { id },
+      });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const updatedProduct =
+      await prisma.product.update({
+        where: { id },
+        data: {
+          featured: !product.featured,
+        },
+      });
+
+    return res.json({
+      success: true,
+      message: updatedProduct.featured
+        ? "Product marked as featured"
+        : "Product removed from featured",
+      data: updatedProduct,
+    });
+
+  } catch (error: any) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+}
+
 }

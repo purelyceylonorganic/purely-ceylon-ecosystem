@@ -1,10 +1,703 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id                  String               @id @default(uuid())
+
+  // =========================
+  // Account Information
+  // =========================
+  email               String?              @unique
+  phone               String?              @unique
+  fullName            String
+
+  passwordHash        String
+  mustChangePassword  Boolean @default(false)
+
+  role                UserRole             @default(CUSTOMER)
+
+  // =========================
+  // Account Status
+  // =========================
+  isActive            Boolean              @default(false)
+  isVerified          Boolean              @default(false)
+
+// =========================
+// Email Verification
+// =========================
+pendingEmail       String?
+verificationToken  String?
+verificationOtp    String?
+otpExpiresAt       DateTime?
+otpLastSentAt      DateTime?
+otpAttempts        Int      @default(0)
+otpLockedUntil     DateTime?
+
+  // =========================
+  // Phone Verification
+  // =========================
+  phoneVerificationOtp       String?
+  phoneOtpExpiresAt          DateTime?
+  phoneOtpLastSentAt         DateTime?
+  phoneOtpAttempts           Int                  @default(0)
+  phoneOtpLockedUntil        DateTime?
+
+  // =========================
+  // Login Security
+  // =========================
+  accountLockedUntil  DateTime?
+  failedLoginAttempts Int                  @default(0)
+
+  // =========================
+// Password Reset
+// =========================
+passwordResetExpire DateTime?
+passwordResetToken  String?
+
+// =========================
+// Phone Password Reset
+// =========================
+phonePasswordResetOtp         String?
+phonePasswordResetExpiresAt   DateTime?
+phonePasswordResetLastSentAt  DateTime?
+phonePasswordResetAttempts    Int      @default(0)
+phonePasswordResetLockedUntil DateTime?
+
+// =========================
+// Phone Password Reset
+// =========================
+
+phonePasswordResetOtpHash       String?
+phonePasswordResetOtpExpiresAt  DateTime?
+phonePasswordResetOtpAttempts   Int      @default(0)
+phonePasswordResetOtpLockedUntil DateTime?
+
+phonePasswordResetToken         String?
+phonePasswordResetTokenExpiresAt DateTime?
+
+  // =========================
+  // Profile
+  // =========================
+  profileImage        String?
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  // =========================
+  // Relations
+  // =========================
+  addresses           Address[]
+  auditLogs            AuditLog[]
+  cart                 Cart?
+  orders               Order[]
+  questions            Question[]           @relation("UserQuestions")
+  reviews              Review[]             @relation("UserReviews")
+  savedCards           SavedPaymentMethod[]
+  sessions             UserSession[]
+  notes                CustomerNote[]
+  wishlist             Wishlist?
+}
+
+model UserSession {
+  id            String   @id @default(uuid())
+  userId        String
+  token         String   @unique
+  ipAddress     String?
+  userAgent     String?
+  isRiskFlagged Boolean  @default(false)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String           @id @default(uuid())
+  name        String
+  description String
+  createdAt   DateTime         @default(now())
+  categoryId  String
+  isActive    Boolean          @default(true)
+  status      ProductStatus    @default(DRAFT)
+  slug        String           @unique
+  updatedAt   DateTime         @updatedAt
+  moq         Int              @default(1)
+  
+  featured Boolean @default(false)
+  publishedAt DateTime?
+  category    Category         @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  variants    ProductVariant[]
+  videos      ProductVideo[]
+  questions   Question[]       @relation("ProductQuestions")
+  reviews     Review[]         @relation("ProductReviews")
+}
+
+model CurrencyRate {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  rate      Float
+  updatedAt DateTime @updatedAt
+}
+
+model ProductVariant {
+  id            String         @id @default(uuid())
+  productId     String
+  sku           String         @unique
+  weight        String
+  price         Float
+  costPrice     Float          @default(0.0)
+  stock         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  cartItems     CartItem[]
+  inventory     Inventory[]
+  orderItems    OrderItem[]
+  product       Product        @relation(fields: [productId], references: [id])
+  wishlistItems WishlistItem[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  url       String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  publicId  String?
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVideo {
+  id        String  @id @default(uuid())
+  productId String
+  url       String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+}
+
+model Order {
+  id             String         @id @default(uuid())
+  userId         String
+  createdAt      DateTime       @default(now())
+
+  paymentMethod  String?
+  paymentStatus  PaymentStatus  @default(UNPAID)
+
+  paidAmount     Float          @default(0)
+  balance        Float          @default(0)
+  paidAt         DateTime?
+
+  shippingCost   Float          @default(0)
+  shippingStatus ShippingStatus @default(PENDING)
+
+  taxAmount      Float          @default(0)
+
+  trackingId     String?
+
+  updatedAt      DateTime       @updatedAt
+
+  status         OrderStatus    @default(PENDING)
+
+  currency       String
+  exchangeRate   Float
+  totalFinal     Float
+  totalUSD       Float
+
+  addressId      String?
+  address        Address?       @relation(fields: [addressId], references: [id])
+
+  user           User           @relation(fields: [userId], references: [id])
+
+  items          OrderItem[]
+  payments       Payment[]
+}
+
+model OrderItem {
+  id               String         @id @default(uuid())
+  orderId          String
+  quantity         Int
+  price            Float
+  productVariantId String
+  createdAt        DateTime       @default(now())
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+}
+
+model Payment {
+
+  id            String   @id @default(uuid())
+
+  orderId       String
+
+  order         Order    @relation(fields:[orderId], references:[id])
+
+  transactionId String?   @unique
+
+  amount        Float
+
+  currency      String    @default("LKR")
+
+  paymentMethod PaymentMethod @default(CASH)
+
+  gateway       String?
+
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  notes         String?
+
+  rawWebhookLog String?
+
+  paidAt        DateTime?
+
+  refunds Refund[]
+
+  createdAt     DateTime  @default(now())
+
+  updatedAt     DateTime  @updatedAt
+}
+
+model Refund {
+  id            String   @id @default(uuid())
+
+  paymentId     String
+  payment       Payment  @relation(fields: [paymentId], references: [id])
+
+  transactionId String   @unique
+
+  amount        Float
+
+  reason        String?
+
+  status        RefundStatus @default(PENDING)
+
+  createdBy     String?
+
+  createdAt     DateTime @default(now())
+
+  updatedAt     DateTime @updatedAt
+}
+
+
+model Address {
+  id         String   @id @default(uuid())
+  userId     String
+  street     String
+  city       String
+  province   String?
+  postalCode String?
+  country    String   @default("Sri Lanka")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  fullName   String
+  phone      String
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+  orders     Order[]
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id               String         @id @default(uuid())
+  cartId           String
+  quantity         Int            @default(1)
+  createdAt        DateTime       @default(now())
+  productVariantId String
+  cart             Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+}
+
+model Wishlist {
+  id        String         @id @default(uuid())
+  userId    String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+}
+
+model WishlistItem {
+  id               String         @id @default(uuid())
+  wishlistId       String
+  productVariantId String
+  createdAt        DateTime       @default(now())
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  wishlist         Wishlist       @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productVariantId])
+}
+
+model Warehouse {
+  id        String      @id @default(uuid())
+  name      String
+  location  String
+  inventory Inventory[]
+}
+
+model Inventory {
+  id               String                 @id @default(uuid())
+  warehouseId      String
+  quantity         Int                    @default(0)
+  productVariantId String
+  minStockLevel    Int                    @default(10)
+  productVariant   ProductVariant         @relation(fields: [productVariantId], references: [id])
+  warehouse        Warehouse              @relation(fields: [warehouseId], references: [id])
+  transactions     InventoryTransaction[]
+  stockAlerts      StockAlert[]
+
+  @@unique([warehouseId, productVariantId])
+}
+
+model InventoryTransaction {
+  id          String          @id @default(uuid())
+  inventoryId String
+  type        TransactionType
+  quantity    Int
+  createdAt   DateTime        @default(now())
+  inventory   Inventory       @relation(fields: [inventoryId], references: [id])
+}
+
+model StockAlert {
+  id          String     @id @default(uuid())
+  message     String
+  isResolved  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  inventoryId String?
+  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+}
+
+model Farmer {
+  id        String   @id @default(uuid())
+  fullName  String
+  createdAt DateTime @default(now())
+  farms     Farm[]
+}
+
+model Farm {
+  id        String   @id @default(uuid())
+  farmName  String
+  location  String
+  farmerId  String
+  createdAt DateTime @default(now())
+  batches   Batch[]
+  farmer    Farmer   @relation(fields: [farmerId], references: [id])
+}
+
+model Batch {
+  id           String              @id @default(uuid())
+  batchNumber  String              @unique
+  harvestDate  DateTime
+  farmId       String
+  createdAt    DateTime            @default(now())
+  farm         Farm                @relation(fields: [farmId], references: [id])
+  certificates Certificate[]
+  traceability TraceabilityRecord?
+}
+
+model TraceabilityRecord {
+  id         String  @id @default(uuid())
+  farmOrigin String
+  qrCode     String?
+  batchId    String  @unique
+  batch      Batch   @relation(fields: [batchId], references: [id])
+}
+
+model Certificate {
+  id              String   @id @default(uuid())
+  certificateName String
+  certificateNo   String
+  batchId         String
+  createdAt       DateTime @default(now())
+  batch           Batch    @relation(fields: [batchId], references: [id])
+}
+
+model TaxRate {
+  id        String   @id @default(cuid())
+  country   String
+  taxName   String
+  rate      Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id                String        @id @default(uuid())
+  code              String        @unique
+  description       String?
+  discountType      DiscountType
+  discountValue     Float
+  minOrderAmount    Float?
+  maxDiscountAmount Float?
+  startDate         DateTime
+  endDate           DateTime
+  usageLimit        Int?
+  usedCount         Int           @default(0)
+  perUserLimit      Int?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  histories         CouponUsage[]
+}
+
+model CouponUsage {
+  id       String   @id @default(uuid())
+  userId   String
+  couponId String
+  orderId  String?
+  usedAt   DateTime @default(now())
+  coupon   Coupon   @relation(fields: [couponId], references: [id])
+
+  @@index([userId])
+  @@index([couponId])
+}
+
+model WholesaleBuyer {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  phone          String?
+  password       String
+  isVerified     Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  tier           BuyerTier       @default(BRONZE)
+  bulkOrders     BulkOrder[]
+  companyProfile CompanyProfile?
+  rfqs           RFQ[]
+}
+
+model CompanyProfile {
+  id             String         @id @default(cuid())
+  companyName    String
+  registrationNo String
+  country        String
+  address        String
+  taxNumber      String?
+  website        String?
+  buyerId        String         @unique
+  buyer          WholesaleBuyer @relation(fields: [buyerId], references: [id])
+}
+
+model RFQ {
+  id          String         @id @default(cuid())
+  buyerId     String
+  status      String         @default("PENDING")
+  createdAt   DateTime       @default(now())
+  quoteNote   String?
+  quotedAt    DateTime?
+  quotedPrice Float?
+  
+  // BulkOrder Relation (Relation key இங்கே வேண்டாம், BulkOrder பக்கம் வைக்கலாம்)
+  bulkOrderId String?        @unique
+  bulkOrder   BulkOrder?     @relation(fields: [bulkOrderId], references: [id])
+
+  buyer       WholesaleBuyer @relation(fields: [buyerId], references: [id])
+  items       RFQItem[]
+}
+
+model RFQItem {
+  id        String @id @default(cuid())
+  rfqId     String
+  productId String
+  quantity  Int
+  rfq       RFQ    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+}
+
+model BulkOrder {
+  id             String                   @id @default(cuid())
+  buyerId        String
+  status         String                   @default("PENDING")
+  createdAt      DateTime                 @default(now())
+  rfqId          String                   @unique
+  totalAmount    Float
+  updatedAt      DateTime                 @updatedAt
+  paidAt         DateTime?
+  paymentMethod  String?
+  paymentStatus  String                   @default("UNPAID")
+  transactionId  String?
+  
+  // Relations
+  buyer          WholesaleBuyer           @relation(fields: [buyerId], references: [id])
+  items          BulkOrderItem[]
+  statusHistory  BulkOrderStatusHistory[]
+  exportDocument ExportDocument?
+  invoice        ExportInvoice?
+  shipment       Shipment?
+
+  // RFQ உடன் Back-relation (இங்கிருந்து RFQ[] நீக்கப்பட்டுள்ளது)
+  RFQ            RFQ?
+}
+
+model BulkOrderItem {
+  id          String    @id @default(cuid())
+  productId   String
+  quantity    Int
+  price       Float?    // Optional ஆக மாற்றப்பட்டுள்ளது (RFQ-ல் price இல்லாவிட்டால் error வராது)
+  totalPrice  Float?
+  bulkOrderId String
+  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
+}
+
+model BulkOrderStatusHistory {
+  id             String    @id @default(cuid())
+  bulkOrderId    String
+  previousStatus String
+  currentStatus  String
+  remarks        String?
+  changedBy      String?
+  createdAt      DateTime  @default(now())
+  bulkOrder      BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
+}
+
+model ExportInvoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  bulkOrderId   String    @unique
+  invoiceDate   DateTime  @default(now())
+  subtotal      Float
+  tax           Float     @default(0)
+  shippingCost  Float     @default(0)
+  totalAmount   Float
+  currency      String    @default("USD")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bulkOrder     BulkOrder @relation(fields: [bulkOrderId], references: [id])
+}
+
+model ExportDocument {
+  id                  String    @id @default(cuid())
+  bulkOrderId         String    @unique
+  commercialInvoice   Boolean   @default(false)
+  packingList         Boolean   @default(false)
+  certificateOfOrigin Boolean   @default(false)
+  billOfLading        String?
+  customsReference    String?
+  status              String    @default("PENDING")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  bulkOrder           BulkOrder @relation(fields: [bulkOrderId], references: [id])
+}
+
+model Shipment {
+  id              String    @id @default(cuid())
+  shipmentNumber  String    @unique
+  bulkOrderId     String    @unique
+  shippingLine    String
+  containerNumber String?
+  vesselName      String?
+  trackingNumber  String?
+  portOfLoading   String
+  destinationPort String
+  etd             DateTime?
+  eta             DateTime?
+  status          String    @default("BOOKED")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  bulkOrder       BulkOrder @relation(fields: [bulkOrderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation("ProductReviews", fields: [productId], references: [id])
+  user      User     @relation("UserReviews", fields: [userId], references: [id])
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String?
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation("ProductQuestions", fields: [productId], references: [id])
+  user      User     @relation("UserQuestions", fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  description String?
+  entityId    String?
+  module      String
+  userAgent   String?
+  userEmail   String?
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SavedPaymentMethod {
+  id                    String   @id @default(uuid())
+  userId                String
+  cardHolderName        String?
+  cardLast4             String
+  expiryMonth           Int?
+  expiryYear            Int?
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  brand                 String
+  stripePaymentMethodId String?
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  note       String
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer   User @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  category    ExpenseCategory
+  description String
+  amount      Float
+  currency    String          @default("LKR")
+  expenseDate DateTime        @default(now())
+  reference   String?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 enum Role {
@@ -25,71 +718,6 @@ enum BuyerTier {
   DISTRIBUTOR
 }
 
-// 👤 பயனர் அட்டவணை (User Model) - திருத்தப்பட்டது
-model User {
-  id           String  @id @default(uuid())
-  email        String  @unique
-  passwordHash String
-  fullName     String
-  phone        String?
-  profileImage String?
-
-  // 🚀 சரி செய்யப்பட்டது: ஒரே ஒரு role புலம், சரியான UserRole enum உடன்
-  role UserRole @default(CUSTOMER)
-
-  // Account Status
-  isActive   Boolean @default(false)
-  isVerified Boolean @default(false)
-
-  // Legacy Email Verification (optional)
-  verificationToken String?
-
-  // OTP Verification
-  verificationOtp String?
-  otpExpiresAt    DateTime?
-  otpLastSentAt   DateTime?
-
-  // Security Protection
-  otpAttempts         Int @default(0)
-  failedLoginAttempts Int @default(0)
-
-  otpLockedUntil     DateTime?
-  accountLockedUntil DateTime?
-
-  passwordResetToken  String?
-  passwordResetExpire DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  addresses Address[]
-  orders    Order[]
-  sessions  UserSession[]
-  auditLogs AuditLog[]
-
-  cart       Cart?
-  wishlist   Wishlist?
-  reviews    Review[]             @relation("UserReviews")
-  questions  Question[]           @relation("UserQuestions")
-  savedCards SavedPaymentMethod[]
-}
-
-// 🔒 செக்யூரிட்டி செஷன்ஸ் (Zero Trust Session Tracking)
-model UserSession {
-  id            String   @id @default(uuid())
-  userId        String
-  token         String   @unique
-  ipAddress     String?
-  userAgent     String?
-  isRiskFlagged Boolean  @default(false)
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// 🔑 பயனர் பாத்திரங்கள் (User Roles)
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -108,140 +736,6 @@ enum ProductStatus {
   ARCHIVED
 }
 
-// 📦 தயாரிப்புகள் (Product Catalog)
-model Product {
-  id          String @id @default(uuid())
-  name        String
-  slug        String @unique
-  description String
-  categoryId  String
-
-  moq         Int           @default(1)
-  isActive    Boolean       @default(true)
-  status      ProductStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  // relations
-  category  Category         @relation(fields: [categoryId], references: [id])
-  variants  ProductVariant[] // 🆕 Variants உடன் தொடர்பு
-  images    ProductImage[]
-  videos    ProductVideo[]
-  reviews   Review[]         @relation("ProductReviews")
-  questions Question[]       @relation("ProductQuestions")
-}
-
-model CurrencyRate {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  rate      Float
-  updatedAt DateTime @updatedAt
-}
-
-// 🆕 Variants மாடல் (இங்குதான் SKU மற்றும் Stock இருக்கும்)
-model ProductVariant {
-  id        String  @id @default(uuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  sku       String @unique
-  weight    String // எ.கா: "50g", "100g"
-  price     Float // தற்போதைய basePrice-க்கு பதில்
-  costPrice Float  @default(0.0)
-  stock     Int    @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // relations
-  orderItems    OrderItem[]
-  cartItems     CartItem[]
-  inventory     Inventory[]
-  wishlistItems WishlistItem[]
-}
-
-model ProductImage {
-  id        String   @id @default(uuid())
-  productId String
-  url       String
-  publicId  String?
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-model ProductVideo {
-  id        String  @id @default(uuid())
-  productId String
-  url       String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-model Category {
-  id       String    @id @default(uuid())
-  name     String
-  slug     String    @unique
-  products Product[]
-}
-
-// 🛒 ஆர்டர் மற்றும் பரிவர்த்தனைகள் (Orders & Commerce Engine)
-model Order {
-  id String @id @default(uuid())
-
-  userId    String
-  addressId String?
-
-  user User @relation(fields: [userId], references: [id])
-
-  address Address? @relation(fields: [addressId], references: [id])
-
-  totalUSD     Float
-  currency     String
-  exchangeRate Float
-  totalFinal   Float
-
-  taxAmount    Float @default(0)
-  shippingCost Float @default(0)
-
-  paymentStatus PaymentStatus @default(UNPAID)
-  paymentMethod String?
-
-  payments Payment[]
-
-  status         OrderStatus    @default(PENDING)
-  shippingStatus ShippingStatus @default(PENDING)
-
-  trackingId String?
-
-  items OrderItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// 🛒 OrderItem (இனி Variant-ஐச் சார்ந்தது)
-model OrderItem {
-  id String @id @default(uuid())
-
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  productVariantId String
-  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-
-  // =========================
-  // 💰 PRICE SNAPSHOT (IMPORTANT)
-  // =========================
-  quantity Int
-  price    Float
-
-  // =========================
-  // 🕒 OPTIONAL AUDIT (GOOD PRACTICE)
-  // =========================
-  createdAt DateTime @default(now())
-}
-
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -253,9 +747,21 @@ enum OrderStatus {
 
 enum PaymentStatus {
   UNPAID
+  PARTIAL
   PAID
+  VOIDED
   REFUNDED
+  REVERSED
   FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  CHEQUE
+  PAYHERE
+  STRIPE
 }
 
 enum ShippingStatus {
@@ -267,261 +773,10 @@ enum ShippingStatus {
   DELIVERED
 }
 
-model Payment {
-  id String @id @default(uuid())
-
-  orderId String
-
-  transactionId String @unique
-
-  amount Float
-
-  gateway String
-
-  status String @default("PENDING")
-
-  currency String @default("USD")
-
-  rawWebhookLog String?
-
-  createdAt DateTime @default(now())
-
-  order Order @relation(fields: [orderId], references: [id])
-}
-
-model Address {
-  id         String   @id @default(uuid()) // அல்லது @default(autoincrement()) உங்கள் பழைய கோடில் உள்ளபடி
-  userId     String
-  fullName   String // 👈 இதைப் புதிதாகச் சேர்க்கவும்
-  phone      String // 👈 இதைப் புதிதாகச் சேர்க்கவும்
-  street     String
-  city       String
-  province   String?
-  postalCode String?
-  country    String   @default("Sri Lanka")
-  isDefault  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  user   User    @relation(fields: [userId], references: [id])
-  orders Order[]
-}
-
-model Cart {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
-}
-
-// 🛒 CartItem (இனி Variant-ஐச் சார்ந்தது)
-model CartItem {
-  id               String @id @default(uuid())
-  cartId           String
-  productVariantId String // 🆕 productId-க்கு பதில்
-  quantity         Int    @default(1)
-
-  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-// ❤️ Wishlist
-model Wishlist {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items WishlistItem[]
-}
-
-// ❤️ Wishlist Items
-model WishlistItem {
-  id               String @id @default(uuid())
-  wishlistId       String
-  productVariantId String
-
-  wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
-
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@unique([wishlistId, productVariantId])
-}
-
-// 🏢 Warehouse Management
-model Warehouse {
-  id        String      @id @default(uuid())
-  name      String
-  location  String
-  inventory Inventory[]
-}
-
-// 📦 Inventory மாடல் திருத்தம்
-model Inventory {
-  id String @id @default(uuid())
-
-  warehouseId      String
-  productVariantId String
-
-  quantity      Int @default(0)
-  minStockLevel Int @default(10)
-
-  // Relations
-  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-
-  transactions InventoryTransaction[]
-  stockAlerts  StockAlert[]
-
-  // Ensure one inventory record per product per warehouse
-  @@unique([warehouseId, productVariantId])
-}
-
-// 🔄 Inventory Transactions (இருப்பு மாற்றம் - வரவு/செலவு)
-model InventoryTransaction {
-  id          String          @id @default(uuid())
-  inventoryId String
-  type        TransactionType // Enum: STOCK_IN, STOCK_OUT, ADJUSTMENT
-  quantity    Int
-  createdAt   DateTime        @default(now())
-
-  inventory Inventory @relation(fields: [inventoryId], references: [id])
-}
-
-// ⚠️ Stock Alerts
-model StockAlert {
-  id          String   @id @default(uuid())
-  inventoryId String?
-  message     String
-  isResolved  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  inventory Inventory? @relation(fields: [inventoryId], references: [id])
-}
-
 enum TransactionType {
   STOCK_IN
   STOCK_OUT
   ADJUSTMENT
-}
-
-model Farmer {
-  id        String   @id @default(uuid())
-  fullName  String
-  farms     Farm[]
-  createdAt DateTime @default(now())
-}
-
-model Farm {
-  id       String @id @default(uuid())
-  farmName String
-  location String
-
-  farmerId String
-  farmer   Farmer @relation(fields: [farmerId], references: [id])
-
-  batches Batch[]
-
-  createdAt DateTime @default(now())
-}
-
-model Batch {
-  id          String   @id @default(uuid())
-  batchNumber String   @unique
-  harvestDate DateTime
-
-  farmId String
-  farm   Farm   @relation(fields: [farmId], references: [id])
-
-  traceability TraceabilityRecord?
-  certificates Certificate[]
-
-  createdAt DateTime @default(now())
-}
-
-model TraceabilityRecord {
-  id         String  @id @default(uuid())
-  farmOrigin String
-  qrCode     String?
-
-  batchId String @unique
-  batch   Batch  @relation(fields: [batchId], references: [id])
-}
-
-model Certificate {
-  id              String @id @default(uuid())
-  certificateName String
-  certificateNo   String
-
-  batchId String
-  batch   Batch  @relation(fields: [batchId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model TaxRate {
-  id String @id @default(cuid())
-
-  country String
-  taxName String
-  rate    Float
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Coupon {
-  id   String @id @default(uuid())
-  code String @unique
-
-  description String?
-
-  discountType  DiscountType
-  discountValue Float
-
-  minOrderAmount    Float?
-  maxDiscountAmount Float?
-
-  startDate DateTime
-  endDate   DateTime
-
-  usageLimit Int?
-  usedCount  Int  @default(0)
-
-  perUserLimit Int?
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  histories CouponUsage[]
-}
-
-model CouponUsage {
-  id String @id @default(uuid())
-
-  userId   String
-  couponId String
-
-  orderId String?
-
-  usedAt DateTime @default(now())
-
-  coupon Coupon @relation(fields: [couponId], references: [id])
-
-  @@index([userId])
-  @@index([couponId])
 }
 
 enum DiscountType {
@@ -530,292 +785,20 @@ enum DiscountType {
   FREE_SHIPPING
 }
 
-model WholesaleBuyer {
-  id         String  @id @default(cuid())
-  name       String
-  email      String  @unique
-  phone      String?
-  password   String
-  isVerified Boolean @default(false)
-
-  tier BuyerTier @default(BRONZE)
-
-  companyProfile CompanyProfile?
-
-  rfqs       RFQ[]
-  bulkOrders BulkOrder[]
-
-  createdAt DateTime @default(now())
+enum RefundStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
 
-model CompanyProfile {
-  id String @id @default(cuid())
-
-  companyName    String
-  registrationNo String
-  country        String
-  address        String
-
-  taxNumber String?
-  website   String?
-
-  buyerId String         @unique
-  buyer   WholesaleBuyer @relation(fields: [buyerId], references: [id])
-}
-
-model RFQ {
-  id String @id @default(cuid())
-
-  buyerId String
-  buyer   WholesaleBuyer @relation(fields: [buyerId], references: [id])
-
-  status String @default("PENDING")
-
-  quotedPrice Float?
-  quoteNote   String?
-  quotedAt    DateTime?
-
-  createdAt DateTime @default(now())
-
-  items RFQItem[]
-
-  bulkOrder   BulkOrder? @relation(fields: [bulkOrderId], references: [id])
-  bulkOrderId String?
-}
-
-model RFQItem {
-  id String @id @default(cuid())
-
-  rfqId String
-  rfq   RFQ    @relation(fields: [rfqId], references: [id])
-
-  productId String
-  quantity  Int
-}
-
-model BulkOrder {
-  id String @id @default(cuid())
-
-  buyerId String
-  buyer   WholesaleBuyer @relation(fields: [buyerId], references: [id])
-
-  rfqId String @unique
-
-  status String @default("PENDING")
-
-  totalAmount Float
-
-  paymentStatus String @default("UNPAID")
-
-  paymentMethod String?
-
-  paidAt DateTime?
-
-  transactionId String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  items BulkOrderItem[]
-
-  statusHistory BulkOrderStatusHistory[]
-
-  invoice ExportInvoice?
-
-  exportDocument ExportDocument?
-
-  shipment Shipment?
-
-  RFQ RFQ[]
-}
-
-model BulkOrderItem {
-  id String @id @default(cuid())
-
-  bulkOrderId String
-  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
-
-  productId String
-  quantity  Int
-  price     Float
-
-  totalPrice Float?
-}
-
-model BulkOrderStatusHistory {
-  id String @id @default(cuid())
-
-  bulkOrderId String
-  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
-
-  previousStatus String
-  currentStatus  String
-
-  remarks String?
-
-  changedBy String?
-
-  createdAt DateTime @default(now())
-}
-
-model ExportInvoice {
-  id String @id @default(cuid())
-
-  invoiceNumber String @unique
-
-  bulkOrderId String    @unique
-  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
-
-  invoiceDate DateTime @default(now())
-
-  subtotal     Float
-  tax          Float @default(0)
-  shippingCost Float @default(0)
-
-  totalAmount Float
-
-  currency String @default("USD")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ExportDocument {
-  id String @id @default(cuid())
-
-  bulkOrderId String    @unique
-  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
-
-  commercialInvoice Boolean @default(false)
-
-  packingList Boolean @default(false)
-
-  certificateOfOrigin Boolean @default(false)
-
-  billOfLading String?
-
-  customsReference String?
-
-  status String @default("PENDING")
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-}
-
-model Shipment {
-  id String @id @default(cuid())
-
-  shipmentNumber String @unique
-
-  bulkOrderId String    @unique
-  bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id])
-
-  shippingLine String
-
-  containerNumber String?
-
-  vesselName String?
-
-  trackingNumber String?
-
-  portOfLoading String
-
-  destinationPort String
-
-  etd DateTime?
-
-  eta DateTime?
-
-  status String @default("BOOKED")
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-}
-
-model Review {
-  id      String  @id @default(uuid())
-  rating  Int
-  comment String?
-
-  userId    String
-  productId String
-
-  // 👈 கீழே உள்ள இரண்டு வரிகளிலும் @relation("...") பெயர் சேர்க்கப்பட்டுள்ளது
-  user    User    @relation("UserReviews", fields: [userId], references: [id])
-  product Product @relation("ProductReviews", fields: [productId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Question {
-  id String @id @default(uuid())
-
-  question String
-  answer   String?
-
-  userId    String
-  productId String
-
-  user    User    @relation("UserQuestions", fields: [userId], references: [id])
-  product Product @relation("ProductQuestions", fields: [productId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AuditLog {
-  id String @id @default(cuid())
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  userEmail String?
-
-  action String
-
-  module String
-
-  entityId String?
-
-  description String?
-
-  ipAddress String?
-
-  userAgent String?
-
-  createdAt DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  title     String
-  message   String
-  type      String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model SavedPaymentMethod {
-  id String @id @default(uuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Stripe மற்றும் Card தகவல்கள்
-  brand                 String
-  cardLast4             String
-  stripePaymentMethodId String? // Stripe Tokenization-க்காக இது அவசியம்
-
-  // தேவைப்பட்டால் இந்த தகவல்களை வைத்துக்கொள்ளலாம்
-  cardHolderName String?
-  expiryMonth    Int?
-  expiryYear     Int?
-
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum ExpenseCategory {
+  PRODUCT_COST
+  PACKAGING
+  PETROL
+  SALARY
+  MAINTENANCE
+  FINANCE
+  SHIPPING
+  MARKETING
+  OTHER
 }

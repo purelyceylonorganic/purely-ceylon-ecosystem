@@ -26,15 +26,20 @@ export default function OrderTracking() {
   }, [id]);
 
   async function loadOrder(orderId: string) {
-    try {
-      const response = await orderService.getOrder(orderId);
-      setOrder(response.order || response.data || response);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  try {
+    const response = await orderService.getOrderDetails(orderId);
+
+    console.log("Tracking Order Response:", response);
+
+    setOrder(response);
+
+  } catch (error) {
+    console.error("Tracking Error:", error);
+    setOrder(null);
+  } finally {
+    setLoading(false);
   }
+}
 
   if (loading) {
     return (

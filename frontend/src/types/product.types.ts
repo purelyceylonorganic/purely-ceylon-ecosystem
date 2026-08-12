@@ -33,6 +33,7 @@ export interface Product {
   image: string;        // இதையும் சேர்க்கவும்
   rating: number;       // இதையும் சேர்க்கவும்
   status: string;
+  featured: boolean;
   categoryId:string;
   moq:number;
   basePrice: number;

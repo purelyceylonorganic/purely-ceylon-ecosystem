@@ -7,53 +7,88 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
+  // Email OR Phone
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setLoading(true);
-
-      const response = await authService.login(email, password);
-
-      console.log("Login Response:", response);
-
-      // ✅ Save JWT Token
-      login(response.token);
-
-      // ✅ Verify Token Saved
-      console.log(
-        "Saved Token:",
-        localStorage.getItem("token")
-      );
-
-      alert("✅ Login Successful");
-
-      login(response.token);
-
-const role = response.user.role;
-
-if (role === "SUPER_ADMIN" || role === "ADMIN") {
-  navigate("/admin/dashboard");
-} else {
-  navigate("/products");
-}
-
-    } catch (error: any) {
-      console.error(error);
-
-      alert(
-        error?.response?.data?.message ||
-          "Login Failed"
-      );
-    } finally {
-      setLoading(false);
-    }
+  if (!identifier.trim() || !password) {
+    alert("Please enter your Email/Phone and Password");
+    return;
   }
+
+  try {
+    setLoading(true);
+
+    // ✅ Email OR Phone + Password
+    const response = await authService.login(
+      identifier.trim(),
+      password
+    );
+
+    console.log("Login Response:", response);
+
+    // ==========================================
+    // ✅ SAVE JWT TOKEN
+    // ==========================================
+
+    login(response.token);
+
+    console.log(
+      "Saved Token:",
+      localStorage.getItem("token")
+    );
+
+    // ==========================================
+    // 🔐 FORCE PASSWORD CHANGE
+    // ==========================================
+
+    if (
+      response.user?.mustChangePassword === true
+    ) {
+      navigate("/change-password", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    // ==========================================
+    // ✅ NORMAL LOGIN
+    // ==========================================
+
+    alert("✅ Login Successful");
+
+    const role = response.user.role;
+
+    if (
+      role === "SUPER_ADMIN" ||
+      role === "ADMIN"
+    ) {
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
+    } else {
+      navigate("/products", {
+        replace: true,
+      });
+    }
+
+  } catch (error: any) {
+    console.error("Login Error:", error);
+
+    alert(
+      error?.response?.data?.message ||
+        "Login Failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <div
@@ -88,14 +123,20 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
       </p>
 
       <form onSubmit={handleLogin}>
+
+        {/* Email OR Phone */}
         <div style={{ marginBottom: "20px" }}>
-          <label>Email</label>
+          <label>
+            Email or Phone Number
+          </label>
 
           <input
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Enter email or phone number"
+            value={identifier}
+            onChange={(e) =>
+              setIdentifier(e.target.value)
+            }
             style={{
               width: "100%",
               padding: "15px",
@@ -103,10 +144,12 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
               border: "1px solid #ddd",
               marginTop: "8px",
               fontSize: "16px",
+              boxSizing: "border-box",
             }}
           />
         </div>
 
+        {/* Password */}
         <div style={{ marginBottom: "30px" }}>
           <label>Password</label>
 
@@ -114,7 +157,9 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
             type="password"
             placeholder="Enter password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             style={{
               width: "100%",
               padding: "15px",
@@ -122,11 +167,17 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
               border: "1px solid #ddd",
               marginTop: "8px",
               fontSize: "16px",
+              boxSizing: "border-box",
             }}
           />
 
-          {/* Forgot Password Link - சேர்க்கப்பட்டது */}
-          <div style={{ marginTop: "10px", textAlign: "right" }}>
+          {/* Forgot Password */}
+          <div
+            style={{
+              marginTop: "10px",
+              textAlign: "right",
+            }}
+          >
             <Link
               to="/forgot-password"
               style={{
@@ -141,6 +192,7 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
           </div>
         </div>
 
+        {/* Login Button */}
         <button
           type="submit"
           disabled={loading}
@@ -151,12 +203,17 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
             color: "#fff",
             border: "none",
             borderRadius: "10px",
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
             fontSize: "18px",
             fontWeight: "bold",
+            opacity: loading ? 0.7 : 1,
           }}
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading
+            ? "Logging in..."
+            : "Login"}
         </button>
       </form>
 
@@ -168,6 +225,7 @@ if (role === "SUPER_ADMIN" || role === "ADMIN") {
         }}
       >
         Don't have an account?{" "}
+
         <Link
           to="/register"
           style={{

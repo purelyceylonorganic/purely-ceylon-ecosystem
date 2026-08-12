@@ -1,82 +1,210 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PaymentService } from '../services/payment.service';
 
-const prisma = new PrismaClient();
-
-// 💳 CREATE PAYMENT (உறுதிப்படுத்தப்பட்ட ஒருங்கிணைந்த கன்ட்ரோலர்)
+// 💳 CREATE PAYMENT (Unified & Cleaned Controller)
 export const createPayment = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { orderId, gateway, paymentMethod } = req.body;
+    const { orderId, amount, gateway, paymentMethod } = req.body;
 
-    // input-ல் எந்தப் பெயர் வந்தாலும் பயன்படுத்திக் கொள்ளும் வசதி
-    const selectedGateway = gateway || paymentMethod || 'UNKNOWN_GATEWAY';
+    const selectedGateway = (gateway || 'CASH').toUpperCase();
+    const selectedMethod = (paymentMethod || selectedGateway).toUpperCase();
+    const paidAmount = parseFloat(amount);
 
-    // ✅ 1. Find Order (ஆர்டர் இருக்கிறதா என சரிபார்த்தல்)
-    const order = await prisma.order.findFirst({
-      where: {
-        id: orderId,
-        userId: user.userId
-      }
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: '❌ Order not found'
-      });
-    }
-
-    // ✅ 2. Already Paid Check (ஏற்கனவே பணம் செலுத்தப்பட்டதா என சரிபார்த்தல்)
-    if (order.paymentStatus === 'PAID') {
+    if (!orderId || isNaN(paidAmount) || paidAmount <= 0) {
       return res.status(400).json({
         success: false,
-        message: '✅ Order already paid'
+        message: '❌ Invalid orderId or payment amount'
       });
     }
 
-    // ✅ 3. Create Payment Record (பணம் செலுத்தியதற்கான தரவை உருவாக்குதல்)
-    const transactionId = 'TXN-' + Date.now();
-    await prisma.payment.create({
-      data: {
-        orderId: order.id,
-        transactionId: transactionId,
-        amount: order.totalFinal,
-        gateway: selectedGateway,
-      }
-    });
+    // Call service to process manual/offline/pos payment with audit details
+    const result = await PaymentService.processManualPayment(
+      orderId,
+      paidAmount,
+      selectedGateway,
+      selectedMethod,
+      user?.userId || user?.id,
+      user?.email,
+      req.ip,
+      req.headers['user-agent']
+    );
 
-    // ✅ 4. Update Order Payment Status (ஆர்டர் நிலையை மாற்றுதல்)
-    await prisma.order.update({
-      where: {
-        id: order.id
-      },
-      data: {
-        paymentStatus: 'PAID'
-      },
-      include: {
-        user: true // schema-வில் wholesaleBuyer என இருந்தால் அதை மாற்றிக்கொள்ளவும்
-      }
-    });
-
-    // ✅ 5. Unified Success Response (ஒருங்கிணைக்கப்பட்ட பதில்)
     return res.status(200).json({
       success: true,
       message: '🎉 Payment successfully processed',
       data: {
-        orderId: order.id,
-        transactionId,
-        amount: order.totalFinal,
-        paymentMethod: selectedGateway,
-        paymentUrl: '/payment-success'
+        orderId: result.updatedOrder.id,
+        transactionId: result.payment.transactionId,
+        amountPaid: result.payment.amount,
+        totalFinal: result.updatedOrder.totalFinal,
+        paidAmount: result.updatedOrder.paidAmount,
+        balance: result.updatedOrder.balance,
+        paymentStatus: result.updatedOrder.paymentStatus,
+        paymentMethod: result.payment.paymentMethod,
+        gateway: result.payment.gateway,
       }
     });
 
   } catch (error: any) {
     console.error('❌ Payment Error:', error);
-    return res.status(500).json({
+    return res.status(400).json({
       success: false,
       message: error.message || '❌ Payment failed internal server error'
     });
+  }
+};
+
+// 📜 GET PAYMENT HISTORY
+export const getOrderPayments = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const payments = await PaymentService.getPaymentHistory(orderId);
+    
+    return res.status(200).json({
+      success: true,
+      data: payments
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// 💰 REFUND PAYMENT
+export const refundPayment = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+
+    const { paymentId } = req.params;
+
+    const {
+      amount,
+      reason
+    } = req.body;
+
+    const user = (req as any).user;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid refund amount",
+      });
+    }
+
+    if (!reason?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Refund reason is required",
+      });
+    }
+
+    const result =
+      await PaymentService.refundPayment(
+        paymentId,
+        Number(amount),
+        reason,
+        user?.id
+      );
+
+    return res.json({
+      success: true,
+      message: "Refund completed successfully",
+      data: result,
+    });
+
+  } catch (error: any) {
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+};
+// ==========================================
+// 🔄 REVERSE PAYMENT
+// ==========================================
+
+export const reversePayment = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { paymentId } = req.params;
+    const { reason } = req.body;
+
+    const user = (req as any).user;
+
+    if (!reason || reason.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Reverse reason is required.",
+      });
+    }
+
+    const result = await PaymentService.reversePayment(
+      paymentId,
+      reason,
+      user?.userId
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment reversed successfully.",
+      data: result,
+    });
+
+  } catch (error: any) {
+
+    console.error(error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+};
+
+export const voidPayment = async (req: Request, res: Response) => {
+  try {
+
+    const { paymentId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Void reason is required"
+      });
+    }
+
+    const user = req as any;
+
+    const payment = await PaymentService.voidPayment(
+      paymentId,
+      reason,
+      user.user?.userId
+    );
+
+    return res.json({
+      success: true,
+      message: "Payment voided successfully",
+      data: payment
+    });
+
+  } catch (error: any) {
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
   }
 };

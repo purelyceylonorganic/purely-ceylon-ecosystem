@@ -182,3 +182,37 @@
     border-right-color: var(--border);
   }
 }
+
+.invoice{
+
+    background:white;
+
+}
+
+@media print{
+
+    body{
+
+        background:white;
+
+    }
+
+    .print\:hidden{
+
+        display:none !important;
+
+    }
+
+    .invoice{
+
+        width:210mm;
+
+        margin:0 auto;
+
+        box-shadow:none;
+
+        border:none;
+
+    }
+
+}

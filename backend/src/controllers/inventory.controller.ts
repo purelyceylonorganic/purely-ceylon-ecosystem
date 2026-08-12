@@ -17,79 +17,126 @@ export const addStock = async (req: Request, res: Response) => {
     if (!warehouseId || !productVariantId || qty <= 0) {
       return res.status(400).json({
         success: false,
-        message: "warehouseId, productVariantId and quantity are required",
+        message:
+          "warehouseId, productVariantId and quantity are required",
       });
     }
 
-    const warehouse = await prisma.warehouse.findUnique({
-      where: { id: warehouseId },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      // ============================
+      // CHECK WAREHOUSE
+      // ============================
 
-    if (!warehouse) {
-      return res.status(404).json({
-        success: false,
-        message: "Warehouse not found",
-      });
-    }
-
-    const productVariant = await prisma.productVariant.findUnique({
-      where: { id: productVariantId },
-    });
-
-    if (!productVariant) {
-      return res.status(404).json({
-        success: false,
-        message: "Product Variant not found",
-      });
-    }
-
-    let inventory = await prisma.inventory.findUnique({
-      where: {
-        warehouseId_productVariantId: {
-          warehouseId,
-          productVariantId,
+      const warehouse = await tx.warehouse.findUnique({
+        where: {
+          id: warehouseId,
         },
-      },
-    });
+      });
 
-    if (!inventory) {
-      inventory = await prisma.inventory.create({
+      if (!warehouse) {
+        throw new Error("Warehouse not found");
+      }
+
+      // ============================
+      // CHECK PRODUCT VARIANT
+      // ============================
+
+      const productVariant = await prisma.productVariant.findUnique({
+  where: {
+    id: productVariantId,
+  },
+});
+
+if (!productVariant) {
+  return res.status(404).json({
+    success: false,
+    message: "Product Variant not found",
+  });
+}
+
+      // ============================
+      // FIND / CREATE INVENTORY
+      // ============================
+
+      let inventory =
+        await tx.inventory.findUnique({
+          where: {
+            warehouseId_productVariantId: {
+              warehouseId,
+              productVariantId,
+            },
+          },
+        });
+
+      if (!inventory) {
+        inventory = await tx.inventory.create({
+          data: {
+            warehouseId,
+            productVariantId,
+            quantity: qty,
+          },
+        });
+      } else {
+        inventory = await tx.inventory.update({
+          where: {
+            id: inventory.id,
+          },
+          data: {
+            quantity: {
+              increment: qty,
+            },
+          },
+        });
+      }
+
+      // ============================
+      // UPDATE PRODUCT VARIANT STOCK
+      // ============================
+
+      const updatedProductVariant =
+        await tx.productVariant.update({
+          where: {
+            id: productVariantId,
+          },
+          data: {
+            stock: {
+              increment: qty,
+            },
+          },
+        });
+
+      // ============================
+      // CREATE TRANSACTION
+      // ============================
+
+      await tx.inventoryTransaction.create({
         data: {
-          warehouseId,
-          productVariantId,
+          inventoryId: inventory.id,
+          type: TransactionType.STOCK_IN,
           quantity: qty,
         },
       });
-    } else {
-      inventory = await prisma.inventory.update({
-        where: {
-          id: inventory.id,
-        },
-        data: {
-          quantity: inventory.quantity + qty,
-        },
-      });
-    }
 
-    await prisma.inventoryTransaction.create({
-      data: {
-        inventoryId: inventory.id,
-        type: TransactionType.STOCK_IN,
-        quantity: qty,
-      },
+      return {
+        inventory,
+        productVariant: updatedProductVariant,
+      };
     });
 
     return res.status(200).json({
       success: true,
       message: "Stock added successfully",
-      data: inventory,
+      data: result,
     });
   } catch (error) {
     console.error("Add Stock Error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Error adding stock",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Error adding stock",
     });
   }
 };
@@ -99,27 +146,75 @@ export const addStock = async (req: Request, res: Response) => {
 // ➖ REMOVE STOCK
 // ============================
 //
-export const removeStock = async (req: Request, res: Response) => {
+export const removeStock = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const { warehouseId, productVariantId, quantity } = req.body;
+    const {
+      warehouseId,
+      productVariantId,
+      quantity,
+    } = req.body;
 
     const qty = Number(quantity);
 
     if (!warehouseId || !productVariantId || qty <= 0) {
       return res.status(400).json({
         success: false,
-        message: "warehouseId, productVariantId and quantity are required",
+        message:
+          "warehouseId, productVariantId and quantity are required",
       });
     }
 
-    const inventory = await prisma.inventory.findUnique({
+    // ============================
+    // CHECK WAREHOUSE
+    // ============================
+
+    const warehouse = await prisma.warehouse.findUnique({
       where: {
-        warehouseId_productVariantId: {
-          warehouseId,
-          productVariantId,
-        },
+        id: warehouseId,
       },
     });
+
+    if (!warehouse) {
+      return res.status(404).json({
+        success: false,
+        message: "Warehouse not found",
+      });
+    }
+
+    // ============================
+    // CHECK PRODUCT VARIANT
+    // ============================
+
+    const productVariant =
+      await prisma.productVariant.findUnique({
+        where: {
+          id: productVariantId,
+        },
+      });
+
+    if (!productVariant) {
+      return res.status(404).json({
+        success: false,
+        message: "Product Variant not found",
+      });
+    }
+
+    // ============================
+    // FIND INVENTORY
+    // ============================
+
+    const inventory =
+      await prisma.inventory.findUnique({
+        where: {
+          warehouseId_productVariantId: {
+            warehouseId,
+            productVariantId,
+          },
+        },
+      });
 
     if (!inventory) {
       return res.status(404).json({
@@ -128,64 +223,134 @@ export const removeStock = async (req: Request, res: Response) => {
       });
     }
 
+    // ============================
+    // CHECK INVENTORY STOCK
+    // ============================
+
     if (inventory.quantity < qty) {
       return res.status(400).json({
         success: false,
-        message: "Not enough stock",
+        message: "Not enough inventory stock",
       });
     }
 
-    const updatedInventory = await prisma.inventory.update({
-      where: {
-        id: inventory.id,
-      },
-      data: {
-        quantity: inventory.quantity - qty,
-      },
-    });
+    // ============================
+    // CHECK PRODUCT VARIANT STOCK
+    // ============================
 
-    await prisma.inventoryTransaction.create({
-      data: {
-        inventoryId: inventory.id,
-        type: TransactionType.STOCK_OUT,
-        quantity: qty,
-      },
-    });
+    if (productVariant.stock < qty) {
+      return res.status(400).json({
+        success: false,
+        message: "Not enough product variant stock",
+      });
+    }
 
-    // Low Stock Alert
-    if (
-      updatedInventory.quantity <=
-      updatedInventory.minStockLevel
-    ) {
-      const existingAlert =
-        await prisma.stockAlert.findFirst({
-          where: {
-            inventoryId: inventory.id,
-            isResolved: false,
-          },
-        });
+    // ============================
+    // DATABASE TRANSACTION
+    // ============================
 
-      if (!existingAlert) {
-        await prisma.stockAlert.create({
+    const result = await prisma.$transaction(
+      async (tx) => {
+
+        // ============================
+        // UPDATE INVENTORY
+        // ============================
+
+        const updatedInventory =
+          await tx.inventory.update({
+            where: {
+              id: inventory.id,
+            },
+            data: {
+              quantity: {
+                decrement: qty,
+              },
+            },
+          });
+
+        // ============================
+        // UPDATE PRODUCT VARIANT STOCK
+        // ============================
+
+        const updatedProductVariant =
+          await tx.productVariant.update({
+            where: {
+              id: productVariantId,
+            },
+            data: {
+              stock: {
+                decrement: qty,
+              },
+            },
+          });
+
+        // ============================
+        // CREATE TRANSACTION
+        // ============================
+
+        await tx.inventoryTransaction.create({
           data: {
             inventoryId: inventory.id,
-            message: `Low stock alert: only ${updatedInventory.quantity} items left`,
+            type: TransactionType.STOCK_OUT,
+            quantity: qty,
           },
         });
+
+        // ============================
+        // LOW STOCK ALERT
+        // ============================
+
+        if (
+          updatedInventory.quantity <=
+          updatedInventory.minStockLevel
+        ) {
+          const existingAlert =
+            await tx.stockAlert.findFirst({
+              where: {
+                inventoryId: inventory.id,
+                isResolved: false,
+              },
+            });
+
+          if (!existingAlert) {
+            await tx.stockAlert.create({
+              data: {
+                inventoryId: inventory.id,
+                message: `Low stock alert: only ${updatedInventory.quantity} items left`,
+              },
+            });
+          }
+        }
+
+        return {
+          inventory: updatedInventory,
+          productVariant: updatedProductVariant,
+        };
       }
-    }
+    );
+
+    // ============================
+    // SUCCESS RESPONSE
+    // ============================
 
     return res.status(200).json({
       success: true,
       message: "Stock removed successfully",
-      data: updatedInventory,
+      data: result,
     });
+
   } catch (error) {
-    console.error("Remove Stock Error:", error);
+    console.error(
+      "Remove Stock Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Error removing stock",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Error removing stock",
     });
   }
 };
@@ -201,12 +366,21 @@ export const getInventory = async (
 ) => {
   try {
     const inventory = await prisma.inventory.findMany({
+  include: {
+    warehouse: true,
+    productVariant: {
       include: {
-        warehouse: true,
-        productVariant: true,
-        transactions: true,
+        product: {
+          include: {
+            category: true,
+            images: true,
+          },
+        },
       },
-    });
+    },
+    transactions: true,
+  },
+});
 
     return res.status(200).json({
       success: true,
@@ -234,11 +408,23 @@ export const getLowStock = async (
 ) => {
   try {
     const inventory = await prisma.inventory.findMany({
+  include: {
+    warehouse: true,
+
+    productVariant: {
       include: {
-        warehouse: true,
-        productVariant: true,
+        product: {
+          include: {
+            category: true,
+            images: true,
+          },
+        },
       },
-    });
+    },
+
+    transactions: true,
+  },
+});
 
     const lowStock = inventory.filter(
       (item: any) =>
@@ -271,14 +457,23 @@ export const getTransactions = async (
 ) => {
   try {
     const transactions =
-      await prisma.inventoryTransaction.findMany({
+  await prisma.inventoryTransaction.findMany({
+    include: {
+      inventory: {
         include: {
-          inventory: true,
+          warehouse: true,
+          productVariant: {
+            include: {
+              product: true,
+            },
+          },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
     return res.status(200).json({
       success: true,

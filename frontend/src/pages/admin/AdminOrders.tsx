@@ -88,7 +88,7 @@ export default function AdminOrders() {
                         ? "#0E4B32"
                         : order.status === "SHIPPED"
                         ? "#007bff"
-                        : order.status === "PROCESSING" || order.status === "PACKED"
+                        : order.status === "PROCESSING"
                         ? "#17a2b8"
                         : order.status === "CONFIRMED"
                         ? "#28a745"
@@ -132,7 +132,6 @@ export default function AdminOrders() {
                   <option value="PENDING">PENDING</option>
                   <option value="CONFIRMED">CONFIRMED</option>
                   <option value="PROCESSING">PROCESSING</option>
-                  <option value="PACKED">PACKED</option>
                   <option value="SHIPPED">SHIPPED</option>
                   <option value="DELIVERED">DELIVERED</option>
                   <option value="CANCELLED">CANCELLED</option>

@@ -18,15 +18,15 @@ export default function OrderDetails() {
   }, [id]);
 
   async function loadOrder(orderId: string) {
-    try {
-      const response = await orderService.getOrder(orderId);
-      setOrder(response.order);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  try {
+    const response = await orderService.getOrderDetails(orderId);
+    setOrder(response);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
   }
+}
 
   // Professional Invoice Generation Function
   function downloadInvoice() {

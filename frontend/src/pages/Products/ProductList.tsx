@@ -44,27 +44,33 @@ export default function ProductList() {
     try {
       setLoading(true);
 
-      let response;
+      // 🔒 Admin API-க்கு பதிலாக எப்போதும் Public API-ஐ மட்டுமே அழைக்க வேண்டும்
+      const response = await productService.getPublicProducts({
+        page: 1,
+        limit: 10,
+      });
 
-      if (search || selectedCategory) {
-        response = await productService.searchProducts({
-          name: search, // searchText என்பதற்கு பதிலாக search என மாற்றப்பட்டுள்ளது
-          categoryId: selectedCategory
-        });
-      } else {
-        response = await productService.getProducts({
-          page: 1,
-          limit: 10
-        });
+      // API-ல் இருந்து வரும் தரவு ஒரு Object-ஆக இருந்தால், அதில் உள்ள 'products' Array-ஐ எடுக்கிறோம்.
+      let data = Array.isArray(response) ? response : (response as any).products;
+      
+      let filteredData = data || [];
+
+      // Client-side search (தேடுதல்)
+      if (search) {
+        filteredData = filteredData.filter((p: Product) =>
+          p.name.toLowerCase().includes(search.toLowerCase())
+        );
       }
 
-      // API-ல் இருந்து வரும் தரவு ஒரு Object-ஆக இருந்தால், 
-      // அதில் உள்ள 'products' என்ற Array-ஐ மட்டும் எடுக்கிறோம்.
-      // ஒருவேளை உங்கள் API நேரடியாக array-ஐ அனுப்பினால், இது தானாகவே அதை கையாளும்.
-      const data = Array.isArray(response) ? response : (response as any).products;
-      
-      setProducts(data || []);
-      
+      // Client-side category filter (வகை வடிகட்டுதல்)
+      if (selectedCategory) {
+        filteredData = filteredData.filter(
+          (p: Product) => p.categoryId === selectedCategory
+        );
+      }
+
+      setProducts(filteredData);
+
     } catch (err) {
       console.error(err);
       setError("Products load செய்ய முடியவில்லை.");

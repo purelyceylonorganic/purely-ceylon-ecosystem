@@ -53,7 +53,6 @@ router.get(
 router.get(
   "/:id",
   protect,
-  verifyRFQOwnership,
   getRFQById
 );
 

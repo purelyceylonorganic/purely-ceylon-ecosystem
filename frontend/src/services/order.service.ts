@@ -72,10 +72,10 @@ export const orderService = {
   },
 
   // ✅ Single Order
-  async getOrder(id: string) {
-    const response = await api.get(`/orders/${id}`);
-    return response.data;
-  },
+  async getOrderDetails(id: string) {
+  const response = await api.get(`/orders/${id}/details`);
+  return response.data.data;
+},
 
   // ✅ My Addresses
   async getAddresses() {
@@ -138,6 +138,91 @@ async getDashboardStats() {
     );
 
   return response.data;
+},
+
+async createDraftOrder(
+    customerId: string,
+    addressId: string
+  ) {
+    try {
+      const response = await api.post(
+        "/orders/admin/create",
+        {
+          customerId, 
+          addressId,
+        }
+      );
+
+      return response.data.data;
+    }
+    
+    catch (error: any) {
+      console.log("Create Draft Order Error:", error.response?.data);
+      throw error;
+    }
+  },
+
+  async addProduct(
+  orderId: string,
+  productVariantId: string,
+  quantity = 1
+) {
+
+  const response =
+    await api.post("/orders/admin/add-product", {
+
+      orderId,
+
+      productVariantId,
+
+      quantity,
+
+    });
+
+  return response.data;
+
+},
+
+async updateOrderItemQuantity(
+  orderItemId: string,
+  quantity: number
+) {
+  const response = await api.put(
+    "/orders/admin/update-quantity",
+    {
+      orderItemId,
+      quantity,
+    }
+  );
+
+  return response.data.data;
+},
+
+async removeProduct(orderItemId: string) {
+  const response = await api.delete(
+    "/orders/admin/remove-product",
+    {
+      data: {
+        orderItemId,
+      },
+    }
+  );
+
+  return response.data.data;
+},
+
+async confirmOrder(orderId: string) {
+
+  const response =
+    await api.put(
+      "/orders/admin/confirm",
+      {
+        orderId,
+      }
+    );
+
+  return response.data.data;
+
 },
 
 };

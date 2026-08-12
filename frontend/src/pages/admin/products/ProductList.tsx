@@ -42,7 +42,7 @@ export default function ProductList() {
         limit: 10,
         name: debouncedSearch || undefined,
         categoryId: selectedCategory || undefined,
-      }as any);
+      } as any);
       setProducts(response.products);
       setTotalPages(response.pagination.totalPages);
     } catch (error) {
@@ -120,29 +120,18 @@ export default function ProductList() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Toolbar Section */}
-      <div className="flex flex-row items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-        <ProductToolbar
-          search={search}
-          onSearchChange={setSearch}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          onAddProduct={() => navigate("/admin/products/create")}
-          onReset={handleReset}
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none h-[42px]"
-        >
-          <option value="ALL">All Status</option>
-          <option value="PUBLISHED">Published</option>
-          <option value="DRAFT">Draft</option>
-          <option value="HIDDEN">Hidden</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
-      </div>
+      {/* Toolbar Section (Status-ஐ Props ஆக அனுப்புகிறோம்) */}
+      <ProductToolbar
+        search={search}
+        onSearchChange={setSearch}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        status={statusFilter}
+        onStatusChange={setStatusFilter}
+        onAddProduct={() => navigate("/admin/products/create")}
+        onReset={handleReset}
+      />
 
       {/* Bulk Actions */}
       {selectedProducts.length > 0 && (
@@ -157,9 +146,8 @@ export default function ProductList() {
         products={filteredProducts}
         onDeleteSuccess={loadProducts}
         selectedProducts={selectedProducts}
-  toggleProduct={toggleProduct}
-  toggleAll={toggleAll}
-        // Note: Checkbox-களை ProductTable-க்குள் அனுப்ப props-களை இங்கே சேர்க்கவும்
+        toggleProduct={toggleProduct}
+        toggleAll={toggleAll}
       />
 
       <ProductPagination

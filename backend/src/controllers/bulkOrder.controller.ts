@@ -6,7 +6,6 @@ import { sendPaymentReceivedNotification } from "../services/notification";
 import { createAuditLog } from "../services/audit";
 import { AUDIT_ACTIONS } from "../constants/auditActions";
 import { MODULES } from "../constants/modules";
-
 const prisma = new PrismaClient();
 
 // ======================================
