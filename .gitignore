@@ -6,3 +6,5 @@ dist
 generated
 .env
 .env.local
+# Backend application logs
+backend/logs/
