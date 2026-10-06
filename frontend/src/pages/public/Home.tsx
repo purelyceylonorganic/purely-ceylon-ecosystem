@@ -1,13 +1,20 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin, FaPinterest, FaWhatsapp, FaYoutube } from "react-icons/fa";
 import { productService } from "../../services/product.service";
 import type { Product } from "../../types/product.types";
+import { newsletterService } from "../../services/newsletter.service";
+import { toast } from "react-hot-toast";
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [newsletterEmail, setNewsletterEmail] =
+  useState("");
+
+const [subscribing, setSubscribing] =
+  useState(false);
 
   const loadProducts = async () => {
     try {
@@ -24,7 +31,52 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+
+  const handleNewsletterSubscribe = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
+
+  const email = newsletterEmail.trim();
+
+  if (!email) {
+    toast.error("Please enter your email address");
+    return;
+  }
+
+  try {
+    setSubscribing(true);
+
+    const response =
+      await newsletterService.subscribe(email);
+
+    if (response.alreadySubscribed) {
+      toast("You are already subscribed!", {
+        icon: "ℹ️",
+      });
+    } else {
+      toast.success(
+        "Successfully subscribed to our newsletter!"
+      );
+    }
+
+    setNewsletterEmail("");
+  } catch (error: any) {
+    console.error(
+      "Newsletter subscription error:",
+      error
+    );
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Subscription failed. Please try again."
+    );
+  } finally {
+    setSubscribing(false);
+  }
+};
+
+ useEffect(() => {
     loadProducts();
   }, []);
 
@@ -49,7 +101,7 @@ export default function Home() {
       <section className="bg-[#0E4B32] text-white py-24 px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
           <div className="md:w-1/2">
-            <motion.h1 {...animationProps} className="text-6xl font-extrabold">Purely Ceylon Organic</motion.h1>
+            <motion.h1 {...animationProps} className="text-6xl font-extrabold">PCO PRODUCTION</motion.h1>
             <p className="mt-6 text-xl text-green-100">Premium Sri Lankan Organic Products with complete traceability.</p>
             <div className="flex gap-5 mt-10">
               <Link to="/products" className="bg-[#D4AF37] text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition">Shop Now</Link>
@@ -87,7 +139,7 @@ export default function Home() {
               <p className="text-gray-500 mt-3">Handpicked Premium Organic Products from Sri Lanka</p>
             </div>
             <Link
-              to="/shop"
+              to="/products"
               className="bg-[#0E4B32] text-white px-6 py-3 rounded-full hover:bg-green-800 transition"
             >
               View All →
@@ -171,20 +223,49 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. NEWSLETTER (Background: Dark Green) */}
-      <section className="bg-[#0E4B32] py-20 text-center text-white">
-        <h2 className="text-3xl font-bold mb-6">Stay Updated</h2>
-        <div className="max-w-md mx-auto flex gap-2 px-6">
-          <input className="w-full p-4 rounded-full text-black outline-none" placeholder="Email Address" />
-          <button className="bg-[#D4AF37] px-8 rounded-full font-bold text-black hover:bg-yellow-500 transition">Subscribe</button>
-        </div>
-      </section>
+      {/* 7. NEWSLETTER */}
+<section className="bg-[#0E4B32] py-20 text-center text-white">
+  <h2 className="text-3xl font-bold mb-6">
+    Stay Updated
+  </h2>
+
+  <p className="text-green-100 mb-8">
+    Subscribe to receive our latest products,
+    offers and updates.
+  </p>
+
+  <form
+    onSubmit={handleNewsletterSubscribe}
+    className="max-w-md mx-auto flex gap-2 px-6"
+  >
+    <input
+      type="email"
+      value={newsletterEmail}
+      onChange={(e) =>
+        setNewsletterEmail(e.target.value)
+      }
+      className="w-full p-4 rounded-full text-black outline-none"
+      placeholder="Email Address"
+      autoComplete="email"
+      required
+      disabled={subscribing}
+    />
+
+    <button
+      type="submit"
+      disabled={subscribing}
+      className="bg-[#D4AF37] px-8 rounded-full font-bold text-black hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+    >
+      {subscribing ? "..." : "Subscribe"}
+    </button>
+  </form>
+</section>
 
       {/* 8 & 9. FOOTER (Background: Black) */}
       <footer className="bg-black text-gray-400 py-16 px-6">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
           <div>
-            <h4 className="text-white font-bold mb-4">Purely Ceylon Organic</h4>
+            <h4 className="text-white font-bold mb-4">PCO PRODUCTION</h4>
             <p>Puluthi Vayal, Palavi, Puttalam, Sri Lanka.</p>
             <p className="mt-2">Email: support@purelyceylonorganic.com</p>
             <p>Phone: +94 76 8989 027</p>
@@ -192,11 +273,67 @@ export default function Home() {
           <div>
             <h4 className="text-white font-bold mb-4">Follow Us</h4>
             <div className="flex gap-6 text-2xl">
-              <FaFacebook className="hover:text-white cursor-pointer" />
-              <FaInstagram className="hover:text-white cursor-pointer" />
-              <FaLinkedin className="hover:text-white cursor-pointer" />
-              <FaYoutube className="hover:text-white cursor-pointer" />
-            </div>
+  <a
+    href="https://www.facebook.com/profile.php?id=61590394625758"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Facebook"
+    className="hover:text-white transition"
+  >
+    <FaFacebook />
+  </a>
+
+  <a
+    href="https://www.instagram.com/purelyceylonorganic?igsh=cGp6OWtuM2JzMXZy"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Instagram"
+    className="hover:text-white transition"
+  >
+    <FaInstagram />
+  </a>
+
+<a
+  href="https://wa.me/94768989027?text=Hello%20Purely%20Ceylon%20Organic"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Chat on WhatsApp"
+  className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-xl hover:bg-green-600 hover:scale-110 transition-all duration-300"
+>
+  <FaWhatsapp size={30} />
+</a>
+
+  <a
+    href="https://pin.it/AtoB6QSlT"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Pinterest"
+    className="hover:text-white transition"
+  >
+    <FaPinterest />
+  </a>
+
+<a
+    href="YOUR_LINKEDIN_URL"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="LinkedIn"
+    className="hover:text-white transition"
+  >
+    <FaLinkedin />
+  </a>
+
+  <a
+    href="https://youtube.com/@musabhafiz?si=A-LgrFBAMhTtMBrJ"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="YouTube"
+    className="hover:text-white transition"
+  >
+    <FaYoutube />
+  </a>
+
+</div>
           </div>
         </div>
       </footer>

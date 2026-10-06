@@ -47,7 +47,7 @@ export default function CustomerSearch() {
       setNotFound(false);
 
       const profileData =
-        await customerService.getProfile(customerId);
+        await customerService.getCustomerProfile(customerId);
 
       console.log("CUSTOMER PROFILE =", profileData);
 
@@ -123,7 +123,7 @@ export default function CustomerSearch() {
       setCustomer(data);
 
       const profileData =
-        await customerService.getProfile(data.id);
+        await customerService.getCustomerProfile(data.id);
 
       console.log("PROFILE API =", profileData);
 

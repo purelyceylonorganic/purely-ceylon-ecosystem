@@ -72,23 +72,42 @@ export const quickCreateCustomer = async (
   return customer;
 };
 
+// =====================================================
+// ADDRESS TYPES
+// =====================================================
+
+export interface CustomerAddressData {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  province?: string;
+  postalCode?: string;
+  country?: string;
+  isDefault?: boolean;
+}
+
+
+// =====================================================
+// ADD CUSTOMER ADDRESS
+// =====================================================
+
 export const addCustomerAddress = async (
   customerId: string,
-  data: {
-    fullName: string;
-    phone: string;
-    street: string;
-    city: string;
-    province?: string;
-    postalCode?: string;
-    country?: string;
-    isDefault?: boolean;
-  }
+  data: CustomerAddressData
 ) => {
-  const customer = await prisma.user.findUnique({
+
+  // ------------------------------------------
+  // Check customer
+  // ------------------------------------------
+
+  const customer = await prisma.user.findFirst({
     where: {
       id: customerId,
       role: "CUSTOMER",
+    },
+    select: {
+      id: true,
     },
   });
 
@@ -96,34 +115,375 @@ export const addCustomerAddress = async (
     throw new Error("Customer not found");
   }
 
-  // If new address is default, remove default from existing addresses
-  if (data.isDefault) {
-    await prisma.address.updateMany({
-      where: {
-        userId: customerId,
-      },
-      data: {
-        isDefault: false,
-      },
-    });
-  }
 
-  const address = await prisma.address.create({
-    data: {
+  // ------------------------------------------
+  // Check existing addresses
+  // ------------------------------------------
+
+  const addressCount = await prisma.address.count({
+    where: {
       userId: customerId,
-      fullName: data.fullName,
-      phone: normalizePhoneNumber(data.phone),
-      street: data.street,
-      city: data.city,
-      province: data.province,
-      postalCode: data.postalCode,
-      country: data.country ?? "Sri Lanka",
-      isDefault: data.isDefault ?? false,
     },
   });
 
+
+  // ------------------------------------------
+  // First address automatically becomes default
+  // ------------------------------------------
+
+  const shouldBeDefault =
+    addressCount === 0 || data.isDefault === true;
+
+
+  // ------------------------------------------
+  // Transaction
+  // ------------------------------------------
+
+  const address = await prisma.$transaction(
+    async (tx) => {
+
+      // Remove previous default
+      if (shouldBeDefault) {
+        await tx.address.updateMany({
+          where: {
+            userId: customerId,
+            isDefault: true,
+          },
+          data: {
+            isDefault: false,
+          },
+        });
+      }
+
+
+      // Create address
+      const newAddress =
+        await tx.address.create({
+          data: {
+            userId: customerId,
+
+            fullName: data.fullName.trim(),
+
+            phone: normalizePhoneNumber(
+              data.phone
+            ),
+
+            street: data.street.trim(),
+
+            city: data.city.trim(),
+
+            province:
+              data.province?.trim() || null,
+
+            postalCode:
+              data.postalCode?.trim() || null,
+
+            country:
+              data.country?.trim() ||
+              "Sri Lanka",
+
+            isDefault: shouldBeDefault,
+          },
+        });
+
+      return newAddress;
+    }
+  );
+
+
   return address;
 };
+
+
+// =====================================================
+// UPDATE CUSTOMER ADDRESS
+// =====================================================
+
+export const updateCustomerAddressService = async (
+  customerId: string,
+  addressId: string,
+  data: CustomerAddressData
+) => {
+
+  // ------------------------------------------
+  // Check address belongs to customer
+  // ------------------------------------------
+
+  const existingAddress =
+    await prisma.address.findFirst({
+      where: {
+        id: addressId,
+        userId: customerId,
+      },
+    });
+
+  if (!existingAddress) {
+    throw new Error(
+      "Address not found"
+    );
+  }
+
+
+  // ------------------------------------------
+  // Determine default status
+  // ------------------------------------------
+
+  const shouldBeDefault =
+    data.isDefault === true;
+
+
+  // ------------------------------------------
+  // Transaction
+  // ------------------------------------------
+
+  const address =
+    await prisma.$transaction(
+      async (tx) => {
+
+        // --------------------------------------
+        // If this address becomes default,
+        // remove default from other addresses
+        // --------------------------------------
+
+        if (shouldBeDefault) {
+
+          await tx.address.updateMany({
+            where: {
+              userId: customerId,
+
+              id: {
+                not: addressId,
+              },
+
+              isDefault: true,
+            },
+
+            data: {
+              isDefault: false,
+            },
+          });
+        }
+
+
+        // --------------------------------------
+        // Update address
+        // --------------------------------------
+
+        const updatedAddress =
+          await tx.address.update({
+            where: {
+              id: addressId,
+            },
+
+            data: {
+              fullName:
+                data.fullName.trim(),
+
+              phone:
+                normalizePhoneNumber(
+                  data.phone
+                ),
+
+              street:
+                data.street.trim(),
+
+              city:
+                data.city.trim(),
+
+              province:
+                data.province?.trim() ||
+                null,
+
+              postalCode:
+                data.postalCode?.trim() ||
+                null,
+
+              country:
+                data.country?.trim() ||
+                "Sri Lanka",
+
+              isDefault:
+                shouldBeDefault,
+            },
+          });
+
+        return updatedAddress;
+      }
+    );
+
+
+  return address;
+};
+
+
+// =====================================================
+// SET DEFAULT CUSTOMER ADDRESS
+// =====================================================
+
+export const setDefaultCustomerAddressService = async (
+  customerId: string,
+  addressId: string
+) => {
+
+  // ------------------------------------------
+  // Check ownership
+  // ------------------------------------------
+
+  const address =
+    await prisma.address.findFirst({
+      where: {
+        id: addressId,
+        userId: customerId,
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+
+  if (!address) {
+    throw new Error(
+      "Address not found"
+    );
+  }
+
+
+  // ------------------------------------------
+  // Transaction
+  // ------------------------------------------
+
+  await prisma.$transaction(
+    async (tx) => {
+
+      // Remove old default
+      await tx.address.updateMany({
+        where: {
+          userId: customerId,
+
+          id: {
+            not: addressId,
+          },
+        },
+
+        data: {
+          isDefault: false,
+        },
+      });
+
+
+      // Set new default
+      await tx.address.update({
+        where: {
+          id: addressId,
+        },
+
+        data: {
+          isDefault: true,
+        },
+      });
+    }
+  );
+
+
+  // ------------------------------------------
+  // Return updated address
+  // ------------------------------------------
+
+  return await prisma.address.findUnique({
+    where: {
+      id: addressId,
+    },
+  });
+};
+
+
+// =====================================================
+// DELETE CUSTOMER ADDRESS
+// =====================================================
+
+export const deleteCustomerAddressService = async (
+  customerId: string,
+  addressId: string
+) => {
+
+  // ------------------------------------------
+  // Check ownership
+  // ------------------------------------------
+
+  const address =
+    await prisma.address.findFirst({
+      where: {
+        id: addressId,
+        userId: customerId,
+      },
+    });
+
+
+  if (!address) {
+    throw new Error(
+      "Address not found"
+    );
+  }
+
+
+  // ------------------------------------------
+  // Delete address
+  // ------------------------------------------
+
+  await prisma.address.delete({
+    where: {
+      id: addressId,
+    },
+  });
+
+
+  // ------------------------------------------
+  // If deleted address was default,
+  // make another address default
+  // ------------------------------------------
+
+  if (address.isDefault) {
+
+    const nextAddress =
+      await prisma.address.findFirst({
+        where: {
+          userId: customerId,
+        },
+
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+
+    if (nextAddress) {
+
+      await prisma.address.update({
+        where: {
+          id: nextAddress.id,
+        },
+
+        data: {
+          isDefault: true,
+        },
+      });
+
+      return {
+        deletedAddressId: addressId,
+        newDefaultAddressId:
+          nextAddress.id,
+      };
+    }
+  }
+
+
+  return {
+    deletedAddressId: addressId,
+    newDefaultAddressId: null,
+  };
+};
+
 
 export const findCustomerProfile = async (id: string) => {
   const customer = await prisma.user.findUnique({
@@ -233,10 +593,10 @@ export const findCustomerProfile = async (id: string) => {
       // ==========================================
 
       notes: {
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
+      orderBy: {
+      createdAt: "desc",
+  },
+},
     },
   });
 

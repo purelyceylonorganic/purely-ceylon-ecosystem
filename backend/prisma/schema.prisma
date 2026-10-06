@@ -8,100 +8,101 @@ datasource db {
 }
 
 model User {
-  id                  String               @id @default(uuid())
+  id String @id @default(uuid())
 
   // =========================
   // Account Information
   // =========================
-  email               String?              @unique
-  phone               String?              @unique
-  fullName            String
+  email    String? @unique
+  phone    String? @unique
+  fullName String
 
-  passwordHash        String
-  mustChangePassword  Boolean @default(false)
+  passwordHash       String
+  mustChangePassword Boolean @default(false)
 
-  role                UserRole             @default(CUSTOMER)
+  role UserRole @default(CUSTOMER)
 
   // =========================
   // Account Status
   // =========================
-  isActive            Boolean              @default(false)
-  isVerified          Boolean              @default(false)
+  isActive   Boolean @default(false)
+  isVerified Boolean @default(false)
 
-// =========================
-// Email Verification
-// =========================
-pendingEmail       String?
-verificationToken  String?
-verificationOtp    String?
-otpExpiresAt       DateTime?
-otpLastSentAt      DateTime?
-otpAttempts        Int      @default(0)
-otpLockedUntil     DateTime?
+  // =========================
+  // Email Verification
+  // =========================
+  pendingEmail      String?
+  verificationToken String?
+  verificationOtp   String?
+  otpExpiresAt      DateTime?
+  otpLastSentAt     DateTime?
+  otpAttempts       Int       @default(0)
+  otpLockedUntil    DateTime?
 
   // =========================
   // Phone Verification
   // =========================
-  phoneVerificationOtp       String?
-  phoneOtpExpiresAt          DateTime?
-  phoneOtpLastSentAt         DateTime?
-  phoneOtpAttempts           Int                  @default(0)
-  phoneOtpLockedUntil        DateTime?
+  phoneVerificationOtp String?
+  phoneOtpExpiresAt    DateTime?
+  phoneOtpLastSentAt   DateTime?
+  phoneOtpAttempts     Int       @default(0)
+  phoneOtpLockedUntil  DateTime?
 
   // =========================
   // Login Security
   // =========================
   accountLockedUntil  DateTime?
-  failedLoginAttempts Int                  @default(0)
+  failedLoginAttempts Int       @default(0)
 
   // =========================
-// Password Reset
-// =========================
-passwordResetExpire DateTime?
-passwordResetToken  String?
+  // Password Reset
+  // =========================
+  passwordResetExpire DateTime?
+  passwordResetToken  String?
 
-// =========================
-// Phone Password Reset
-// =========================
-phonePasswordResetOtp         String?
-phonePasswordResetExpiresAt   DateTime?
-phonePasswordResetLastSentAt  DateTime?
-phonePasswordResetAttempts    Int      @default(0)
-phonePasswordResetLockedUntil DateTime?
+  // =========================
+  // Phone Password Reset
+  // =========================
+  phonePasswordResetOtp         String?
+  phonePasswordResetExpiresAt   DateTime?
+  phonePasswordResetLastSentAt  DateTime?
+  phonePasswordResetAttempts    Int       @default(0)
+  phonePasswordResetLockedUntil DateTime?
 
-// =========================
-// Phone Password Reset
-// =========================
+  // =========================
+  // Phone Password Reset
+  // =========================
 
-phonePasswordResetOtpHash       String?
-phonePasswordResetOtpExpiresAt  DateTime?
-phonePasswordResetOtpAttempts   Int      @default(0)
-phonePasswordResetOtpLockedUntil DateTime?
+  phonePasswordResetOtpHash        String?
+  phonePasswordResetOtpExpiresAt   DateTime?
+  phonePasswordResetOtpAttempts    Int       @default(0)
+  phonePasswordResetOtpLockedUntil DateTime?
 
-phonePasswordResetToken         String?
-phonePasswordResetTokenExpiresAt DateTime?
+  phonePasswordResetToken          String?
+  phonePasswordResetTokenExpiresAt DateTime?
 
   // =========================
   // Profile
   // =========================
-  profileImage        String?
+  profileImage String?
 
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // =========================
   // Relations
   // =========================
-  addresses           Address[]
-  auditLogs            AuditLog[]
-  cart                 Cart?
-  orders               Order[]
-  questions            Question[]           @relation("UserQuestions")
-  reviews              Review[]             @relation("UserReviews")
-  savedCards           SavedPaymentMethod[]
-  sessions             UserSession[]
-  notes                CustomerNote[]
-  wishlist             Wishlist?
+  addresses     Address[]
+  auditLogs     AuditLog[]
+  cart          Cart?
+  orders        Order[]
+  questions     Question[]           @relation("UserQuestions")
+  reviews       Review[]             @relation("UserReviews")
+  savedCards    SavedPaymentMethod[]
+  sessions      UserSession[]
+  notes         CustomerNote[]
+  notifications Notification[]
+  wishlist      Wishlist?
 }
 
 model UserSession {
@@ -117,18 +118,18 @@ model UserSession {
 }
 
 model Product {
-  id          String           @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
   description String
-  createdAt   DateTime         @default(now())
+  createdAt   DateTime      @default(now())
   categoryId  String
-  isActive    Boolean          @default(true)
-  status      ProductStatus    @default(DRAFT)
-  slug        String           @unique
-  updatedAt   DateTime         @updatedAt
-  moq         Int              @default(1)
-  
-  featured Boolean @default(false)
+  isActive    Boolean       @default(true)
+  status      ProductStatus @default(DRAFT)
+  slug        String        @unique
+  updatedAt   DateTime      @updatedAt
+  moq         Int           @default(1)
+
+  featured    Boolean          @default(false)
   publishedAt DateTime?
   category    Category         @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
@@ -187,40 +188,40 @@ model Category {
 }
 
 model Order {
-  id             String         @id @default(uuid())
-  userId         String
-  createdAt      DateTime       @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
 
-  paymentMethod  String?
-  paymentStatus  PaymentStatus  @default(UNPAID)
+  paymentMethod String?
+  paymentStatus PaymentStatus @default(UNPAID)
 
-  paidAmount     Float          @default(0)
-  balance        Float          @default(0)
-  paidAt         DateTime?
+  paidAmount Float     @default(0)
+  balance    Float     @default(0)
+  paidAt     DateTime?
 
   shippingCost   Float          @default(0)
   shippingStatus ShippingStatus @default(PENDING)
 
-  taxAmount      Float          @default(0)
+  taxAmount Float @default(0)
 
-  trackingId     String?
+  trackingId String?
 
-  updatedAt      DateTime       @updatedAt
+  updatedAt DateTime @updatedAt
 
-  status         OrderStatus    @default(PENDING)
+  status OrderStatus @default(PENDING)
 
-  currency       String
-  exchangeRate   Float
-  totalFinal     Float
-  totalUSD       Float
+  currency     String
+  exchangeRate Float
+  totalFinal   Float
+  totalUSD     Float
 
-  addressId      String?
-  address        Address?       @relation(fields: [addressId], references: [id])
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
 
-  user           User           @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-  items          OrderItem[]
-  payments       Payment[]
+  items    OrderItem[]
+  payments Payment[]
 }
 
 model OrderItem {
@@ -235,59 +236,57 @@ model OrderItem {
 }
 
 model Payment {
+  id String @id @default(uuid())
 
-  id            String   @id @default(uuid())
+  orderId String
 
-  orderId       String
+  order Order @relation(fields: [orderId], references: [id])
 
-  order         Order    @relation(fields:[orderId], references:[id])
+  transactionId String? @unique
 
-  transactionId String?   @unique
+  amount Float
 
-  amount        Float
-
-  currency      String    @default("LKR")
+  currency String @default("LKR")
 
   paymentMethod PaymentMethod @default(CASH)
 
-  gateway       String?
+  gateway String?
 
   paymentStatus PaymentStatus @default(UNPAID)
 
-  notes         String?
+  notes String?
 
   rawWebhookLog String?
 
-  paidAt        DateTime?
+  paidAt DateTime?
 
   refunds Refund[]
 
-  createdAt     DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt     DateTime  @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 model Refund {
-  id            String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  paymentId     String
-  payment       Payment  @relation(fields: [paymentId], references: [id])
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id])
 
-  transactionId String   @unique
+  transactionId String @unique
 
-  amount        Float
+  amount Float
 
-  reason        String?
+  reason String?
 
-  status        RefundStatus @default(PENDING)
+  status RefundStatus @default(PENDING)
 
-  createdBy     String?
+  createdBy String?
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt     DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
-
 
 model Address {
   id         String   @id @default(uuid())
@@ -497,20 +496,20 @@ model CompanyProfile {
 }
 
 model RFQ {
-  id          String         @id @default(cuid())
+  id          String    @id @default(cuid())
   buyerId     String
-  status      String         @default("PENDING")
-  createdAt   DateTime       @default(now())
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
   quoteNote   String?
   quotedAt    DateTime?
   quotedPrice Float?
-  
-  // BulkOrder Relation (Relation key இங்கே வேண்டாம், BulkOrder பக்கம் வைக்கலாம்)
-  bulkOrderId String?        @unique
-  bulkOrder   BulkOrder?     @relation(fields: [bulkOrderId], references: [id])
 
-  buyer       WholesaleBuyer @relation(fields: [buyerId], references: [id])
-  items       RFQItem[]
+  // BulkOrder Relation (Relation key இங்கே வேண்டாம், BulkOrder பக்கம் வைக்கலாம்)
+  bulkOrderId String?    @unique
+  bulkOrder   BulkOrder? @relation(fields: [bulkOrderId], references: [id])
+
+  buyer WholesaleBuyer @relation(fields: [buyerId], references: [id])
+  items RFQItem[]
 }
 
 model RFQItem {
@@ -522,18 +521,18 @@ model RFQItem {
 }
 
 model BulkOrder {
-  id             String                   @id @default(cuid())
-  buyerId        String
-  status         String                   @default("PENDING")
-  createdAt      DateTime                 @default(now())
-  rfqId          String                   @unique
-  totalAmount    Float
-  updatedAt      DateTime                 @updatedAt
-  paidAt         DateTime?
-  paymentMethod  String?
-  paymentStatus  String                   @default("UNPAID")
-  transactionId  String?
-  
+  id            String    @id @default(cuid())
+  buyerId       String
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  rfqId         String    @unique
+  totalAmount   Float
+  updatedAt     DateTime  @updatedAt
+  paidAt        DateTime?
+  paymentMethod String?
+  paymentStatus String    @default("UNPAID")
+  transactionId String?
+
   // Relations
   buyer          WholesaleBuyer           @relation(fields: [buyerId], references: [id])
   items          BulkOrderItem[]
@@ -543,14 +542,14 @@ model BulkOrder {
   shipment       Shipment?
 
   // RFQ உடன் Back-relation (இங்கிருந்து RFQ[] நீக்கப்பட்டுள்ளது)
-  RFQ            RFQ?
+  RFQ RFQ?
 }
 
 model BulkOrderItem {
   id          String    @id @default(cuid())
   productId   String
   quantity    Int
-  price       Float?    // Optional ஆக மாற்றப்பட்டுள்ளது (RFQ-ல் price இல்லாவிட்டால் error வராது)
+  price       Float? // Optional ஆக மாற்றப்பட்டுள்ளது (RFQ-ல் price இல்லாவிட்டால் error வராது)
   totalPrice  Float?
   bulkOrderId String
   bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
@@ -653,12 +652,22 @@ model AuditLog {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  title     String
-  message   String
-  type      String
-  isRead    Boolean  @default(false)
+  id String @id @default(uuid())
+
+  userId  String
+  title   String
+  message String
+  type    String
+
+  isRead Boolean @default(false)
+
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 model SavedPaymentMethod {
@@ -677,14 +686,14 @@ model SavedPaymentMethod {
 }
 
 model CustomerNote {
-  id         String   @id @default(cuid())
+  id         String @id @default(cuid())
   customerId String
   note       String
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  customer   User @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer User @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -698,6 +707,18 @@ model Expense {
   notes       String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+}
+
+// 📧 Newsletter Subscribers
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([isActive])
 }
 
 enum Role {

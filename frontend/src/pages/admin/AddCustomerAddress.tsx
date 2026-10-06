@@ -42,7 +42,8 @@ export default function AddCustomerAddress() {
 
         console.log("Loading customer:", customerId);
 
-        const profile = await customerService.getProfile(customerId);
+        const profile =
+  await customerService.getCustomerProfile(customerId);
 
         console.log("Customer Profile Response:", profile);
 
@@ -95,9 +96,6 @@ export default function AddCustomerAddress() {
     }));
   };
 
-  // ==========================================
-  // SAVE ADDRESS
-  // ==========================================
   const handleSubmit = async (
   e: React.FormEvent<HTMLFormElement>
 ) => {
@@ -121,22 +119,16 @@ export default function AddCustomerAddress() {
       formData
     );
 
-    console.log(
-      "Address Created:",
-      addressResponse
-    );
+    console.log("Address Created:", addressResponse);
 
     // ==========================================
-    // 2. GET LATEST CUSTOMER PROFILE
+    // 2. GET UPDATED CUSTOMER PROFILE
     // ==========================================
 
     const profile =
-      await customerService.getProfile(customerId);
+      await customerService.getCustomerProfile(customerId);
 
-    console.log(
-      "Updated Customer Profile:",
-      profile
-    );
+    console.log("Updated Customer Profile:", profile);
 
     const customerData =
       profile?.customer ??
@@ -151,17 +143,17 @@ export default function AddCustomerAddress() {
     }
 
     // ==========================================
-    // 3. FIND DEFAULT ADDRESS
+    // 3. FIND THE NEW / DEFAULT ADDRESS
     // ==========================================
 
-    const addresses =
-      Array.isArray(customerData.addresses)
-        ? customerData.addresses
-        : [];
+    const addresses = Array.isArray(customerData.addresses)
+      ? customerData.addresses
+      : [];
 
     const defaultAddress =
       addresses.find(
-        (address: any) => address.isDefault === true
+        (address: any) =>
+          address.isDefault === true
       ) ||
       addresses[addresses.length - 1];
 
@@ -191,20 +183,26 @@ export default function AddCustomerAddress() {
       draftOrder
     );
 
+    if (!draftOrder?.id) {
+      throw new Error(
+        "Draft order was created but order ID was not returned"
+      );
+    }
+
     // ==========================================
     // 5. SUCCESS
     // ==========================================
 
     alert(
-      "Address Added Successfully. Draft Order Created."
+      "Address Added Successfully."
     );
 
     // ==========================================
-    // 6. GO DIRECTLY TO ORDER BUILDER
+    // 6. GO TO ORDER BUILDER
     // ==========================================
 
     navigate(
-      `/admin/order-builder/${draftOrder.id}`
+      `/admin/customers/${customerId}`
     );
 
   } catch (error: any) {

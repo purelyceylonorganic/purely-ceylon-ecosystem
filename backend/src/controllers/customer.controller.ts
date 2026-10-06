@@ -7,7 +7,13 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import {
   findCustomerProfile,
+  updateCustomerAddressService,
+  setDefaultCustomerAddressService,
+  deleteCustomerAddressService,
+  addCustomerAddress,
 } from "../services/customer.service";
+
+
 const prisma = new PrismaClient();
 
 
@@ -268,21 +274,19 @@ export const customerProfile = async (
     });
   }
 };
-export const addCustomerAddress = async (id: string, addressData: any) => {
-  return await prisma.address.create({
-    data: {
-      ...addressData,
-      userId: id,
-    },
-  });
-};
-
 export const createCustomerAddress = async (
   req: Request,
   res: Response
 ) => {
   try {
     const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID is required",
+      });
+    }
 
     const address = await addCustomerAddress(
       id,
@@ -294,7 +298,6 @@ export const createCustomerAddress = async (
       message: "Address added successfully",
       data: address,
     });
-
   } catch (error: any) {
     console.error(
       "Create Customer Address Error:",
@@ -549,6 +552,130 @@ export const getCustomers = async (
   }
 };
 
+// =====================================================
+// UPDATE CUSTOMER ADDRESS
+// =====================================================
+
+export const updateCustomerAddress = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, addressId } = req.params;
+
+    if (!id || !addressId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID and Address ID are required",
+      });
+    }
+
+    const updatedAddress =
+      await updateCustomerAddressService(
+        id,
+        addressId,
+        req.body
+      );
+
+    return res.status(200).json({
+      success: true,
+      message: "Address updated successfully",
+      data: updatedAddress,
+    });
+  } catch (error: any) {
+    console.error(
+      "Update Customer Address Error:",
+      error
+    );
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update address",
+    });
+  }
+};
+export const deleteCustomerAddress = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, addressId } = req.params;
+
+    if (!id || !addressId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID and Address ID are required",
+      });
+    }
+
+    const result =
+      await deleteCustomerAddressService(
+        id,
+        addressId
+      );
+
+    return res.status(200).json({
+      success: true,
+      message: "Address deleted successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    console.error(
+      "Delete Customer Address Error:",
+      error
+    );
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to delete address",
+    });
+  }
+};
+
+export const setDefaultCustomerAddress = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, addressId } = req.params;
+
+    if (!id || !addressId) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer ID and Address ID are required",
+      });
+    }
+
+    const address =
+      await setDefaultCustomerAddressService(
+        id,
+        addressId
+      );
+
+    return res.status(200).json({
+      success: true,
+      message: "Default address updated successfully",
+      data: address,
+    });
+  } catch (error: any) {
+    console.error(
+      "Set Default Address Error:",
+      error
+    );
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to set default address",
+    });
+  }
+};
+
 
 export const createCustomerNote = async (
   req: Request,
@@ -618,6 +745,158 @@ export const getCustomerNotes = async (
     });
   }
 };
+
+
+// =====================================================
+// UPDATE CUSTOMER NOTE
+// =====================================================
+
+export const updateCustomerNote = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, noteId } = req.params;
+    const { note } = req.body;
+
+    // Validate
+    if (!note || !note.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Note is required",
+      });
+    }
+
+    // Check customer
+    const customer = await prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    // Check note belongs to customer
+    const existingNote =
+      await prisma.customerNote.findFirst({
+        where: {
+          id: noteId,
+          customerId: id,
+        },
+      });
+
+    if (!existingNote) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer note not found",
+      });
+    }
+
+    // Update
+    const updatedNote =
+      await prisma.customerNote.update({
+        where: {
+          id: noteId,
+        },
+        data: {
+          note: note.trim(),
+        },
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Customer note updated successfully",
+      data: updatedNote,
+    });
+
+  } catch (error: any) {
+    console.error(
+      "Update Customer Note Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to update customer note",
+    });
+  }
+};
+
+// =====================================================
+// DELETE CUSTOMER NOTE
+// =====================================================
+
+export const deleteCustomerNote = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id, noteId } = req.params;
+
+    // Check customer
+    const customer = await prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    // Check note belongs to customer
+    const existingNote =
+      await prisma.customerNote.findFirst({
+        where: {
+          id: noteId,
+          customerId: id,
+        },
+      });
+
+    if (!existingNote) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer note not found",
+      });
+    }
+
+    // Delete
+    await prisma.customerNote.delete({
+      where: {
+        id: noteId,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Customer note deleted successfully",
+    });
+
+  } catch (error: any) {
+    console.error(
+      "Delete Customer Note Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to delete customer note",
+    });
+  }
+};
+
 export const customerHistory = async (
   req: Request,
   res: Response

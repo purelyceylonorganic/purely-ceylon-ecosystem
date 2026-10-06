@@ -542,6 +542,16 @@ export default function CustomerList() {
                       ================================== */}
 
                       <td className="px-5 py-4 text-right">
+                        <button
+  onClick={() =>
+    navigate(
+      `/admin/customers/${customer.id}/draft-order`
+    )
+  }
+  className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+>
+  + Draft Order
+</button>
 
                         <button
                           onClick={() =>

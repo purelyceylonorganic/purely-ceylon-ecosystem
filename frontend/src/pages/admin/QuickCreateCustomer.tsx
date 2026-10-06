@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { customerService } from "../../services/customer.service";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react"; // ஐகான் பயன்படுத்த (Optional - Lucide icons)
+import { Loader2 } from "lucide-react"; 
 
 export function QuickCreateCustomer() {
   const navigate = useNavigate();
@@ -59,8 +59,20 @@ if (customerId) {
     }
   };
 
-  return (
-    <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+ return (
+  <div className="mx-auto max-w-md">
+    
+    {/* Back to Customer Management */}
+    <button
+      type="button"
+      onClick={() => navigate("/admin/customers")}
+      className="mb-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+    >
+      ← Back to Customer Management
+    </button>
+
+    <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-slate-900">Quick Create Customer</h2>
         <p className="text-sm text-slate-500">Enter basic details to get started quickly.</p>
@@ -108,7 +120,8 @@ if (customerId) {
           )}
         </button>
       </form>
-    </div>
+      </div>
+      </div>
   );
 }
 

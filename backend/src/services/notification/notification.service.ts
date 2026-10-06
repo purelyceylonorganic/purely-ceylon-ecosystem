@@ -1,107 +1,149 @@
-import { sendEmail } from "./email.service";
+import { PrismaClient } from "@prisma/client";
 
-import { rfqSubmittedTemplate } from "./templates/rfqSubmitted";
-import { quoteApprovedTemplate } from "./templates/quoteApproved";
-import { paymentReceivedTemplate } from "./templates/paymentReceived";
-import { shipmentShippedTemplate } from "./templates/shipmentShipped";
-import { deliveredTemplate } from "./templates/delivered";
+const prisma = new PrismaClient();
 
-export const sendRFQSubmittedNotification = async (
+/**
+ * Create a notification for a specific user
+ */
+export const createNotification = async ({
+  userId,
+  title,
+  message,
+  type,
+}: {
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+}) => {
+  const notification = await prisma.notification.create({
+    data: {
+      userId,
+      title,
+      message,
+      type,
+    },
+  });
 
-    email: string,
-
-    buyerName: string
-
-) => {
-
-    await sendEmail(
-
-        email,
-
-        "RFQ Submitted Successfully",
-
-        rfqSubmittedTemplate(buyerName)
-
-    );
-
+  return notification;
 };
 
-export const sendQuoteApprovedNotification = async (
-
-    email: string,
-
-    buyerName: string
-
+/**
+ * Get latest notifications for a user
+ */
+export const getUserNotifications = async (
+  userId: string,
+  limit = 20
 ) => {
+  const notifications = await prisma.notification.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: limit,
+  });
 
-    await sendEmail(
-
-        email,
-
-        "Quotation Approved",
-
-        quoteApprovedTemplate(buyerName)
-
-    );
-
+  return notifications;
 };
 
-export const sendPaymentReceivedNotification = async (
-
-    email: string,
-
-    buyerName: string
-
+/**
+ * Get unread notification count
+ */
+export const getUnreadNotificationCount = async (
+  userId: string
 ) => {
+  const count = await prisma.notification.count({
+    where: {
+      userId,
+      isRead: false,
+    },
+  });
 
-    await sendEmail(
-
-        email,
-
-        "Payment Received",
-
-        paymentReceivedTemplate(buyerName)
-
-    );
-
+  return count;
 };
 
-export const sendShipmentNotification = async (
-
-    email: string,
-
-    buyerName: string
-
+/**
+ * Mark one notification as read
+ */
+export const markNotificationAsRead = async (
+  notificationId: string,
+  userId: string
 ) => {
+  const notification =
+    await prisma.notification.findFirst({
+      where: {
+        id: notificationId,
+        userId,
+      },
+    });
 
-    await sendEmail(
+  if (!notification) {
+    throw new Error("Notification not found");
+  }
 
-        email,
+  if (notification.isRead) {
+    return notification;
+  }
 
-        "Shipment Shipped",
+  const updatedNotification =
+    await prisma.notification.update({
+      where: {
+        id: notificationId,
+      },
+      data: {
+        isRead: true,
+      },
+    });
 
-        shipmentShippedTemplate(buyerName)
-
-    );
-
+  return updatedNotification;
 };
 
-export const sendDeliveredNotification = async (
-
-    email: string,
-
-    buyerName: string
-
+/**
+ * Mark all notifications as read
+ */
+export const markAllNotificationsAsRead = async (
+  userId: string
 ) => {
+  const result =
+    await prisma.notification.updateMany({
+      where: {
+        userId,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
 
-    await sendEmail(
+  return result;
+};
 
-        email,
+/**
+ * Delete one notification
+ */
+export const deleteNotification = async (
+  notificationId: string,
+  userId: string
+) => {
+  const notification =
+    await prisma.notification.findFirst({
+      where: {
+        id: notificationId,
+        userId,
+      },
+    });
 
-        "Shipment Delivered",
+  if (!notification) {
+    throw new Error("Notification not found");
+  }
 
-        deliveredTemplate(buyerName)
+  await prisma.notification.delete({
+    where: {
+      id: notificationId,
+    },
+  });
 
-    );
-
+  return notification;
 };

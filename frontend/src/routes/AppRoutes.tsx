@@ -34,6 +34,7 @@ import AdminLayout from "../layout/AdminLayout";
 import EditProduct from "../pages/admin/products/EditProduct";
 import ProductImages from "../pages/admin/products/ProductImages";
 import Contact from "../pages/public/Contact";
+import ComingSoon from "../pages/public/ComingSoon";
 import OrderBuilder from "../pages/admin/OrderBuilder"; // உங்கள் கோப்பு இருப்பிடத்திற்கு ஏற்ப பாதையை மாற்றிக் கொள்ளவும்
 import AdminOrderInvoice from "../pages/admin/orders/AdminOrderInvoice";
 import QuickCreateCustomer from "../pages/admin/QuickCreateCustomer";
@@ -50,6 +51,12 @@ import InventoryTransactions from "../pages/admin/InventoryTransactions";
 import ChangePassword from "../auth/ChangePassword";
 import CustomerList from "../pages/admin/customers/CustomerList";
 import CustomerProfile from "../pages/admin/CustomerProfile";
+import CreateDraftOrder from "../pages/admin/CreateDraftOrder";
+import FinanceDashboard from "../pages/admin/finance/FinanceDashboard";
+import ExpenseManagement from "../pages/admin/finance/ExpenseManagement";
+import NewsletterSubscribers from "../pages/admin/newsletter/NewsletterSubscribers";
+
+
 
 export default function AppRoutes() {
   return (
@@ -59,6 +66,37 @@ export default function AppRoutes() {
       <Routes>
         {/* 🌐 Public Pages */}
         <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+
+        
+        {/* 🚧 Future Modules */}
+
+<Route
+  path="/b2b"
+  element={
+    <MainLayout>
+      <ComingSoon type="b2b" />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/export"
+  element={
+    <MainLayout>
+      <ComingSoon type="export" />
+    </MainLayout>
+  }
+/>
+
+<Route
+  path="/traceability"
+  element={
+    <MainLayout>
+      <ComingSoon type="traceability" />
+    </MainLayout>
+  }
+/>
+
         <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
         <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
         <Route path="/register-phone" element={<PhoneRegister />} />
@@ -142,6 +180,11 @@ export default function AppRoutes() {
   <Route path="products/edit/:id" element={<EditProduct />} />
   <Route path="products/:id/images" element={<ProductImages />} />
 
+<Route
+  path="newsletter"
+  element={<NewsletterSubscribers />}
+/>
+
  {/* Inventory */}
 <Route
   path="inventory"
@@ -152,6 +195,17 @@ export default function AppRoutes() {
   path="/admin/inventory/transactions"
   element={<InventoryTransactions />}
 />
+
+<Route
+  path="/admin/finance"
+  element={<FinanceDashboard />}
+/>
+
+<Route
+  path="/admin/finance/expenses"
+  element={<ExpenseManagement />}
+/>
+
   {/* ============================= */}
 {/* 👥 CUSTOMER MANAGEMENT */}
 {/* ============================= */}
@@ -169,6 +223,11 @@ export default function AppRoutes() {
 <Route
   path="customers/:customerId/add-address"
   element={<AddCustomerAddress />}
+/>
+
+<Route
+  path="customers/:customerId/draft-order"
+  element={<CreateDraftOrder />}
 />
 
 <Route

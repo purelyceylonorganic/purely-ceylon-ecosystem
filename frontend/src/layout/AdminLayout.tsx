@@ -22,6 +22,14 @@ export default function AdminLayout() {
       name: "Customers",
       path: "/admin/customers",
     },
+    {
+      name: "Finance",
+      path: "/admin/finance",
+    },
+    {
+      name: "Newsletter",
+      path: "/admin/newsletter",
+    },
   ];
 
   return (

@@ -16,11 +16,12 @@ export class LoggerService {
       // பிரியஸ்மா ஆடிட் லாக்கில் தானாகப் பதிவு செய்தல்
       if ((prisma as any).auditLog) {
         await (prisma as any).auditLog.create({
-          data: {
-            action: `ERROR_${context.toUpperCase()}`,
-            details: `பிழை: ${errorMessage} | நேரம்: ${timestamp}`
-          }
-        });
+  data: {
+    action: `ERROR_${context.toUpperCase()}`,
+    module: "SYSTEM",
+    description: `பிழை: ${errorMessage} | நேரம்: ${timestamp}`
+  }
+});
       }
     } catch (dbError) {
       console.error('⚠️ Database logging failed:', dbError);
@@ -35,11 +36,12 @@ export class LoggerService {
     try {
       if ((prisma as any).auditLog) {
         await (prisma as any).auditLog.create({
-          data: {
-            action,
-            details: `${details} (நேரம்: ${timestamp})`
-          }
-        });
+  data: {
+    action,
+    module: "SYSTEM",
+    description: `${details} (நேரம்: ${timestamp})`
+  }
+});
       }
     } catch (dbError) {
       console.error('⚠️ Database logging failed:', dbError);

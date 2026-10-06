@@ -62,7 +62,9 @@ import productImageRoutes from "./routes/productImage.routes";
 import uploadRoutes from "./routes/upload.routes";
 import customerRoutes from "./routes/customer.routes";
 import adminRFQRoutes from "./routes/adminRFQ.routes";
-
+import expenseRoutes from "./routes/expense.routes";
+import financeRoutes from "./routes/finance.routes";
+import newsletterRoutes from "./routes/newsletter.route";
 
 process.on("uncaughtException", (err) => {
   logger.error("💥 Uncaught Exception:", err);
@@ -206,10 +208,12 @@ app.use("/api/v1/product-images", productImageRoutes);
 app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/customers", customerRoutes);
 app.use("/api/v1/b2b/admin", adminRFQRoutes);
-app.use(
-  "/api/v1/b2b/admin",
-  adminQuoteRoutes
-);
+app.use("/api/v1/b2b/admin", adminQuoteRoutes);
+app.use("/api/v1/expenses", expenseRoutes);
+app.use("/api/v1/finance", financeRoutes);
+app.use("/api/v1/newsletter", newsletterRoutes);
+
+
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
 app.get('/api/v1/verify-email-connection', async (_req, res) => {
   try {
@@ -243,29 +247,21 @@ app.use('*', (_req, res) => {
 app.use(globalErrorHandler);
 
 // 8. Server Start
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 if (require.main === module) {
-
-  const server = app.listen(PORT, () => {
-
+  const server = app.listen(PORT, "0.0.0.0", () => {
     logger.info(
       `🚀 Server running on port ${PORT}`
     );
 
-
     // Start Background Workers
     startAllJobs();
-
 
     logger.info(
       "⚙️ Background Jobs Started"
     );
-
-
   });
-
-
 }
 
 // FINAL EXPORT
