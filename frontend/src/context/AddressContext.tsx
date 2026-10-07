@@ -35,47 +35,44 @@ export function AddressProvider({
 
   // 2. அனைத்து முகவரிகளையும் லோடு செய்யும் முதன்மை ஃபங்ஷன்
   async function loadAddresses() {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      // மைக்ரேஷன் எளிதாக இருக்க, சேவையகம் (service) இல்லையெனில் நேரடி fetch-ஐயும் பயன்படுத்தலாம்
-      let addrList: Address[] = [];
-      
-      if (addressService && typeof addressService.getMyAddresses === "function") {
-        const response = await addressService.getMyAddresses();
-        addrList = response.data ?? response ?? [];
-      } else {
-        // Fallback: பழைய நேரடி API Fetch லாஜிக்
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/api/v1/addresses", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const result = await response.json();
-        if (result.success) {
-          addrList = result.data;
-        }
-      }
-      
-      setAddresses(addrList);
+    const response =
+      await addressService.getMyAddresses();
 
-      // 📍 Default முகவரியைக் கண்டறிந்து செட் செய்தல்
-      const foundDefault = addrList.find((a: Address) => a.isDefault) || null;
-      setDefaultAddress(foundDefault);
+    const addrList: Address[] =
+      response.data ?? response ?? [];
 
-      // 🔄 ஏதும் அட்ரஸ் செலக்ட் செய்யப்படவில்லை எனில் Default அட்ரஸையோ அல்லது முதல் அட்ரஸையோ செலக்ட் செய்யும் லாஜிக்
-      if (foundDefault) {
-        setSelectedAddressId(foundDefault.id || (foundDefault as any)._id);
-      } else if (addrList.length > 0) {
-        setSelectedAddressId(addrList[0].id || (addrList[0] as any)._id);
-      }
-    } catch (error) {
-      console.error("முகவரிகளை லோடு செய்வதில் பிழை:", error);
-    } finally {
-      setLoading(false);
+    setAddresses(addrList);
+
+    const foundDefault =
+      addrList.find(
+        (a: Address) => a.isDefault
+      ) || null;
+
+    setDefaultAddress(foundDefault);
+
+    if (foundDefault) {
+      setSelectedAddressId(
+        foundDefault.id ||
+          (foundDefault as any)._id
+      );
+    } else if (addrList.length > 0) {
+      setSelectedAddressId(
+        addrList[0].id ||
+          (addrList[0] as any)._id
+      );
     }
+  } catch (error) {
+    console.error(
+      "முகவரிகளை லோடு செய்வதில் பிழை:",
+      error
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   // பழைய கோப்பில் இருந்த பெயருக்கும் ஆதரவு வழங்குதல் (Alias)
   const fetchAddresses = loadAddresses;

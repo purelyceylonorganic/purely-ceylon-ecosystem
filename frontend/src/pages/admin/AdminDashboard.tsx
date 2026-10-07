@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { orderService } from "../../services/order.service";
 import {
@@ -53,83 +53,105 @@ export default function AdminDashboard() {
   // ==========================================
 
   const loadMonthlySales = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/monthly-sales", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const result = await response.json();
-      if (result.success && result.data) {
-        const chartData = Object.entries(result.data).map(([month, revenue]) => ({
+  try {
+    const response = await api.get("/admin/monthly-sales");
+
+    const result = response.data;
+
+    if (result.success && result.data) {
+      const chartData = Object.entries(result.data).map(
+        ([month, revenue]) => ({
           month,
           revenue: Number(revenue),
-        }));
-        setMonthlySales(chartData);
-      }
-    } catch (error) {
-      console.error("Chart data loading error:", error);
+        })
+      );
+
+      setMonthlySales(chartData);
     }
-  };
+  } catch (error) {
+    console.error("Chart data loading error:", error);
+  }
+};
 
   const loadTopProducts = async () => {
+  try {
+    const response = await api.get("/admin/top-products");
+
+    const result = response.data;
+
+    if (result.success) {
+      setTopProducts(result.data || []);
+    }
+  } catch (error) {
+    console.error("Top Products Error:", error);
+  }
+};
+
+// ==========================================
+// 🔄 USEEFFECT (INITIAL LOAD)
+// ==========================================
+useEffect(() => {
+  async function fetchAllAnalytics() {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/top-products", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setTopProducts(result.data || []);
-      }
-    } catch (error) {
-      console.error("Top Products Error:", error);
-    }
-  };
+      setLoading(true);
 
-  // ==========================================
-  // 🔄 USEEFFECT (INITIAL LOAD)
-  // ==========================================
-  useEffect(() => {
-    async function fetchAllAnalytics() {
       try {
-        setLoading(true);
+        const response = await orderService.getDashboardStats();
 
-        try {
-          const response = await orderService.getDashboardStats();
-          setStats(response.stats || response.data?.data || response.data);
-        } catch (err) {
-          console.error("Fallback route used to fetch dashboard stats:", err);
-          const resStats = await axios.get("http://localhost:5000/api/v1/admin/revenue-dashboard");
-          if (resStats.data.success) setStats(resStats.data.data);
-        }
-
-        await Promise.all([
-          loadMonthlySales(),
-          loadTopProducts()
-        ]);
-
-        const resTop = await axios.get("http://localhost:5000/api/v1/admin/top-analytics");
-        if (resTop.data.success) setTopAnalytics(resTop.data);
-
+        setStats(
+          response.stats ||
+            response.data?.data ||
+            response.data
+        );
       } catch (err) {
-        console.error("Data loading error:", err);
-        toast.error("Failed to load dashboard statistics");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAllAnalytics();
-  }, []);
+        console.error(
+          "Fallback route used to fetch dashboard stats:",
+          err
+        );
 
+        const resStats = await api.get(
+          "/admin/revenue-dashboard"
+        );
+
+        if (resStats.data.success) {
+          setStats(resStats.data.data);
+        }
+      }
+
+      await Promise.all([
+        loadMonthlySales(),
+        loadTopProducts(),
+      ]);
+
+      const resTop = await api.get(
+        "/admin/top-analytics"
+      );
+
+      if (resTop.data.success) {
+        setTopAnalytics(resTop.data);
+      }
+    } catch (err) {
+      console.error("Data loading error:", err);
+      toast.error("Failed to load dashboard statistics");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchAllAnalytics();
+}, []);
   // ==========================================
   // 📄 PDF EXPORT LOGIC
   // ==========================================
   const handleExportPDF = async () => {
     try {
       toast.loading("Generating PDF Report...", { id: "pdf" });
-      const response = await axios.get("http://localhost:5000/api/v1/admin/revenue-report/pdf", {
-        responseType: "blob", 
-      });
+      const response = await api.get(
+  "/admin/revenue-report/pdf",
+  {
+    responseType: "blob",
+  }
+);
       
       const blob = new Blob([response.data], { type: "application/pdf" });
       const link = document.createElement("a");

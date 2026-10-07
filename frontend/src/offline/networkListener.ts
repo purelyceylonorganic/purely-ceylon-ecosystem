@@ -1,14 +1,30 @@
 import { syncOfflineQueue } from "./syncEngine";
 
-export const startNetworkListener = () => {
-  window.addEventListener("online", () => {
-    syncOfflineQueue();
-  });
+let cleanupNetworkListener: (() => void) | null = null;
 
-  // periodic sync every 30 seconds
-  setInterval(() => {
+export const startNetworkListener = () => {
+  if (cleanupNetworkListener) {
+    return cleanupNetworkListener;
+  }
+
+  const handleOnline = () => {
+    console.log("🌐 Network online. Syncing offline queue...");
+    syncOfflineQueue();
+  };
+
+  window.addEventListener("online", handleOnline);
+
+  const intervalId = window.setInterval(() => {
     if (navigator.onLine) {
       syncOfflineQueue();
     }
   }, 30000);
+
+  cleanupNetworkListener = () => {
+    window.removeEventListener("online", handleOnline);
+    window.clearInterval(intervalId);
+    cleanupNetworkListener = null;
+  };
+
+  return cleanupNetworkListener;
 };

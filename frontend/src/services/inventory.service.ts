@@ -1,7 +1,5 @@
 import api from "../api/axios";
 
-const API = "http://localhost:5000/api/v1";
-
 export interface InventoryItem {
   id: string;
   warehouseId: string;
@@ -28,11 +26,13 @@ export interface InventoryItem {
       name: string;
       slug: string;
       isActive: boolean;
+
       category?: {
         id: string;
         name: string;
         slug: string;
       };
+
       images?: {
         id: string;
         url: string;
@@ -42,7 +42,6 @@ export interface InventoryItem {
   };
 
   transactions?: InventoryTransaction[];
-
   stockAlerts?: StockAlert[];
 }
 
@@ -56,15 +55,18 @@ export interface InventoryTransaction {
   inventory?: {
     id: string;
     quantity: number;
+
     warehouse?: {
       id: string;
       name: string;
       location: string;
     };
+
     productVariant?: {
       id: string;
       sku: string;
       weight: string;
+
       product?: {
         id: string;
         name: string;
@@ -99,11 +101,9 @@ export const inventoryService = {
   // GET /api/v1/inventory
   // ==========================================
   async getInventory(): Promise<InventoryItem[]> {
-    const response = await api.get(
-      `${API}/inventory`
-    );
+    const response = await api.get("/inventory");
 
-    return response.data.data;
+    return response.data.data || [];
   },
 
   // ==========================================
@@ -111,33 +111,28 @@ export const inventoryService = {
   // GET /api/v1/inventory/low-stock
   // ==========================================
   async getLowStock(): Promise<InventoryItem[]> {
-    const response = await api.get(
-      `${API}/inventory/low-stock`
-    );
+    const response = await api.get("/inventory/low-stock");
 
-    return response.data.data;
+    return response.data.data || [];
   },
 
   // ==========================================
   // 📜 GET TRANSACTIONS
   // GET /api/v1/inventory/transactions
   // ==========================================
-  // 📜 GET TRANSACTIONS
-async getTransactions(): Promise<InventoryTransaction[]> {
-  const response = await api.get("/inventory/transactions");
+  async getTransactions(): Promise<InventoryTransaction[]> {
+    const response = await api.get("/inventory/transactions");
 
-  return response.data.data || [];
-},
+    return response.data.data || [];
+  },
 
   // ==========================================
   // ➕ ADD STOCK
   // POST /api/v1/inventory/add-stock
   // ==========================================
-  async addStock(
-    data: AddStockPayload
-  ) {
+  async addStock(data: AddStockPayload) {
     const response = await api.post(
-      `${API}/inventory/add-stock`,
+      "/inventory/add-stock",
       data
     );
 
@@ -148,11 +143,9 @@ async getTransactions(): Promise<InventoryTransaction[]> {
   // ➖ REMOVE STOCK
   // POST /api/v1/inventory/remove-stock
   // ==========================================
-  async removeStock(
-    data: RemoveStockPayload
-  ) {
+  async removeStock(data: RemoveStockPayload) {
     const response = await api.post(
-      `${API}/inventory/remove-stock`,
+      "/inventory/remove-stock",
       data
     );
 

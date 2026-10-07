@@ -7,8 +7,6 @@ import { Link } from "react-router-dom";
 import AddressManager from "../../components/address/AddressManager";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.png";
 
@@ -42,7 +40,6 @@ type Order = {
 export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const { cartCount } = useCart() as any;
   const { wishlistCount } = useWishlist();
@@ -73,21 +70,18 @@ export default function Dashboard() {
 }
 
   async function loadDashboard() {
-    try {
-      setLoading(true);
-      const [orderRes, addressRes] = await Promise.all([
-        orderService.getMyOrders(),
-        addressService.getMyAddresses(),
-      ]);
+  try {
+    const [orderRes, addressRes] = await Promise.all([
+      orderService.getMyOrders(),
+      addressService.getMyAddresses(),
+    ]);
 
-      setOrders(orderRes.orders ?? orderRes.data ?? []);
-      setAddresses(addressRes.data ?? addressRes ?? []);
-    } catch (err) {
-      console.error("Dashboard Loading Error:", err);
-    } finally {
-      setLoading(false);
-    }
+    setOrders(orderRes.orders ?? orderRes.data ?? []);
+    setAddresses(addressRes.data ?? addressRes ?? []);
+  } catch (err) {
+    console.error("Dashboard Loading Error:", err);
   }
+}
 
   // Professional Invoice Generation
   function downloadInvoice(order: Order) {
@@ -166,50 +160,6 @@ img.src = logo;
 
     doc.save(`invoice-${order.id || order._id}.pdf`);
   }
-
-  if (loading) {
-  return (
-    <div
-      style={{
-        maxWidth:"1200px",
-        margin:"40px auto",
-        padding:"20px",
-      }}
-    >
-
-      <Skeleton height={120} borderRadius={12}/>
-
-
-      <div
-        style={{
-          display:"grid",
-          gridTemplateColumns:
-          "repeat(auto-fit,minmax(240px,1fr))",
-          gap:20,
-          marginTop:30,
-        }}
-      >
-
-        {[1,2,3,4].map((item)=>(
-          <Skeleton
-            key={item}
-            height={150}
-            borderRadius={16}
-          />
-        ))}
-
-      </div>
-
-
-      <div style={{marginTop:40}}>
-        <Skeleton height={250} borderRadius={16}/>
-      </div>
-
-
-    </div>
-  );
-}
-
 const dashboardCards = [
   {
     icon: "📦",
@@ -240,365 +190,404 @@ const dashboardCards = [
     path: "/addresses",
   },
 ];
-  return (
+
+    return (
     <div
-style={{
-maxWidth:"1200px",
-margin:"40px auto",
-padding:"20px",
-background: darkMode 
-? "#111827" 
-: "#f8fafc",
-minHeight:"100vh",
-}}
->
-
-      <div style={{ background: "linear-gradient(135deg,#0E4B32,#177245)", color: "#fff", borderRadius: 12, padding: 30, marginBottom: 30, boxShadow: "0 4px 15px rgba(14,75,50,0.15)" }}>
-        <h1 style={{ margin: 0, fontSize: "32px" }}>👋 Welcome Back!</h1>
-        <button
-onClick={toggleDarkMode}
-style={{
-marginTop:15,
-padding:"8px 16px",
-borderRadius:"8px",
-border:"none",
-cursor:"pointer",
-background:"#fff",
-color:"#0E4B32",
-fontWeight:"bold"
-}}
->
-{darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-</button>
-
-        <p style={{ marginTop: 10, opacity: 0.9, fontSize: "16px" }}>Manage your orders, wishlist, cart and account from one place.</p>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", border: "1px solid #ddd", borderRadius: 12, padding: 20, marginBottom: 30, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "20px", color: "#333" }}>👤 Customer Account</h2>
-          <p style={{ margin: "5px 0 0 0", color: "#666" }}>Manage your profile and account settings.</p>
-        </div>
-        <Link to="/profile"><button style={secondaryButtonStyle}>Edit Profile</button></Link>
-      </div>
-
-      <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
-    gap: 25,
-    marginTop: 35,
-  }}
->
-  {dashboardCards.map((card, index) => (
-  <Link
-    key={card.title}
-    to={card.path}
-    style={{
-      textDecoration: "none",
-      color: "inherit",
-    }}
-  >
-    <motion.div
-      initial={{
-        opacity: 0,
-        y: 30,
-      }}
-      animate={{
-        opacity: 1,
-        y: 0,
-      }}
-      transition={{
-        duration: 0.4,
-        delay: index * 0.1,
-      }}
-      whileHover={{
-        scale: 1.05,
-        y: -5,
-      }}
-      whileTap={{
-        scale: 0.98,
-      }}
-      style={{
-        ...cardStyle,
-        borderTop: `5px solid ${card.color}`,
-        cursor: "pointer",
-      }}
+      className={`min-h-screen w-full overflow-x-hidden ${
+        darkMode ? "bg-gray-950 text-white" : "bg-[#FFF8EE] text-[#111111]"
+      }`}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <span style={{ fontSize: 34 }}>
-          {card.icon}
-        </span>
+      <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
 
-        <span
-          style={{
-            color: "#999",
-            fontSize: 22,
-          }}
+        {/* Welcome Header */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0E4B32] via-[#145E3F] to-[#177245] p-5 text-white shadow-lg sm:rounded-3xl sm:p-8 lg:p-10">
+          <div className="relative z-10 max-w-3xl">
+            <div className="mb-3 inline-flex rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold backdrop-blur sm:text-sm">
+              🌿 Purely Ceylon Customer Account
+            </div>
+
+            <h1 className="text-2xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
+              👋 Welcome Back!
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/85 sm:text-base sm:leading-7">
+              Manage your orders, wishlist, cart and account from one place.
+            </p>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                to="/profile"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#0E4B32] transition hover:bg-[#D4AF37] hover:text-white"
+              >
+                👤 Edit Profile
+              </Link>
+
+              <button
+                type="button"
+                onClick={toggleDarkMode}
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+              </button>
+            </div>
+          </div>
+
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#D4AF37]/20 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+        </section>
+
+        {/* Customer Account */}
+        <section
+          className={`mt-5 flex flex-col gap-4 rounded-2xl border p-5 shadow-sm sm:mt-7 sm:flex-row sm:items-center sm:justify-between sm:p-6 ${
+            darkMode
+              ? "border-gray-800 bg-gray-900"
+              : "border-gray-200 bg-white"
+          }`}
         >
-          ➜
-        </span>
-      </div>
+          <div>
+            <h2
+              className={`text-lg font-extrabold sm:text-xl ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              👤 Customer Account
+            </h2>
 
-      <h2 style={numberStyle}>
-        {card.value}
-      </h2>
-
-      <p style={labelStyle}>
-        {card.title}
-      </p>
-
-      <small
-        style={{
-          color: "#888",
-        }}
-      >
-        Updated just now
-      </small>
-    </motion.div>
-  </Link>
-))}
-</div>
-
-      {/* Recent Orders */}
-<div style={{ marginTop: 50 }}>
-
-  <h2
-    style={{
-      fontSize: "24px",
-      marginBottom: "20px",
-      color: "#333",
-    }}
-  >
-   <div style={{ marginTop: 50, marginBottom: 30 }}>
-        <h2 style={{ fontSize: "24px", marginBottom: "20px", color: "#333" }}>⚡ Quick Actions</h2>
-        <div style={{ display: "flex", gap: 15, flexWrap: "wrap" }}>
-          <Link to="/orders"><button style={buttonStyle}>📦 Orders</button></Link>
-          <Link to="/wishlist"><button style={buttonStyle}>❤️ Wishlist</button></Link>
-          <Link to="/checkout"><button style={buttonStyle}>💳 Checkout</button></Link>
-          <Link to="/payment-methods">
-    <button style={buttonStyle}>
-      💳 Saved Payment Methods
-    </button>
-  </Link>
-        </div>
-      </div>
-
-    📦 Recent Orders
-  </h2>
-
-
-  {orders.length === 0 ? (
-    <div style={previewBoxStyle}>
-      <p style={{ color: "#666" }}>
-        No Orders Yet.
-      </p>
-    </div>
-
-  ) : (
-
-    orders.slice(0, 5).map((order) => (
-
-      <div
-        key={order.id || order._id}
-        style={previewBoxStyle}
-      >
-
-        {/* Order Header */}
-        <div
-          style={{
-            display:"flex",
-            justifyContent:"space-between",
-            alignItems:"center",
-            flexWrap:"wrap",
-            gap:10,
-          }}
-        >
-
-          <h3
-            style={{
-              margin:0,
-              color:"#0E4B32",
-            }}
-          >
-            Order #
-            {(order.id || order._id || "").slice(0,8)}
-          </h3>
-
-
-          <span
-            style={{
-              padding:"6px 14px",
-              borderRadius:"20px",
-              background:
-                order.status === "Completed"
-                ? "#dcfce7"
-                : "#fef3c7",
-
-              color:
-                order.status === "Completed"
-                ? "#166534"
-                : "#92400e",
-
-              fontSize:"13px",
-              fontWeight:"bold",
-            }}
-          >
-            {order.status}
-          </span>
-
-        </div>
-
-
-        {/* Order Information */}
-        <div
-          style={{
-            marginTop:15,
-            color:"#555",
-            lineHeight:"1.8",
-          }}
-        >
-
-          <p>
-            📅 Date:
-            {" "}
-            {order.createdAt
-              ? new Date(order.createdAt)
-              .toLocaleDateString()
-              : "N/A"
-            }
-          </p>
-
-
-          <p>
-            🛒 Items:
-            {" "}
-            {order.items?.length || 0}
-            {" "}
-            Products
-          </p>
-
-
-          <p>
-            💰 Total:
-            {" "}
-            USD
-            {" "}
-            {order.totalFinal
-              ? order.totalFinal.toFixed(2)
-              : "0.00"
-            }
-          </p>
-
-        </div>
-
-
-
-        {/* Buttons */}
-        <div
-          style={{
-            display:"flex",
-            gap:10,
-            marginTop:15,
-            flexWrap:"wrap",
-          }}
-        >
+            <p
+              className={`mt-1 text-sm ${
+                darkMode ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              Manage your profile and account settings.
+            </p>
+          </div>
 
           <Link
-            to={`/orders/${order.id || order._id}`}
-            style={{
-              padding:"9px 18px",
-              background:"#f1f5f9",
-              color:"#333",
-              borderRadius:"8px",
-              textDecoration:"none",
-              fontWeight:"bold",
-              fontSize:"13px",
-            }}
+            to="/profile"
+            className="inline-flex min-h-[46px] w-full items-center justify-center rounded-xl border border-[#0E4B32] px-5 py-3 text-sm font-bold text-[#0E4B32] transition hover:bg-[#0E4B32] hover:text-white sm:w-auto"
           >
-            🔍 View Details
+            Edit Profile
           </Link>
+        </section>
 
+        {/* Dashboard Cards */}
+        <section className="mt-5 grid grid-cols-2 gap-3 sm:mt-7 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+          {dashboardCards.map((card, index) => (
+            <Link
+              key={card.title}
+              to={card.path}
+              className="min-w-0 no-underline"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: index * 0.08,
+                }}
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                className={`h-full rounded-2xl border border-t-4 p-4 shadow-sm transition-shadow hover:shadow-lg sm:rounded-3xl sm:p-6 ${
+                  darkMode
+                    ? "border-gray-800 bg-gray-900"
+                    : "border-gray-100 bg-white"
+                }`}
+                style={{ borderTopColor: card.color }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-2xl sm:text-3xl">
+                    {card.icon}
+                  </span>
 
-          <button
-            onClick={() => downloadInvoice(order)}
-            style={primaryButtonStyle}
+                  <span
+                    className={`text-lg sm:text-xl ${
+                      darkMode ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
+                    →
+                  </span>
+                </div>
+
+                <h2 className="mt-4 text-2xl font-extrabold text-[#0E4B32] sm:text-4xl">
+                  {card.value}
+                </h2>
+
+                <p
+                  className={`mt-1 text-xs font-bold sm:text-sm ${
+                    darkMode ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  {card.title}
+                </p>
+
+                <p
+                  className={`mt-2 text-[11px] sm:text-xs ${
+                    darkMode ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Updated just now
+                </p>
+              </motion.div>
+            </Link>
+          ))}
+        </section>
+
+        {/* Quick Actions */}
+        <section className="mt-8 sm:mt-10">
+          <div className="mb-4 flex items-center justify-between">
+            <h2
+              className={`text-xl font-extrabold sm:text-2xl ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              ⚡ Quick Actions
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              to="/orders"
+              className="flex min-h-[52px] items-center justify-center rounded-xl border border-[#0E4B32] bg-white px-3 py-3 text-center text-xs font-bold text-[#0E4B32] shadow-sm transition hover:bg-[#0E4B32] hover:text-white sm:text-sm"
+            >
+              📦 Orders
+            </Link>
+
+            <Link
+              to="/wishlist"
+              className="flex min-h-[52px] items-center justify-center rounded-xl border border-[#0E4B32] bg-white px-3 py-3 text-center text-xs font-bold text-[#0E4B32] shadow-sm transition hover:bg-[#0E4B32] hover:text-white sm:text-sm"
+            >
+              ❤️ Wishlist
+            </Link>
+
+            <Link
+              to="/checkout"
+              className="flex min-h-[52px] items-center justify-center rounded-xl border border-[#0E4B32] bg-white px-3 py-3 text-center text-xs font-bold text-[#0E4B32] shadow-sm transition hover:bg-[#0E4B32] hover:text-white sm:text-sm"
+            >
+              💳 Checkout
+            </Link>
+
+            <Link
+              to="/payment-methods"
+              className="flex min-h-[52px] items-center justify-center rounded-xl border border-[#0E4B32] bg-white px-3 py-3 text-center text-xs font-bold text-[#0E4B32] shadow-sm transition hover:bg-[#0E4B32] hover:text-white sm:text-sm"
+            >
+              💳 Payment Methods
+            </Link>
+          </div>
+        </section>
+
+        {/* Recent Orders */}
+        <section className="mt-10 sm:mt-12">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <h2
+              className={`text-xl font-extrabold sm:text-2xl ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              📦 Recent Orders
+            </h2>
+
+            {orders.length > 0 && (
+              <Link
+                to="/orders"
+                className="text-xs font-bold text-[#0E4B32] sm:text-sm"
+              >
+                View All →
+              </Link>
+            )}
+          </div>
+
+          {orders.length === 0 ? (
+            <div
+              className={`rounded-2xl border p-8 text-center shadow-sm sm:p-12 ${
+                darkMode
+                  ? "border-gray-800 bg-gray-900"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="text-4xl">📦</div>
+
+              <h3
+                className={`mt-3 text-lg font-bold ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                No Orders Yet
+              </h3>
+
+              <p
+                className={`mt-2 text-sm ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Your recent orders will appear here.
+              </p>
+
+              <Link
+                to="/products"
+                className="mt-5 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#111111]"
+              >
+                🛍️ Start Shopping
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.slice(0, 5).map((order) => {
+                const orderId = order.id || order._id || "";
+                const isCompleted =
+                  order.status?.toLowerCase() === "completed" ||
+                  order.status?.toLowerCase() === "delivered";
+
+                return (
+                  <motion.div
+                    key={orderId}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-2xl border p-4 shadow-sm sm:p-6 ${
+                      darkMode
+                        ? "border-gray-800 bg-gray-900"
+                        : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-500">
+                          ORDER
+                        </p>
+
+                        <h3 className="mt-1 truncate text-base font-extrabold text-[#0E4B32] sm:text-lg">
+                          #{orderId.slice(0, 8)}
+                        </h3>
+                      </div>
+
+                      <span
+                        className={`inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-bold ${
+                          isCompleted
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+
+                    <div
+                      className={`mt-4 grid grid-cols-1 gap-2 border-t pt-4 text-sm sm:grid-cols-3 sm:gap-4 ${
+                        darkMode
+                          ? "border-gray-800 text-gray-400"
+                          : "border-gray-100 text-gray-600"
+                      }`}
+                    >
+                      <p>
+                        <span className="font-semibold">📅 Date:</span>{" "}
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString()
+                          : "N/A"}
+                      </p>
+
+                      <p>
+                        <span className="font-semibold">🛒 Items:</span>{" "}
+                        {order.items?.length || 0} Products
+                      </p>
+
+                      <p className="font-bold text-[#0E4B32]">
+                        <span>💰 Total:</span>{" "}
+                        USD{" "}
+                        {order.totalFinal
+                          ? Number(order.totalFinal).toFixed(2)
+                          : "0.00"}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+                      <Link
+                        to={`/orders/${orderId}`}
+                        className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-gray-100 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-200"
+                      >
+                        🔍 View Details
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => downloadInvoice(order)}
+                        className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#0E4B32] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#111111]"
+                      >
+                        📄 Download Invoice
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Wishlist & Cart */}
+        <section className="mt-10 sm:mt-12">
+          <h2
+            className={`mb-4 text-xl font-extrabold sm:text-2xl ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
           >
-            📄 Invoice
-          </button>
+            ❤️ Wishlist & 🛒 Cart
+          </h2>
 
+          <div
+            className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${
+              darkMode
+                ? "border-gray-800 bg-gray-900"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl bg-red-50 p-4">
+                <p className="text-xs font-semibold text-red-500">
+                  ❤️ Wishlist
+                </p>
+                <p className="mt-1 text-2xl font-extrabold text-red-600">
+                  {wishlistCount}
+                </p>
+              </div>
 
-        </div>
+              <div className="rounded-xl bg-emerald-50 p-4">
+                <p className="text-xs font-semibold text-emerald-600">
+                  🛒 Cart
+                </p>
+                <p className="mt-1 text-2xl font-extrabold text-emerald-700">
+                  {cartCount}
+                </p>
+              </div>
+            </div>
 
+            <Link
+              to="/cart"
+              className="mt-4 flex min-h-[50px] w-full items-center justify-center rounded-xl bg-[#0E4B32] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#111111]"
+            >
+              Go to Cart →
+            </Link>
+          </div>
+        </section>
+
+        {/* Saved Addresses */}
+        <section className="mt-10 pb-8 sm:mt-12 sm:pb-12">
+          <h2
+            className={`mb-4 text-xl font-extrabold sm:text-2xl ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            🏠 Saved Addresses
+          </h2>
+
+          <div
+            className={`overflow-hidden rounded-2xl border p-3 shadow-sm sm:p-5 ${
+              darkMode
+                ? "border-gray-800 bg-gray-900"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <AddressManager />
+          </div>
+        </section>
 
       </div>
-
-    ))
-
-  )}
-
-</div>
-
-      {/* Summaries */}
-      <div style={{ marginTop: 50 }}>
-        <h2 style={{ fontSize: "24px", marginBottom: "15px", color: "#333" }}>❤️ Wishlist & 🛒 Cart</h2>
-        <div style={previewBoxStyle}>
-          <p>You have <strong>{wishlistCount}</strong> items in your Wishlist and <strong>{cartCount}</strong> items in your Cart.</p>
-          <Link to="/cart"><button style={buttonStyle}>Go to Cart</button></Link>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 50 }}><h2 style={{ fontSize: "24px", marginBottom: "15px", color: "#333" }}>🏠 Saved Addresses</h2><div style={previewBoxStyle}><AddressManager /></div></div>
-
-      
     </div>
-  );
-}
-
-// Styles
-const cardStyle = {
-  background: "#ffffff",
-  borderRadius: "16px",
-  padding: "28px",
-  textAlign: "center" as const,
-  boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-  border: "1px solid #eef2f7",
-  transition: "all .3s ease",
-  cursor: "pointer",
-};
-
-const previewBoxStyle = {
-  background: "#ffffff",
-  borderRadius: "16px",
-  padding: "24px",
-  boxShadow: "0 8px 20px rgba(0,0,0,.06)",
-  border: "1px solid #eef2f7",
-  marginTop: 20,
-};
-
-const numberStyle = {
-  fontSize: "42px",
-  fontWeight: 700 as const,
-  color: "#0E4B32",
-  margin: 0,
-};
-
-const labelStyle = {
-  marginTop: 10,
-  color: "#6b7280",
-  fontSize: "15px",
-  fontWeight: 600 as const,
-};
-
-
-
-const buttonStyle = { padding: "12px 24px", background: "#fff", border: "1px solid #0E4B32", color: "#0E4B32", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" as const, fontSize: "14px" };
-const secondaryButtonStyle = { padding: "10px 20px", background: "#fff", border: "1px solid #ccc", color: "#555", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" as const, fontSize: "14px" };
-const primaryButtonStyle = { padding: "8px 16px", background: "#0E4B32", border: "none", color: "#fff", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" as const, fontSize: "13px" };
+  );}

@@ -1,9 +1,11 @@
 import { openDB } from "idb";
 
-export const dbPromise = openDB("pco-offline-db", 1, {
+export const dbPromise = openDB("pco-offline-db", 2, {
   upgrade(db) {
-    db.createObjectStore("queue", {
-      keyPath: "id",
-    });
+    if (!db.objectStoreNames.contains("queue")) {
+      db.createObjectStore("queue", {
+        keyPath: "id",
+      });
+    }
   },
 });

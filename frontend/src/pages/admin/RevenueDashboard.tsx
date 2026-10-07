@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import api from "../../api/axios";
 import {
   BarChart,
   Bar,
@@ -32,136 +33,130 @@ export default function RevenueDashboard() {
   // ==========================================
   
   // 1. Load Main Dashboard & Recent Orders
-  const loadDashboard = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/revenue-dashboard", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setRevenueStats(result.data);
-        setRecentOrders(result.data.recentOrders || []);
-      }
-    } catch (error) {
-      console.error("Dashboard Error:", error);
+ const loadDashboard = async () => {
+  try {
+    const response = await api.get("/admin/revenue-dashboard");
+    const result = response.data;
+
+    if (result.success) {
+      setRevenueStats(result.data);
+      setRecentOrders(result.data.recentOrders || []);
     }
-  };
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+  }
+};
 
   // 2. Load Monthly Sales
   const loadMonthlySales = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/monthly-sales", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setMonthlySales(result.data || {});
-      }
-    } catch (error) {
-      console.error("Monthly Sales Error:", error);
-    }
-  };
+  try {
+    const response = await api.get("/admin/monthly-sales");
+    const result = response.data;
 
+    if (result.success) {
+      setMonthlySales(result.data || {});
+    }
+  } catch (error) {
+    console.error("Monthly Sales Error:", error);
+  }
+};
   // 3. Load Top Selling Products
   const loadTopProducts = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/top-products", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
+  try {
+    const response = await api.get("/admin/top-products");
+    const result = response.data;
+
+    if (result.success) {
       setTopProducts(result.data || []);
-    } catch (error) {
-      console.error("Top Products Error:", error);
     }
-  };
+  } catch (error) {
+    console.error("Top Products Error:", error);
+  }
+};
 
   // 4. Load Top Customers
   const loadTopCustomers = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/top-customers", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
+  try {
+    const response = await api.get("/admin/top-customers");
+    const result = response.data;
+
+    if (result.success) {
       setTopCustomers(result.data || []);
-    } catch (error) {
-      console.error("Top Customers Error:", error);
     }
-  };
+  } catch (error) {
+    console.error("Top Customers Error:", error);
+  }
+};
 
   // 5. Load Country Revenue Analytics
   const loadCountryRevenue = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/revenue-country", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setCountryRevenue(result.data || []);
-      }
-    } catch (error) {
-      console.error("Country Revenue Error:", error);
+  try {
+    const response = await api.get("/admin/revenue-country");
+    const result = response.data;
+
+    if (result.success) {
+      setCountryRevenue(result.data || []);
     }
-  };
+  } catch (error) {
+    console.error("Country Revenue Error:", error);
+  }
+};
 
   // 6. Load Admin Notifications (Integrated Array Response)
   const loadNotifications = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/notifications", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setNotifications(result.data || []);
-      }
-    } catch (error) {
-      console.error("Notifications Error:", error);
+  try {
+    const response = await api.get("/admin/notifications");
+    const result = response.data;
+
+    if (result.success) {
+      setNotifications(result.data || []);
     }
-  };
+  } catch (error) {
+    console.error("Notifications Error:", error);
+  }
+};
 
   // 7. Load KPI Growth Analytics
   const loadKPIGrowth = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/kpi-growth", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setKpiGrowth(result.data);
-      }
-    } catch (error) {
-      console.error("KPI Growth Error:", error);
+  try {
+    const response = await api.get("/admin/kpi-growth");
+    const result = response.data;
+
+    if (result.success) {
+      setKpiGrowth(result.data);
     }
-  };
+  } catch (error) {
+    console.error("KPI Growth Error:", error);
+  }
+};
 
   // 8. Download Revenue PDF
-  const downloadRevenuePDF = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/admin/revenue-pdf", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+ const downloadRevenuePDF = async () => {
+  try {
+    const response = await api.get("/admin/revenue-pdf", {
+      responseType: "blob",
+    });
 
-      if (!response.ok) throw new Error("Download failed");
+    const blob = new Blob([response.data], {
+      type: "application/pdf",
+    });
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Revenue-Report.pdf";
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert("PDF Download Failed");
-    }
-  };
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Revenue-Report.pdf";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Revenue PDF Download Error:", error);
+    alert("PDF Download Failed");
+  }
+};
 
   // ==========================================
   // 🔄 THEME TOGGLE FUNCTION

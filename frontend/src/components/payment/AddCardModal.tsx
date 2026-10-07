@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../../api/axios";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -15,42 +16,39 @@ export default function AddCardModal({ onClose, onSaved }: Props) {
   const [brand, setBrand] = useState("VISA");
 
   async function saveCard() {
-    // Basic validation
-    if (cardLast4.length !== 4 || cvc.length < 3) {
-      toast.error("Please enter valid card details");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/v1/payment-methods", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          cardHolderName,
-          cardLast4,
-          brand,
-          expiryMonth,
-          expiryYear,
-          cvc, // நிஜமான சர்வரில் இதை பாதுகாப்பாக கையாளவும்
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success("Card Added Successfully");
-        onSaved();
-        onClose();
-      } else {
-        toast.error(data.message || "Failed to add card");
-      }
-    } catch (error) {
-      toast.error("Something went wrong");
-    }
+  if (cardLast4.length !== 4 || cvc.length < 3) {
+    toast.error("Please enter valid card details");
+    return;
   }
+
+  try {
+    const response = await api.post("/payment-methods", {
+      cardHolderName,
+      cardLast4,
+      brand,
+      expiryMonth,
+      expiryYear,
+      cvc,
+    });
+
+    const data = response.data;
+
+    if (data.success) {
+      toast.success("Card Added Successfully");
+      onSaved();
+      onClose();
+    } else {
+      toast.error(data.message || "Failed to add card");
+    }
+  } catch (error: any) {
+    console.error(error);
+
+    toast.error(
+      error?.response?.data?.message ||
+        "Something went wrong"
+    );
+  }
+}
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4 z-50">

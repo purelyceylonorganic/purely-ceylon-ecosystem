@@ -4,6 +4,8 @@ import { addressService, type Address } from "../../services/address.service";
 import { orderService } from "../../services/order.service";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../../api/axios";
+
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -86,32 +88,31 @@ export default function Checkout() {
   }
 
   // 🚚 Step 2 — Shipping Calculator Function
-  const calculateShipping = async (country: string, subtotal: number) => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/v1/shipping/calculate",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            country,
-            orderValue: subtotal,
-          }),
-        }
-      );
+  const calculateShipping = async (
+  country: string,
+  subtotal: number
+) => {
+  try {
+    const response = await api.post("/shipping/calculate", {
+      country,
+      orderValue: subtotal,
+    });
 
-      const result = await response.json();
+    const result = response.data;
 
-      if (result.success) {
-        setShippingCost(result.shippingCost);
-        setEstimatedDays(result.estimatedDays);
-      }
-    } catch (error) {
-      console.error("Shipping கணக்கீட்டில் பிழை:", error);
+    if (result.success) {
+      setShippingCost(result.shippingCost);
+      setEstimatedDays(result.estimatedDays);
+    } else {
+      setShippingCost(0);
+      setEstimatedDays(0);
     }
-  };
+  } catch (error) {
+    console.error("Shipping கணக்கீட்டில் பிழை:", error);
+    setShippingCost(0);
+    setEstimatedDays(0);
+  }
+};
 
   // Checkout Validation & Backend API Trigger
   async function handleCheckout() {
@@ -165,30 +166,27 @@ if (!orderId) {
       if (paymentMethod === "STRIPE" || paymentMethod === "PAYPAL") {
         toast.loading("Redirecting to payment gateway...", { id: "payment-loading" });
         
-        const paymentRes = await fetch("http://localhost:5000/api/v1/payments/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            // டோக்கன் ஆதென்டிகேஷன் தேவைப்பட்டால் இங்கே ஹெடரில் சேர்க்கவும் (எ.கா: Authorization: `Bearer ${token}`)
-          },
-          body: JSON.stringify({
-            orderId,
-            paymentMethod // 'STRIPE' அல்லது 'PAYPAL' பேக்-எண்டிற்கு அனுப்பப்படும்
-          })
-        });
+       const paymentResponse = await api.post("/payments/create", {
+  orderId,
+  paymentMethod,
+});
 
-        const paymentData = await paymentRes.json();
-        toast.dismiss("payment-loading");
+const paymentData = paymentResponse.data;
 
-        if (paymentData.success && paymentData.paymentUrl) {
-          // 💳 ஸ்ட்ரைப்/பேபால் செக்அவுட் பக்கத்திற்கு பயனரை ரீடைரெக்ட் செய்தல்
-          window.location.href = paymentData.paymentUrl;
-          return;
-        } else {
-          toast.error(paymentData.message || "Payment initiation failed. Please check orders page.");
-          navigate("/orders");
-          return;
-        }
+toast.dismiss("payment-loading");
+
+if (paymentData.success && paymentData.paymentUrl) {
+  window.location.href = paymentData.paymentUrl;
+  return;
+} else {
+  toast.error(
+    paymentData.message ||
+      "Payment initiation failed. Please check orders page."
+  );
+
+  navigate("/orders");
+  return;
+}
       }
 
       // COD ஆக இருந்தால் நேரடியாக ஆர்டர் பக்கத்திற்குச் செல்லலாம்
@@ -223,61 +221,62 @@ if (!orderId) {
   const discountAmount = (subtotal * discountPercent) / 100;
   const finalTotal = subtotal - discountAmount + shippingCost;
 
-  return (
-    <div
-      style={{
-        maxWidth: "1000px",
-        margin: "40px auto",
-        padding: "20px",
-        fontFamily: "Arial, sans-serif",
-        textAlign: "left"
-      }}
-    >
-      <h1>Checkout</h1>
-      <hr />
+    return (
+    <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      {/* PAGE TITLE */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-extrabold text-[#111111] sm:text-4xl">
+          Checkout
+        </h1>
+        <div className="mt-3 h-1 w-16 rounded-full bg-[#D4AF37]" />
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", marginTop: "20px" }}>
-        
-        {/* இடப்பக்கம்: முகவரி மற்றும் கட்டண முறைகள் */}
-        <div>
-          <h3>Select Delivery Address</h3>
-          
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "20px",
-              marginBottom: "20px",
-              borderRadius: "10px",
-              background: "#fff"
-            }}
-          >
+      {/* MAIN CHECKOUT GRID */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
+
+        {/* ================= LEFT SIDE ================= */}
+        <div className="min-w-0 space-y-6">
+
+          {/* 1. DELIVERY ADDRESS */}
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+                1
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-[#111111] sm:text-xl">
+                  Delivery Address
+                </h2>
+                <p className="text-xs text-gray-500 sm:text-sm">
+                  Choose where you want your order delivered
+                </p>
+              </div>
+            </div>
+
             {addresses.length === 0 ? (
-              <div style={{ color: "#dc3545", marginBottom: "15px", fontStyle: "italic", fontWeight: "500" }}>
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-600">
                 ⚠️ No Address Found. Please add an address to proceed.
               </div>
             ) : (
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
-                  Delivery Address
+              <div>
+                <label className="mb-2 block text-sm font-bold text-gray-700">
+                  Select Delivery Address
                 </label>
+
                 <select
                   value={selectedAddress}
                   onChange={(e) => setSelectedAddress(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    border: "1px solid #ccc",
-                    fontSize: "15px",
-                    background: "#fff",
-                    outline: "none",
-                    cursor: "pointer"
-                  }}
+                  className="min-h-[50px] w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
                 >
-                  <option value="">-- Choose Shipping Address --</option>
+                  <option value="">
+                    -- Choose Shipping Address --
+                  </option>
+
                   {addresses.map((address) => (
                     <option key={address.id} value={address.id}>
-                      {address.street} - {address.city}, {address.country} {address.isDefault ? "(Default)" : ""}
+                      {address.street} - {address.city}, {address.country}{" "}
+                      {address.isDefault ? "(Default)" : ""}
                     </option>
                   ))}
                 </select>
@@ -285,146 +284,197 @@ if (!orderId) {
             )}
 
             <button
+              type="button"
               onClick={() => navigate("/addresses")}
-              style={{
-                background: "none",
-                border: "1px dashed #0E4B32",
-                color: "#0E4B32",
-                padding: "10px 15px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontWeight: "bold",
-                fontSize: "14px",
-                marginTop: "5px",
-                width: "100%",
-                textAlign: "center",
-                transition: "all 0.2s"
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.background = "#f4fbf7")}
-              onMouseOut={(e) => (e.currentTarget.style.background = "none")}
+              className="mt-4 min-h-[48px] w-full rounded-xl border border-dashed border-[#0E4B32] px-4 py-3 text-sm font-bold text-[#0E4B32] transition hover:bg-[#F4FBF7]"
             >
               + Add New Address
             </button>
-          </div>
+          </section>
 
-          {/* 💳 Step 5 — Payment Option Dropdown UI சேர்ப்பு */}
-          <h2>2. Payment Method</h2>
-          <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "8px", border: "1px solid #eee" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
+          {/* 2. PAYMENT METHOD */}
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+                2
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-[#111111] sm:text-xl">
+                  Payment Method
+                </h2>
+                <p className="text-xs text-gray-500 sm:text-sm">
+                  Select your preferred payment option
+                </p>
+              </div>
+            </div>
+
+            <label className="mb-2 block text-sm font-bold text-gray-700">
               Choose Payment Option
             </label>
+
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                fontSize: "15px",
-                background: "#fff",
-                outline: "none",
-                cursor: "pointer"
-              }}
+              className="min-h-[50px] w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
             >
               <option value="COD">Cash On Delivery</option>
               <option value="STRIPE">Stripe Card</option>
               <option value="PAYPAL">PayPal</option>
             </select>
-          </div>
+
+            {paymentMethod === "COD" && (
+              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-700">
+                💵 You will pay when your order is delivered.
+              </div>
+            )}
+          </section>
         </div>
 
-        {/* வலப்பக்கம்: ஆர்டர் சுருக்கம் (Order Summary) */}
-        <div style={{ borderLeft: "1px solid #eee", paddingLeft: "40px" }}>
-          <h2>3. Order Summary</h2>
-          
-          <div style={{ maxHeight: "300px", overflowY: "auto", marginBottom: "20px" }}>
-            {cart.items.map((item: any) => (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "15px",
-                  paddingBottom: "15px",
-                  borderBottom: "1px solid #eee"
-                }}
-              >
-                <div>
-                  <h4 style={{ margin: "0 0 5px 0" }}>{item.productName}</h4>
-                  {item.weight && <p style={{ margin: "0 0 5px 0", color: "#666", fontSize: "14px" }}>Weight: {item.weight}</p>}
-                  <p style={{ margin: 0, fontSize: "14px", color: "#888" }}>Qty: {item.quantity} × USD {item.price || (item.itemTotalUSD / item.quantity)}</p>
+        {/* ================= RIGHT SIDE / ORDER SUMMARY ================= */}
+        <div className="min-w-0">
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-24">
+            
+            {/* 3. ORDER SUMMARY */}
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+                3
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-[#111111] sm:text-xl">
+                  Order Summary
+                </h2>
+                <p className="text-xs text-gray-500 sm:text-sm">
+                  Review your order before placing it
+                </p>
+              </div>
+            </div>
+
+            {/* CART ITEMS */}
+            <div className="max-h-[320px] overflow-y-auto pr-1">
+              {cart.items.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex gap-3 border-b border-gray-100 py-4 first:pt-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <h4 className="break-words text-sm font-bold text-gray-900">
+                      {item.productName}
+                    </h4>
+
+                    {item.weight && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Weight: {item.weight}
+                      </p>
+                    )}
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Qty: {item.quantity} × USD{" "}
+                      {item.price ||
+                        item.itemTotalUSD / item.quantity}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-right text-sm font-bold text-[#111111]">
+                    USD {item.itemTotalUSD}
+                  </div>
                 </div>
-                <div style={{ fontWeight: "bold" }}>
-                  USD {item.itemTotalUSD}
+              ))}
+            </div>
+
+            {/* COUPON */}
+            {discountPercent > 0 && (
+              <div className="my-5 flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <span className="break-all text-sm font-bold text-emerald-800">
+                  🎟️ Coupon: {couponCode}
+                </span>
+
+                <span className="text-sm font-bold text-emerald-700">
+                  {discountPercent}% OFF Applied
+                </span>
+              </div>
+            )}
+
+            {/* PRICE SUMMARY */}
+            <div className="mt-5 border-t border-gray-200 pt-5">
+
+              <div className="flex items-center justify-between gap-4 py-1">
+                <span className="text-sm text-gray-600">
+                  Subtotal
+                </span>
+
+                <span className="text-sm font-semibold text-gray-900">
+                  {cart.currency || "USD"} {subtotal.toFixed(2)}
+                </span>
+              </div>
+
+              {discountPercent > 0 && (
+                <div className="flex items-center justify-between gap-4 py-1">
+                  <span className="text-sm font-semibold text-emerald-600">
+                    Coupon Discount
+                  </span>
+
+                  <span className="text-sm font-bold text-emerald-600">
+                    -{cart.currency || "USD"}{" "}
+                    {discountAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-4 py-1">
+                <span className="text-sm text-gray-600">
+                  Shipping
+                </span>
+
+                <span className="text-sm font-semibold text-gray-900">
+                  {cart.currency || "USD"}{" "}
+                  {shippingCost.toFixed(2)}
+                </span>
+              </div>
+
+              {selectedAddress && (
+                <div className="mt-2 flex items-center justify-between gap-4 rounded-lg bg-yellow-50 px-3 py-2">
+                  <span className="text-xs font-medium text-yellow-700">
+                    🚚 Estimated Delivery
+                  </span>
+
+                  <span className="text-xs font-bold text-yellow-700">
+                    {estimatedDays} Days
+                  </span>
+                </div>
+              )}
+
+              {/* GRAND TOTAL */}
+              <div className="mt-5 border-t-2 border-gray-100 pt-4">
+                <div className="flex items-end justify-between gap-4">
+                  <span className="text-base font-bold text-gray-700">
+                    Grand Total
+                  </span>
+
+                  <span className="text-2xl font-extrabold text-[#0E4B32]">
+                    {cart.currency || "USD"}{" "}
+                    {finalTotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {discountPercent > 0 && (
-            <div style={{
-              background: "#ecfdf5",
-              border: "1px solid #A7F3D0",
-              padding: "10px 15px",
-              borderRadius: "6px",
-              marginBottom: "15px",
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "14px"
-            }}>
-              <span style={{ color: "#065f46", fontWeight: "bold" }}>🎟️ Coupon Code: {couponCode}</span>
-              <span style={{ color: "#047857", fontWeight: "bold" }}>{discountPercent}% OFF Applied</span>
+              {/* PLACE ORDER */}
+              <button
+                type="button"
+                onClick={handleCheckout}
+                className="mt-6 min-h-[56px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-base font-extrabold text-white shadow-md transition hover:bg-[#111111] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {paymentMethod === "COD"
+                  ? "Place Order"
+                  : `Pay with ${paymentMethod}`}
+              </button>
+
+              <p className="mt-3 text-center text-xs leading-5 text-gray-500">
+                🔒 Your order information is securely processed.
+              </p>
             </div>
-          )}
-
-          <hr />
-          
-          <div style={{ marginTop: "20px", textAlign: "right" }}>
-            <p style={{ fontSize: "15px", color: "#666", margin: "4px 0" }}>
-              Subtotal: {cart.currency || "USD"} {subtotal.toFixed(2)}
-            </p>
-            
-            {discountPercent > 0 && (
-              <p style={{ fontSize: "15px", color: "#10b981", fontWeight: "bold", margin: "4px 0" }}>
-                Coupon Discount: -{cart.currency || "USD"} {discountAmount.toFixed(2)}
-              </p>
-            )}
-
-            <p style={{ fontSize: "15px", color: "#666", margin: "4px 0" }}>
-              Shipping: {cart.currency || "USD"} {shippingCost.toFixed(2)}
-            </p>
-
-            {selectedAddress && (
-              <p style={{ fontSize: "14px", color: "#eab308", fontWeight: "500", margin: "4px 0" }}>
-                ⏳ Delivery: {estimatedDays} Days
-              </p>
-            )}
-
-            <h2 style={{ fontSize: "24px", color: "#333", marginTop: "10px", marginBottom: "20px" }}>
-              Grand Total : {cart.currency || "USD"} {finalTotal.toFixed(2)}
-            </h2>
-
-            <button
-              onClick={handleCheckout}
-              style={{
-                width: "100%",
-                padding: "15px",
-                background: "#0E4B32",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "18px",
-                fontWeight: "bold",
-                transition: "background 0.2s"
-              }}
-            >
-              {paymentMethod === "COD" ? "Place Order" : `Pay with ${paymentMethod}`}
-            </button>
-          </div>
-
+          </section>
         </div>
       </div>
     </div>

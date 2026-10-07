@@ -10,60 +10,81 @@ export default function OrderTracking() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // ⏱️ Step 6 & 8: 10 வினாடிக்கு ஒருமுறை ஆட்டோ ரெஃப்ரெஷ் செய்யும் லாஜிக் இணைக்கப்பட்ட useEffect
+  // 10-second auto refresh
   useEffect(() => {
     if (id) {
-      loadOrder(id); // முதலில் பக்கத்திற்கு வரும்போது ஒருமுறை அழைக்கும்
+      loadOrder(id);
 
       const interval = setInterval(() => {
-        // பக்கத்தில் லோடிங் ஸ்பின்னர் காட்டாமல் பின்னணியில் மட்டும் தரவை புதுப்பிக்க
-        // loadOrder(id) நேரடியாக அழைக்கப்படுகிறது
-        loadOrder(id); 
-      }, 10000); 
+        loadOrder(id);
+      }, 10000);
 
-      return () => clearInterval(interval); // பக்கத்தை விட்டு வெளியேறும்போது இன்டர்வெல் கிளீனப் செய்யப்படும்
+      return () => clearInterval(interval);
     }
   }, [id]);
 
   async function loadOrder(orderId: string) {
-  try {
-    const response = await orderService.getOrderDetails(orderId);
+    try {
+      const response = await orderService.getOrderDetails(orderId);
 
-    console.log("Tracking Order Response:", response);
+      console.log("Tracking Order Response:", response);
 
-    setOrder(response);
-
-  } catch (error) {
-    console.error("Tracking Error:", error);
-    setOrder(null);
-  } finally {
-    setLoading(false);
+      setOrder(response);
+    } catch (error) {
+      console.error("Tracking Error:", error);
+      setOrder(null);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 20px", fontFamily: "system-ui, sans-serif" }}>
-        <div style={{ color: "#0E4B32", fontWeight: "600", fontSize: "18px" }}>Loading tracking status...</div>
+      <div className="mx-auto flex min-h-[50vh] w-full items-center justify-center px-4 py-10">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#0E4B32]" />
+
+          <h2 className="text-lg font-bold text-[#0E4B32]">
+            Loading tracking status...
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Please wait while we get the latest shipment status.
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div style={{ textAlign: "center", padding: "80px 20px", fontFamily: "system-ui, sans-serif" }}>
-        <div style={{ color: "#dc3545", fontWeight: "600", fontSize: "18px" }}>Order Not Found</div>
-        <button 
-          onClick={() => navigate("/orders")} 
-          style={{ marginTop: "15px", background: "#0E4B32", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}
-        >
-          Back to Orders
-        </button>
+      <div className="mx-auto flex min-h-[50vh] w-full items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-3xl">
+            ⚠️
+          </div>
+
+          <h2 className="text-xl font-extrabold text-red-600">
+            Order Not Found
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-gray-500">
+            We could not find the tracking information for this order.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate("/orders")}
+            className="mt-6 min-h-[48px] w-full rounded-xl bg-[#0E4B32] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#111111]"
+          >
+            ← Back to Orders
+          </button>
+        </div>
       </div>
     );
   }
 
-  // 🟢 அசல் செங்குத்து டைம்லைன் நிலைகள்
+  // Original tracking steps
   const steps = [
     "PENDING",
     "READY_TO_SHIP",
@@ -73,152 +94,271 @@ export default function OrderTracking() {
     "DELIVERED",
   ];
 
-  const currentStep = steps.indexOf(order.shippingStatus || "PENDING");
+  const currentStep = steps.indexOf(
+    order.shippingStatus || "PENDING"
+  );
+
+  const shippingStatus =
+    order.shippingStatus || "PENDING";
 
   return (
-    <div
-      style={{
-        maxWidth: "1140px",
-        margin: "30px auto",
-        padding: "0 20px",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        backgroundColor: "#fcfbf7" 
-      }}
-    >
-      {/* 🧭 Top Navigation Breadcrumb */}
-      <div style={{ marginBottom: "20px", fontSize: "14px", color: "#6b7280" }}>
-        <span style={{ cursor: "pointer", color: "#0E4B32", fontWeight: "500" }} onClick={() => navigate("/orders")}>My Orders</span>
-        <span style={{ margin: "0 8px" }}>/</span>
-        <span>Track Order</span>
-      </div>
+    <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
 
-      {/* 📦 Header Container */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e7eb", paddingBottom: "15px", marginBottom: "25px" }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "600", color: "#111827" }}>
-            Track Your Order #{order.id?.slice(-6).toUpperCase()}
-          </h2>
-          <p style={{ margin: "6px 0 0 0", fontSize: "14px", color: "#6b7280", letterSpacing: "0.3px" }}>
-            Order ID: <span style={{ color: "#374151", fontWeight: "600" }}>{order.id}</span>
-          </p>
-        </div>
-        <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600", letterSpacing: "0.5px" }}>
-          {order.shippingStatus || "PENDING"}
+      {/* ================= BREADCRUMB ================= */}
+      <div className="mb-5 flex flex-wrap items-center gap-2 text-sm">
+        <button
+          type="button"
+          onClick={() => navigate("/orders")}
+          className="font-bold text-[#0E4B32] hover:underline"
+        >
+          My Orders
+        </button>
+
+        <span className="text-gray-400">/</span>
+
+        <span className="text-gray-500">
+          Track Order
         </span>
       </div>
 
-      {/* 🚚 1. Top Section: Horizontal Progress Bar */}
-      <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "20px", marginBottom: "30px", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-        <DeliveryTimeline status={order.shippingStatus || "PENDING"} />
-      </div>
+      {/* ================= HEADER ================= */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
 
-      {/* 📊 2. Bottom Section: 2-Column Split Layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: "30px", alignItems: "start" }}>
-        
-        {/* 🟢 LEFT COLUMN: Live Shipment Progress Logs */}
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 25px 0", fontSize: "16px", fontWeight: "600", color: "#111827" }}>
-            Live Shipment Progress Logs
-          </h3>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "25px", position: "relative", paddingLeft: "35px" }}>
-            {/* செங்குத்து கோடு */}
-            <div
-              style={{
-                position: "absolute",
-                left: "11px",
-                top: "12px",
-                bottom: "12px",
-                width: "2px",
-                background: "#e2e8f0",
-              }}
-            />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-            {steps.map((step, idx) => {
-              const completed = idx <= currentStep;
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]">
+              Live Shipment Tracking
+            </p>
 
-              return (
-                <div key={step} style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  {/* டிக் மார்க் வட்டம் */}
+            <h1 className="mt-1 break-words text-xl font-extrabold text-[#111111] sm:text-2xl lg:text-3xl">
+              Track Your Order #
+              {order.id?.slice(-6).toUpperCase()}
+            </h1>
+
+            <p className="mt-2 break-all text-xs text-gray-500 sm:text-sm">
+              Order ID:{" "}
+              <span className="font-semibold text-gray-700">
+                {order.id}
+              </span>
+            </p>
+          </div>
+
+          {/* CURRENT STATUS */}
+          <div className="w-fit rounded-full border border-sky-200 bg-sky-50 px-4 py-2">
+            <span className="text-xs font-extrabold tracking-wide text-sky-700 sm:text-sm">
+              {shippingStatus.replace(/_/g, " ")}
+            </span>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= DELIVERY TIMELINE ================= */}
+      <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:mt-8 sm:p-6">
+
+        <div className="mb-5">
+          <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+            Delivery Progress
+          </h2>
+
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+            Your order's current shipping progress
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-gray-50 p-4 sm:p-6">
+          <div className="min-w-[620px]">
+            <DeliveryTimeline status={shippingStatus} />
+          </div>
+        </div>
+      </section>
+
+      {/* ================= MAIN CONTENT ================= */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:mt-8 lg:grid-cols-[1fr_380px] lg:items-start lg:gap-8">
+
+        {/* ================= LIVE PROGRESS ================= */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+
+          <div className="mb-6">
+            <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+              Live Shipment Progress
+            </h2>
+
+            <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+              Your shipment status updates automatically.
+            </p>
+          </div>
+
+          <div className="relative pl-9">
+
+            {/* VERTICAL LINE */}
+            <div className="absolute bottom-3 left-[11px] top-3 w-0.5 bg-gray-200" />
+
+            <div className="space-y-7">
+              {steps.map((step, idx) => {
+                const completed = idx <= currentStep;
+                const isCurrent = idx === currentStep;
+
+                return (
                   <div
-                    style={{
-                      position: "absolute",
-                      left: "-35px",
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
-                      background: completed ? "#28a745" : "#e2e8f0",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      color: "#fff",
-                      fontSize: "12px",
-                      fontWeight: "bold",
-                      zIndex: 2,
-                    }}
+                    key={step}
+                    className="relative flex min-h-[28px] items-center"
                   >
-                    {completed ? "✓" : ""}
+
+                    {/* STATUS DOT */}
+                    <div
+                      className={`absolute -left-9 z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                        completed
+                          ? "bg-[#0E4B32] text-white"
+                          : "bg-gray-200 text-gray-400"
+                      } ${
+                        isCurrent
+                          ? "ring-4 ring-[#0E4B32]/10"
+                          : ""
+                      }`}
+                    >
+                      {completed ? "✓" : ""}
+                    </div>
+
+                    {/* STATUS TEXT */}
+                    <div className="min-w-0">
+                      <p
+                        className={`break-words text-sm font-bold tracking-wide ${
+                          completed
+                            ? "text-[#0E4B32]"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {step.replace(/_/g, " ")}
+                      </p>
+
+                      {isCurrent && (
+                        <p className="mt-1 text-xs font-medium text-[#D4AF37]">
+                          Current shipment status
+                        </p>
+                      )}
+                    </div>
+
                   </div>
-
-                  {/* நிலை உரை */}
-                  <span
-                    style={{
-                      color: completed ? "#28a745" : "#a0aec0",
-                      fontWeight: "bold",
-                      fontSize: "14px",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    {step.replace(/_/g, " ")}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 🗺️ RIGHT COLUMN: Shipment Overview & Delivery Address */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-          
-          {/* Shipment Details Card */}
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-            <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600", color: "#111827" }}>
-              Shipment Overview
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Tracking Number</label>
-                <span style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>{order.trackingId || "Not Assigned"}</span>
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Payment Method</label>
-                <span style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>{order.paymentMethod || "CARD"}</span>
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "11px", color: "#9ca3af", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Total Amount</label>
-                <span style={{ fontSize: "16px", fontWeight: "700", color: "#0E4B32" }}>{order.currency || "USD"} {order.totalFinal}</span>
-              </div>
+                );
+              })}
             </div>
           </div>
+        </section>
 
-          {/* Delivery Address Card */}
-          <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e5e7eb", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.02)" }}>
-            <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600", color: "#111827", display: "flex", alignItems: "center", gap: "6px" }}>
-              📍 Delivery Address
-            </h3>
-            <div style={{ color: "#4b5563", lineHeight: "1.6", fontSize: "14px", borderTop: "1px solid #f3f4f6", paddingTop: "12px" }}>
-              <p style={{ margin: "0 0 6px 0", fontWeight: "600", color: "#111827", fontSize: "15px" }}>
-                {order.address?.fullName || "MUHAMMADU NALEEM HADEEJA BANU"}
+        {/* ================= RIGHT COLUMN ================= */}
+        <div className="space-y-6">
+
+          {/* SHIPMENT OVERVIEW */}
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] text-lg">
+                📦
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-gray-900">
+                  Shipment Overview
+                </h2>
+
+                <p className="text-xs text-gray-500">
+                  Current shipment information
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+
+              {/* TRACKING NUMBER */}
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  Tracking Number
+                </p>
+
+                <p className="mt-1 break-all text-sm font-bold text-gray-800">
+                  {order.trackingId || "Not Assigned"}
+                </p>
+              </div>
+
+              {/* PAYMENT METHOD */}
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  Payment Method
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-gray-800">
+                  {order.paymentMethod || "CARD"}
+                </p>
+              </div>
+
+              {/* TOTAL */}
+              <div className="rounded-xl bg-emerald-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Total Amount
+                </p>
+
+                <p className="mt-1 text-lg font-extrabold text-[#0E4B32]">
+                  {order.currency || "USD"}{" "}
+                  {Number(order.totalFinal || 0).toFixed(2)}
+                </p>
+              </div>
+
+            </div>
+          </section>
+
+          {/* DELIVERY ADDRESS */}
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] text-lg">
+                📍
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-gray-900">
+                  Delivery Address
+                </h2>
+
+                <p className="text-xs text-gray-500">
+                  Shipping destination
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border-l-4 border-[#0E4B32] bg-[#F4F7F5] p-4">
+
+              <p className="text-sm font-extrabold text-gray-900">
+                {order.address?.fullName ||
+                  "MUHAMMADU NALEEM HADEEJA BANU"}
               </p>
-              <p style={{ margin: "0 0 4px 0" }}>{order.address?.street || "649/2"}</p>
-              <p style={{ margin: "0 0 4px 0" }}>{order.address?.city || "Madurankuliya"}</p>
-              <p style={{ margin: "0", fontWeight: "500", color: "#111827" }}>{order.address?.country || "Sri Lanka"}</p>
+
+              <p className="mt-1 text-sm text-gray-600">
+                {order.address?.street || "649/2"}
+              </p>
+
+              <p className="mt-1 text-sm text-gray-600">
+                {order.address?.city || "Madurankuliya"}
+              </p>
+
+              <p className="mt-1 text-sm font-semibold text-gray-800">
+                {order.address?.country || "Sri Lanka"}
+              </p>
+
             </div>
-          </div>
+          </section>
 
         </div>
-
       </div>
+
+      {/* ================= AUTO REFRESH NOTICE ================= */}
+      <div className="mt-6 rounded-xl border border-[#D4AF37]/30 bg-[#FFF8EE] px-4 py-3 text-center sm:mt-8">
+        <p className="text-xs font-medium text-gray-600">
+          🔄 Tracking status automatically refreshes every 10 seconds.
+        </p>
+      </div>
+
     </div>
   );
 }

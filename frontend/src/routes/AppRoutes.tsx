@@ -147,7 +147,14 @@ export default function AppRoutes() {
         <Route path="/payment-methods" element={<ProtectedRoute><MainLayout><PaymentMethodsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/customer-dashboard" element={<ProtectedRoute><MainLayout><CustomerDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
-        <Route path="/contact" element={<Contact />} />
+        <Route
+  path="/contact"
+  element={
+    <MainLayout>
+      <Contact />
+    </MainLayout>
+  }
+/>
 
         {/* 💳 Public Payment Success */}
         <Route path="/payment-success" element={<MainLayout><PaymentSuccess /></MainLayout>} />
@@ -192,17 +199,17 @@ export default function AppRoutes() {
 />
 
 <Route
-  path="/admin/inventory/transactions"
+  path="inventory/transactions"
   element={<InventoryTransactions />}
 />
 
 <Route
-  path="/admin/finance"
+  path="finance"
   element={<FinanceDashboard />}
 />
 
 <Route
-  path="/admin/finance/expenses"
+  path="finance/expenses"
   element={<ExpenseManagement />}
 />
 

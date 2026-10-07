@@ -128,164 +128,173 @@ export default function Cart() {
   }
 
   return (
-    <div style={{ maxWidth: "800px", margin: "40px auto", padding: "20px" }}>
-      <h1 style={{ textAlign: "center", marginBottom: "30px" }}>🛒 Shopping Cart</h1>
+    <div className="mx-auto w-full max-w-[800px] overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10">
+      <h1 className="mb-8 text-center text-2xl font-extrabold text-[#111111] sm:text-3xl">
+  🛒 Shopping Cart
+</h1>
 
       {items.length === 0 ? (
-        <h2 style={{ textAlign: "center", color: "#666" }}>Your Cart is Empty</h2>
+        <h2 className="text-center text-gray-600">Your Cart is Empty</h2>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div className="flex w-full flex-col gap-4 sm:gap-5">
           
           {/* ITEMS LIST */}
           {items.map((item) => (
             <div
-              key={item.id}
-              style={{
-                display: "flex",
-                gap: "20px",
-                padding: "20px",
-                border: "1px solid #eee",
-                borderRadius: "12px",
-                alignItems: "center",
-                background: "#fff",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.03)"
-              }}
-            >
+  key={item.id}
+  className="flex w-full flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:gap-5 sm:p-5"
+>
               <img
                 src={item.image ?? "/no-image.png"}
                 alt={item.productName}
-                style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", background: "#eee" }}
+                className="h-28 w-full rounded-xl bg-gray-100 object-cover sm:h-24 sm:w-24"
               />
 
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: "0 0 8px 0", fontSize: "16px" }}>{item.productName}</h3>
-                <p style={{ margin: "2px 0", color: "#666", fontSize: "13px" }}><strong>SKU:</strong> {item.sku}</p>
-                <p style={{ margin: "2px 0", color: "#666", fontSize: "13px" }}><strong>Weight:</strong> {item.weight}</p>
-                <p style={{ margin: "6px 0 0 0", fontWeight: "bold", color: "#333" }}>Price: {currency} {item.priceUSD}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="mb-2 break-words text-base font-bold text-gray-900">
+  {item.productName}
+</h3>
+                <p className="my-1 break-all text-xs text-gray-500">
+  <strong>SKU:</strong> {item.sku}
+</p>
+                <p className="my-1 text-xs text-gray-500">
+  <strong>Weight:</strong> {item.weight}
+</p>
+                <p className="mt-2 font-bold text-[#0E4B32]">
+  Price: {currency} {item.priceUSD}
+</p>
 
-                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "12px" }}>
-                  <button onClick={() => decrease(item)} style={{ padding: "2px 10px", cursor: "pointer" }}>-</button>
-                  <strong>{item.quantity}</strong>
-                  <button onClick={() => increase(item)} style={{ padding: "2px 10px", cursor: "pointer" }}>+</button>
+                <div className="flex gap-2.5 items-center mt-3">
+                  <button
+  type="button"
+  onClick={() => decrease(item)}
+  className="flex h-11 w-11 items-center justify-center bg-gray-50 text-lg font-bold text-gray-700 transition hover:bg-gray-100"
+>
+  −
+</button>
+                  <strong className="flex h-11 min-w-12 items-center justify-center border-x border-gray-200 px-3 text-sm">
+  {item.quantity}
+</strong>
+                  <button
+  type="button"
+  onClick={() => increase(item)}
+  className="flex h-11 w-11 items-center justify-center bg-gray-200 text-lg font-bold text-gray-700 transition hover:bg-gray-300"
+>
+    +
+  </button>
                 </div>
               </div>
 
-              <div style={{ textAlign: "right" }}>
-                <h3 style={{ margin: 0 }}>{currency} {item.itemTotalUSD}</h3>
+              <div className="text-right">
+                <h3 className="m-0 text-lg font-extrabold text-[#111111]">
+  {currency} {item.itemTotalUSD}
+</h3>
                 <button
-                  onClick={() => remove(item.id)}
-                  style={{ marginTop: "15px", background: "#dc2626", color: "#fff", border: "none", padding: "6px 12px", cursor: "pointer", borderRadius: "6px", fontSize: "13px" }}
-                >
-                  🗑 Remove
-                </button>
+  type="button"
+  onClick={() => remove(item.id)}
+  className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100"
+>
+  🗑 Remove
+</button>
               </div>
             </div>
           ))}
 
-          {/* 🎟️ NEW: UPGRADED COUPON BOX SECTION */}
-          <div style={{ 
-            background: "#fff", 
-            padding: "20px", 
-            borderRadius: "12px", 
-            border: discountPercent > 0 ? "1px solid #a7f3d0" : "1px dashed #0E4B32",
-            marginTop: "10px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-          }}>
-            <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px", color: "#333", fontSize: "14px" }}>
-              🎟️ Have a Promo Code / Coupon?
-            </label>
+          {/* 🎟️ COUPON BOX */}
+<div className="mt-2 rounded-2xl border border-dashed border-[#0E4B32] bg-white p-4 shadow-sm sm:p-5">
+  <label className="mb-3 block text-sm font-bold text-gray-700">
+    🎟️ Have a Promo Code / Coupon?
+  </label>
 
-            {discountPercent === 0 ? (
-              /* கூப்பன் அப்ளை செய்வதற்கு முன் காட்டும் பகுதி */
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="text"
-                  placeholder="E.g. WELCOME10"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  disabled={isApplying}
-                  style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px", textTransform: "uppercase" }}
-                />
-                {/* 1. அப்ளை ஆகும் போது பட்டன் டிஸேபிள் செய்யப்படுகிறது */}
-                <button
-                  onClick={handleApplyCoupon}
-                  disabled={isApplying || !couponCode.trim()}
-                  style={{ 
-                    background: !couponCode.trim() ? "#ccc" : "#0E4B32", 
-                    color: "#fff", 
-                    border: "none", 
-                    padding: "0 20px", 
-                    borderRadius: "6px", 
-                    cursor: !couponCode.trim() ? "not-allowed" : "pointer", 
-                    fontWeight: "bold", 
-                    fontSize: "14px",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  {isApplying ? "Applying..." : "Apply"}
-                </button>
-              </div>
-            ) : (
-              /* 3. SUCCESS BOX: கூப்பன் வெற்றிகரமாக அப்ளை ஆன பின் காட்டும் பச்சை நிற அட்டை */
-              <div style={{ 
-                background: "#ecfdf5", 
-                border: "1px solid #10b981", 
-                borderRadius: "8px", 
-                padding: "15px", 
-                display: "flex", 
-                justifyContent: "between", 
-                alignItems: "center" 
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-                    <span style={{ background: "#10b981", color: "#fff", fontWeight: "bold", padding: "3px 8px", borderRadius: "4px", fontSize: "12px", letterSpacing: "0.05em" }}>
-                      {couponCode}
-                    </span>
-                    <strong style={{ color: "#065f46", fontSize: "14px" }}>✓ Coupon Applied Successfully</strong>
-                  </div>
-                  <p style={{ margin: 0, color: "#047857", fontSize: "13px", fontWeight: "500" }}>
-                    {discountPercent}% OFF saved on this order!
-                  </p>
-                </div>
-                
-                {/* 2. COUPON REMOVE BUTTON */}
-                <button 
-                  onClick={handleRemoveCoupon}
-                  style={{ background: "none", border: "none", color: "#dc2626", fontWeight: "bold", cursor: "pointer", fontSize: "13px", textDecoration: "underline" }}
-                >
-                  Remove
-                </button>
-              </div>
-            )}
+  {discountPercent === 0 ? (
+    /* Coupon Apply Section */
+    <div className="flex w-full flex-col gap-3 sm:flex-row">
+      <input
+        type="text"
+        placeholder="E.g. WELCOME10"
+        value={couponCode}
+        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+        disabled={isApplying}
+        className="min-h-[48px] min-w-0 flex-1 rounded-xl border border-gray-200 px-4 text-sm uppercase outline-none focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
+      />
 
-            {/* எர்ரர் மெசேஜ் மட்டும் கீழே காட்டும் */}
-            {couponMessage.isError && (
-              <p style={{ margin: "10px 0 0 0", fontSize: "13px", fontWeight: "600", color: "#dc2626" }}>
-                {couponMessage.text}
-              </p>
-            )}
-          </div>
+      <button
+        type="button"
+        onClick={handleApplyCoupon}
+        disabled={isApplying || !couponCode.trim()}
+        className={`min-h-[48px] w-full rounded-xl px-5 text-sm font-bold text-white transition sm:w-auto ${
+          !couponCode.trim()
+            ? "cursor-not-allowed bg-gray-300"
+            : "bg-[#0E4B32] hover:bg-[#111111]"
+        }`}
+      >
+        {isApplying ? "Applying..." : "Apply"}
+      </button>
+    </div>
+  ) : (
+    /* Coupon Applied Successfully */
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500 bg-emerald-50 p-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-md bg-emerald-500 px-2 py-1 text-xs font-bold tracking-wide text-white">
+            {couponCode}
+          </span>
+
+          <strong className="text-sm text-emerald-800">
+            ✓ Coupon Applied Successfully
+          </strong>
+        </div>
+
+        <p className="mt-2 text-xs font-medium text-emerald-700">
+          {discountPercent}% OFF saved on this order!
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleRemoveCoupon}
+        className="shrink-0 rounded-lg px-2 py-2 text-xs font-bold text-red-600 underline hover:bg-red-50"
+      >
+        Remove
+      </button>
+    </div>
+  )}
+
+  {/* Coupon Error Message */}
+  {couponMessage.isError && (
+    <p className="mt-3 text-sm font-semibold text-red-600">
+      {couponMessage.text}
+    </p>
+  )}
+</div>
 
           {/* SUMMARY & CHECKOUT */}
-          <div style={{ textAlign: "right", borderTop: "2px solid #eee", paddingTop: "20px", marginTop: "10px" }}>
-            <p style={{ fontSize: "15px", color: "#666", margin: "4px 0" }}>Subtotal: {currency} {total.toFixed(2)}</p>
-            {discountPercent > 0 && (
-              <p style={{ fontSize: "15px", color: "#10b981", fontWeight: "600", margin: "4px 0" }}>
-                Discount ({discountPercent}%): - {currency} {discountAmount.toFixed(2)}
-              </p>
-            )}
-            <h2 style={{ fontSize: "24px", color: "#333", marginTop: "10px", marginBottom: "20px" }}>
-              Grand Total: {currency} {finalTotal.toFixed(2)}
-            </h2>
-            
-            {/* 4. புதிய ஹேண்ட்லர் பங்க்ஷன் மூலம் இயங்கும் செக்அவுட் பட்டன் */}
-            <button
-              onClick={handleProceedToCheckout}
-              style={{ padding: "14px 35px", background: "#0E4B32", color: "#fff", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", fontWeight: "bold", width: "100%" }}
-            >
-              Proceed To Checkout →
-            </button>
-          </div>
+<div className="mt-3 border-t-2 border-gray-100 pt-5 text-left sm:text-right">
+
+  <p className="my-1 text-sm text-gray-600">
+    Subtotal: {currency} {total.toFixed(2)}
+  </p>
+
+  {discountPercent > 0 && (
+    <p className="my-1 text-sm font-semibold text-emerald-600">
+      Discount ({discountPercent}%): - {currency}{" "}
+      {discountAmount.toFixed(2)}
+    </p>
+  )}
+
+  <h2 className="mb-5 mt-3 text-2xl font-extrabold text-[#111111]">
+    Grand Total: {currency} {finalTotal.toFixed(2)}
+  </h2>
+
+  <button
+    type="button"
+    onClick={handleProceedToCheckout}
+    className="min-h-[54px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-base font-bold text-white shadow-md transition hover:bg-[#111111]"
+  >
+    Proceed To Checkout →
+  </button>
+
+</div>
         </div>
       )}
     </div>

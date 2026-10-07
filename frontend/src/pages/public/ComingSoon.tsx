@@ -1,5 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock3, Globe2, Leaf, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock3,
+  Globe2,
+  Leaf,
+  ShoppingBag,
+  Sparkles,
+} from "lucide-react";
 
 interface ComingSoonProps {
   type: "b2b" | "export" | "traceability";
@@ -28,115 +35,73 @@ const pageData = {
   },
 };
 
-export default function ComingSoon({ type }: ComingSoonProps) {
+export default function ComingSoon({
+  type,
+}: ComingSoonProps) {
   const navigate = useNavigate();
 
   const data = pageData[type];
   const Icon = data.icon;
 
   return (
-    <div
-      style={{
-        minHeight: "calc(100vh - 80px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 20px",
-        background: "#f8faf9",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "700px",
-          textAlign: "center",
-          background: "#ffffff",
-          borderRadius: "24px",
-          padding: "60px 40px",
-          boxShadow: "0 10px 40px rgba(0,0,0,0.08)",
-          border: "1px solid #e5e7eb",
-        }}
-      >
-        {/* Icon */}
-        <div
-          style={{
-            width: "90px",
-            height: "90px",
-            margin: "0 auto 25px",
-            borderRadius: "50%",
-            background: "#eef6f1",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon size={42} />
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-[#FFF8EE] px-4 py-8 sm:px-6 sm:py-12">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-gray-100 bg-white text-center shadow-xl">
+
+        {/* Hero */}
+        <div className="relative overflow-hidden bg-[#0E4B32] px-5 py-10 text-white sm:px-10 sm:py-14">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#D4AF37]/10" />
+
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-44 w-44 rounded-full bg-white/5" />
+
+          <div className="relative z-10">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+              <Icon
+                size={45}
+                className="text-[#D4AF37]"
+              />
+            </div>
+
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-bold text-[#111111]">
+              <Clock3 size={15} />
+              Coming Soon
+            </div>
+
+            <h1 className="mt-5 text-2xl font-extrabold sm:text-3xl lg:text-4xl">
+              {data.title}
+            </h1>
+          </div>
         </div>
 
-        {/* Title */}
-        <h1
-          style={{
-            fontSize: "32px",
-            fontWeight: 700,
-            marginBottom: "15px",
-            color: "#1f2937",
-          }}
-        >
-          {data.title}
-        </h1>
+        {/* Content */}
+        <div className="px-5 py-8 sm:px-10 sm:py-10">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0E4B32]/10 text-[#0E4B32]">
+            <Sparkles size={23} />
+          </div>
 
-        {/* Coming Soon Badge */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "8px 16px",
-            borderRadius: "999px",
-            background: "#fef3c7",
-            color: "#92400e",
-            fontSize: "14px",
-            fontWeight: 600,
-            marginBottom: "25px",
-          }}
-        >
-          <Clock3 size={16} />
-          Coming Soon
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-gray-600 sm:text-base">
+            {data.description}
+          </p>
+
+          <div className="mt-8 rounded-2xl border border-[#0E4B32]/10 bg-[#FFF8EE] p-4 sm:p-5">
+            <p className="text-sm font-bold text-[#0E4B32]">
+              🌿 Purely Ceylon
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-gray-500">
+              Premium Sri Lankan organic products and
+              export-grade solutions.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-7 inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#111111] active:scale-[0.98] sm:w-auto"
+          >
+            <ArrowLeft size={18} />
+            Back to Home
+          </button>
         </div>
-
-        {/* Description */}
-        <p
-          style={{
-            maxWidth: "560px",
-            margin: "0 auto 35px",
-            color: "#6b7280",
-            fontSize: "16px",
-            lineHeight: 1.7,
-          }}
-        >
-          {data.description}
-        </p>
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/")}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            border: "none",
-            borderRadius: "10px",
-            padding: "12px 22px",
-            background: "#1f2937",
-            color: "#ffffff",
-            fontSize: "15px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          <ArrowLeft size={18} />
-          Back to Home
-        </button>
       </div>
     </div>
   );

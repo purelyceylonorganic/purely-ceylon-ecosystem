@@ -1,30 +1,104 @@
-import axios from "axios";
-import { getQueue, clearItem } from "./queue";
+import api from "../api/axios";
+import {
+  getQueue,
+  clearItem,
+  updateQueueItem,
+} from "./queue";
 import { shouldRetry } from "./retry";
 
+let isSyncing = false;
+
 export const syncOfflineQueue = async () => {
-  const queue = await getQueue();
+  if (isSyncing) {
+    return;
+  }
 
-  for (const item of queue) {
-    try {
-      // Try sending offline saved request
-      await axios.post("/api/orders", item.payload);
+  if (!navigator.onLine) {
+    return;
+  }
 
-      // If success → remove from queue
-      await clearItem(item.id);
-      console.log("✅ Synced:", item.id);
+  isSyncing = true;
 
-    } catch (error) {
-      // Increase retry count
-      item.retries += 1;
+  try {
+    const queue = await getQueue();
 
-      // Retry logic check (centralized)
-      if (!shouldRetry(item.retries)) {
-        console.log("❌ Failed permanently:", item.id);
+    for (const item of queue) {
+      if (item.status === "failed") {
+        continue;
+      }
 
-        // Remove if exceeded retry limit
+      try {
+        await updateQueueItem(item.id, {
+          status: "syncing",
+        });
+
+        /*
+         * Payment requests must never
+         * be processed from the offline queue.
+         */
+        if (item.type === "payment") {
+          console.warn(
+            "Payment request found in offline queue. Skipping:",
+            item.id
+          );
+
+          await updateQueueItem(item.id, {
+            status: "failed",
+          });
+
+          continue;
+        }
+
+        /*
+         * Customer order endpoint
+         * confirmed from orderService:
+         * POST /orders/checkout
+         */
+        await api.post(
+          "/orders/checkout",
+          item.payload
+        );
+
         await clearItem(item.id);
+
+        console.log(
+          "✅ Offline order synced:",
+          item.id
+        );
+      } catch (error: any) {
+        console.error(
+          "Offline sync failed:",
+          item.id,
+          error
+        );
+
+        const nextRetries =
+          item.retries + 1;
+
+        if (shouldRetry(nextRetries)) {
+          await updateQueueItem(item.id, {
+            retries: nextRetries,
+            status: "pending",
+          });
+
+          console.log(
+            `🔁 Retry ${nextRetries}/3:`,
+            item.id
+          );
+        } else {
+          await updateQueueItem(item.id, {
+            retries: nextRetries,
+            status: "failed",
+          });
+
+          console.error(
+            "❌ Offline order failed permanently:",
+            item.id
+          );
+        }
       }
     }
+  } finally {
+    isSyncing = false;
   }
 };

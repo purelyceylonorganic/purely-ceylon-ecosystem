@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react"; 
-// 1. react-hot-toast-ஐ Import செய்துள்ளோம்
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Check, MapPin, Save } from "lucide-react";
 
 type Props = {
   onSubmit: (data: {
-    fullName: string;      
-    phone: string;         
+    fullName: string;
+    phone: string;
     street: string;
     city: string;
     province: string;
@@ -17,17 +17,21 @@ type Props = {
 };
 
 export default function AddressForm({ onSubmit, initialData }: Props) {
-  // அனைத்து ஸ்டேட்களும் (States)
   const [fullName, setFullName] = useState(initialData?.fullName || "");
   const [phone, setPhone] = useState(initialData?.phone || "");
   const [street, setStreet] = useState(initialData?.street || "");
   const [city, setCity] = useState(initialData?.city || "");
   const [province, setProvince] = useState(initialData?.province || "");
-  const [postalCode, setPostalCode] = useState(initialData?.postalCode || "");
-  const [country, setCountry] = useState(initialData?.country || "Sri Lanka");
-  const [isDefault, setIsDefault] = useState(initialData?.isDefault || false);
+  const [postalCode, setPostalCode] = useState(
+    initialData?.postalCode || ""
+  );
+  const [country, setCountry] = useState(
+    initialData?.country || "Sri Lanka"
+  );
+  const [isDefault, setIsDefault] = useState(
+    initialData?.isDefault || false
+  );
 
-  // எடிட் செய்யும்போது பழைய தரவுகளை லோடு செய்ய
   useEffect(() => {
     if (!initialData) {
       setFullName("");
@@ -51,11 +55,9 @@ export default function AddressForm({ onSubmit, initialData }: Props) {
     setIsDefault(initialData.isDefault || false);
   }, [initialData]);
 
-  // சப்மிட் ஃபங்ஷன் மற்றும் வேலிடேஷன்
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // 2. ஒவ்வொரு ஃபீல்டுக்கும் தனித்தனி டோஸ்ட் வேலிடேஷன் (Step 2)
     if (!fullName.trim()) {
       toast.error("Full Name Required");
       return;
@@ -66,8 +68,8 @@ export default function AddressForm({ onSubmit, initialData }: Props) {
       return;
     }
 
-    // போன் நம்பர் வேலிடேஷன் (குறைந்தது 7 முதல் 15 எண்கள் வரை இருக்க வேண்டும்)
-    const phoneClean = phone.replace(/\s+/g, ""); // இடைவெளிகளை நீக்க
+    const phoneClean = phone.replace(/\s+/g, "");
+
     if (!/^\+?\d{7,15}$/.test(phoneClean)) {
       toast.error("Enter a valid Phone Number");
       return;
@@ -98,7 +100,6 @@ export default function AddressForm({ onSubmit, initialData }: Props) {
       return;
     }
 
-    // அனைத்து வேலிடேஷன்களும் பாஸ் ஆனால் தரவை சப்மிட் செய்யும்
     onSubmit({
       fullName: fullName.trim(),
       phone: phone.trim(),
@@ -112,150 +113,237 @@ export default function AddressForm({ onSubmit, initialData }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-      
-      {/* 👤 Full Name Input */}
+    <form
+      onSubmit={handleSubmit}
+      className="w-full space-y-5"
+    >
+      {/* Form Header */}
+      <div className="flex items-start gap-3 rounded-2xl border border-[#0E4B32]/10 bg-[#FFF8EE] p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0E4B32]/10 text-[#0E4B32]">
+          <MapPin size={20} />
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="text-base font-extrabold text-[#111111]">
+            Delivery Information
+          </h3>
+
+          <p className="mt-1 text-xs leading-5 text-gray-500 sm:text-sm">
+            Enter the address where you want your order delivered.
+          </p>
+        </div>
+      </div>
+
+      {/* Full Name */}
       <div>
-        <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Full Name *</label>
+        <label
+          htmlFor="address-full-name"
+          className="mb-1.5 block text-sm font-bold text-gray-700"
+        >
+          Full Name <span className="text-red-500">*</span>
+        </label>
+
         <input
+          id="address-full-name"
           type="text"
           placeholder="John Doe"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          style={inputStyle}
+          autoComplete="name"
+          className={inputClass}
         />
       </div>
 
-      {/* 📞 Phone Number Input with Country Code */}
+      {/* Phone */}
       <div>
-        <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Phone Number *</label>
-        <div style={{ display: "flex", gap: "5px" }}>
-          <select 
-            style={{ ...inputStyle, width: "90px", background: "#f5f5f5" }}
+        <label
+          htmlFor="address-phone"
+          className="mb-1.5 block text-sm font-bold text-gray-700"
+        >
+          Phone Number <span className="text-red-500">*</span>
+        </label>
+
+        <div className="flex w-full gap-2">
+          <select
+            aria-label="Country code"
+            defaultValue="+94"
             onChange={(e) => {
-              if (!phone.startsWith(e.target.value)) {
-                setPhone(e.target.value + " " + phone.replace(/^\+\d+\s*/, ""));
-              }
+              const code = e.target.value;
+
+              const numberWithoutCode = phone
+                .replace(/^\+\d+\s*/, "")
+                .trim();
+
+              setPhone(
+                numberWithoutCode
+                  ? `${code} ${numberWithoutCode}`
+                  : `${code} `
+              );
             }}
+            className="min-h-[50px] w-[100px] shrink-0 rounded-xl border border-gray-200 bg-gray-50 px-2 text-sm font-semibold text-gray-800 outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10 sm:w-[115px]"
           >
             <option value="+94">🇱🇰 +94</option>
             <option value="+91">🇮🇳 +91</option>
             <option value="+1">🇺🇸 +1</option>
             <option value="+44">🇬🇧 +44</option>
           </select>
-          
+
           <input
+            id="address-phone"
             type="tel"
+            inputMode="tel"
             placeholder="771234567"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            style={{ ...inputStyle, flex: 1 }}
+            autoComplete="tel"
+            className={`${inputClass} min-w-0 flex-1`}
           />
         </div>
       </div>
 
-      {/* 🏠 Street Input */}
+      {/* Street */}
       <div>
-        <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Street Address *</label>
+        <label
+          htmlFor="address-street"
+          className="mb-1.5 block text-sm font-bold text-gray-700"
+        >
+          Street Address <span className="text-red-500">*</span>
+        </label>
+
         <input
+          id="address-street"
           type="text"
           placeholder="No. 12, Main Street"
           value={street}
           onChange={(e) => setStreet(e.target.value)}
-          style={inputStyle}
+          autoComplete="street-address"
+          className={inputClass}
         />
       </div>
 
-      {/* 🏙️ City & Province Inputs */}
-      <div style={{ display: "flex", gap: "15px" }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>City *</label>
+      {/* City + Province */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="address-city"
+            className="mb-1.5 block text-sm font-bold text-gray-700"
+          >
+            City <span className="text-red-500">*</span>
+          </label>
+
           <input
+            id="address-city"
             type="text"
             placeholder="Colombo"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            style={inputStyle}
+            autoComplete="address-level2"
+            className={inputClass}
           />
         </div>
-        
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Province *</label>
+
+        <div>
+          <label
+            htmlFor="address-province"
+            className="mb-1.5 block text-sm font-bold text-gray-700"
+          >
+            Province / State <span className="text-red-500">*</span>
+          </label>
+
           <input
+            id="address-province"
             type="text"
             placeholder="Western"
             value={province}
             onChange={(e) => setProvince(e.target.value)}
-            style={inputStyle}
+            autoComplete="address-level1"
+            className={inputClass}
           />
         </div>
       </div>
 
-      {/* 📮 Postal Code & Country Inputs */}
-      <div style={{ display: "flex", gap: "15px" }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Postal Code *</label>
+      {/* Postal + Country */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor="address-postal"
+            className="mb-1.5 block text-sm font-bold text-gray-700"
+          >
+            Postal Code <span className="text-red-500">*</span>
+          </label>
+
           <input
+            id="address-postal"
             type="text"
+            inputMode="numeric"
             placeholder="00100"
             value={postalCode}
             onChange={(e) => setPostalCode(e.target.value)}
-            style={inputStyle}
+            autoComplete="postal-code"
+            className={inputClass}
           />
         </div>
 
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>Country *</label>
+        <div>
+          <label
+            htmlFor="address-country"
+            className="mb-1.5 block text-sm font-bold text-gray-700"
+          >
+            Country <span className="text-red-500">*</span>
+          </label>
+
           <input
+            id="address-country"
             type="text"
-            placeholder="Country"
+            placeholder="Sri Lanka"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            style={inputStyle}
+            autoComplete="country-name"
+            className={inputClass}
           />
         </div>
       </div>
 
-      {/* ☑️ Default Address Checkbox */}
-      <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", marginTop: "5px" }}>
+      {/* Default Address */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-[#0E4B32]/30 hover:bg-[#0E4B32]/5">
         <input
           type="checkbox"
           checked={isDefault}
           onChange={(e) => setIsDefault(e.target.checked)}
-          style={{ width: "16px", height: "16px", cursor: "pointer" }}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-[#0E4B32]"
         />
-        <span style={{ fontSize: "14px", color: "#444" }}>Set as default delivery address</span>
+
+        <span className="min-w-0">
+          <span className="block text-sm font-bold text-gray-800">
+            Set as default delivery address
+          </span>
+
+          <span className="mt-1 block text-xs leading-5 text-gray-500">
+            Use this address automatically during checkout.
+          </span>
+        </span>
       </label>
 
-      {/* 💾 Submit Button */}
-      <button 
-        type="submit" 
-        style={{
-          background: "#0E4B32",
-          color: "#fff",
-          border: "none",
-          padding: "12px",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontWeight: "bold",
-          fontSize: "15px",
-          marginTop: "10px",
-          boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
-        }}
+      {/* Submit */}
+      <button
+        type="submit"
+        className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#111111] active:scale-[0.98] sm:min-h-[50px]"
       >
-        {initialData ? "🔄 Update Address" : "💾 Save Address"}
+        {initialData ? (
+          <>
+            <Check size={18} />
+            Update Address
+          </>
+        ) : (
+          <>
+            <Save size={18} />
+            Save Address
+          </>
+        )}
       </button>
-
     </form>
   );
 }
 
-const inputStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: "6px",
-  border: "1px solid #ccc",
-  fontSize: "14px",
-  boxSizing: "border-box" as const,
-  outline: "none"
-};
+const inputClass =
+  "min-h-[50px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10";

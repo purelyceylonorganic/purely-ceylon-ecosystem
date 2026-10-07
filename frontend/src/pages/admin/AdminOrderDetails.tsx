@@ -239,36 +239,40 @@ const handleReverse = async () => {
 
 
   // ✅ Safe Fetch PDF Download
-  const downloadInvoice = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/v1/orders/${order.id}/invoice`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Invoice download failed");
+const downloadInvoice = async () => {
+  try {
+    const response = await api.get(
+      `/orders/${order.id}/invoice`,
+      {
+        responseType: "blob",
       }
+    );
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${order.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert("Invoice download failed");
-    }
-  };
+    const blob = new Blob([response.data], {
+      type: "application/pdf",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `invoice-${order.id}.pdf`;
+
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error: any) {
+    console.error("Invoice download error:", error);
+
+    alert(
+      error?.response?.data?.message ||
+        "Invoice download failed"
+    );
+  }
+}; 
 
   // 💳 Handle Payment Function (POS Payment)
   const handlePayment = async () => {

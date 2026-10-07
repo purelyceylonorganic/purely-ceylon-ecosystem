@@ -133,140 +133,348 @@ export default function OrderDetails() {
     doc.save(`invoice-${order.id}.pdf`);
   }
 
-  if (loading) {
-    return <h2 style={{ textAlign: "center", marginTop: "40px" }}>Loading Order...</h2>;
+    if (loading) {
+    return (
+      <div className="mx-auto flex min-h-[50vh] w-full items-center justify-center px-4 py-10">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#0E4B32]" />
+
+          <h2 className="text-lg font-bold text-[#0E4B32]">
+            Loading Order...
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Please wait while we load your order.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (!order) {
-    return <h2 style={{ textAlign: "center", marginTop: "40px", color: "red" }}>Order Not Found</h2>;
+    return (
+      <div className="mx-auto flex min-h-[50vh] w-full items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-3xl">
+            ⚠️
+          </div>
+
+          <h2 className="text-xl font-extrabold text-red-600">
+            Order Not Found
+          </h2>
+
+          <p className="mt-2 text-sm text-gray-500">
+            We could not find the requested order.
+          </p>
+        </div>
+      </div>
+    );
   }
 
+  const status =
+    order.status?.toUpperCase() || "UNKNOWN";
+
+  const statusClasses =
+    status === "DELIVERED"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : status === "SHIPPED"
+      ? "bg-blue-50 text-blue-700 border-blue-200"
+      : status === "PROCESSING"
+      ? "bg-sky-50 text-sky-700 border-sky-200"
+      : status === "CANCELLED"
+      ? "bg-red-50 text-red-700 border-red-200"
+      : "bg-amber-50 text-amber-700 border-amber-200";
+
+  const paymentStatus = order.paymentStatus?.toUpperCase() || "UNKNOWN";
+
   return (
-    <div
-      style={{
-        maxWidth: "800px",
-        margin: "40px auto",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        padding: "20px",
-        backgroundColor: "#fff",
-        borderRadius: "12px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-      }}
-    >
-      <h2 style={{ color: "#0E4B32", marginBottom: "20px" }}>Order Details</h2>
-      <hr style={{ border: "0", height: "1px", background: "#eee", marginBottom: "20px" }} />
+    <div className="mx-auto w-full max-w-5xl overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
 
-      {/* Order Info Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "25px" }}>
-        <div>
-          <p style={{ margin: "5px 0" }}><strong>Order ID :</strong> <span style={{ fontSize: "14px", color: "#555" }}>{order.id}</span></p>
-          <p style={{ margin: "5px 0" }}><strong>Order Date :</strong> {order.createdAt ? new Date(order.createdAt).toLocaleString() : "N/A"}</p>
-          <p style={{ margin: "5px 0" }}><strong>Payment :</strong> {order.paymentStatus}</p>
-          <p style={{ margin: "5px 0", fontSize: "18px" }}><strong>Total :</strong> <span style={{ color: "#0E4B32", fontWeight: "bold" }}>USD {order.totalFinal}</span></p>
-          
-          {/* Action Buttons Section */}
-          <div style={{ marginTop: "15px", display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-start" }}>
-            {/* Download Invoice Button */}
-            <button
-              onClick={downloadInvoice}
-              style={{
-                background: "#0E4B32",
-                color: "#fff",
-                border: "none",
-                padding: "10px 18px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              📄 Download Invoice
-            </button>
+      {/* ================= HEADER ================= */}
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
 
-            {/* Track Shipment Link Button */}
-            <Link
-              to={`/tracking/${order.id}`}
-              style={{
-                background: "#0E4B32",
-                color: "#fff",
-                padding: "10px 20px",
-                borderRadius: "6px",
-                textDecoration: "none",
-                display: "inline-block",
-                fontWeight: "bold",
-              }}
-            >
-              🚚 Track Shipment
-            </Link>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37]">
+            Customer Order
+          </p>
+
+          <h1 className="mt-1 text-2xl font-extrabold text-[#0E4B32] sm:text-3xl">
+            Order Details
+          </h1>
+
+          <p className="mt-2 break-all text-xs text-gray-500 sm:text-sm">
+            Order ID: {order.id}
+          </p>
+        </div>
+
+        {/* STATUS */}
+        <span
+          className={`inline-flex w-fit rounded-full border px-4 py-2 text-xs font-extrabold ${statusClasses}`}
+        >
+          {status}
+        </span>
+      </div>
+
+      {/* ================= ORDER SUMMARY ================= */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+            1
+          </div>
+
+          <div>
+            <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+              Order Summary
+            </h2>
+
+            <p className="text-xs text-gray-500 sm:text-sm">
+              Your order and payment information
+            </p>
           </div>
         </div>
 
-        <div>
-          <p style={{ margin: "5px 0" }}>
-            <strong>Status :</strong>
-            <span
-              style={{
-                background:
-                  order.status === "DELIVERED"
-                    ? "#28a745"
-                    : order.status === "SHIPPED"
-                    ? "#007bff"
-                    : "#ffc107",
-                color: order.status === "PENDING" ? "#000" : "#fff",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                marginLeft: "10px",
-                fontSize: "13px",
-                fontWeight: "bold"
-              }}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+          {/* ORDER ID */}
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Order ID
+            </p>
+
+            <p className="mt-1 break-all text-sm font-bold text-gray-900">
+              {order.id}
+            </p>
+          </div>
+
+          {/* ORDER DATE */}
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Order Date
+            </p>
+
+            <p className="mt-1 text-sm font-bold text-gray-900">
+              {order.createdAt
+                ? new Date(order.createdAt).toLocaleString()
+                : "N/A"}
+            </p>
+          </div>
+
+          {/* PAYMENT */}
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Payment
+            </p>
+
+            <p
+              className={`mt-1 text-sm font-bold ${
+                paymentStatus === "UNPAID"
+                  ? "text-red-600"
+                  : "text-emerald-600"
+              }`}
             >
-              {order.status}
-            </span>
-          </p>
+              {order.paymentStatus}
+            </p>
+          </div>
+
+          {/* TOTAL */}
+          <div className="rounded-xl bg-emerald-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Grand Total
+            </p>
+
+            <p className="mt-1 text-xl font-extrabold text-[#0E4B32]">
+              USD {Number(order.totalFinal || 0).toFixed(2)}
+            </p>
+          </div>
+
         </div>
-      </div>
 
-      {/* Amazon Style Tracking Timeline Box */}
-      <div style={{ margin: "25px 0", padding: "20px", background: "#f8f9fa", borderRadius: "8px", border: "1px solid #e9ecef" }}>
-        <h4 style={{ marginTop: 0, marginBottom: "15px", color: "#333" }}>Order Tracking Timeline</h4>
-        <OrderTimeline status={order.status} />
-      </div>
+        {/* ACTION BUTTONS */}
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
 
-      {/* Delivery Address Section */}
+          <button
+            type="button"
+            onClick={downloadInvoice}
+            className="min-h-[50px] rounded-xl border border-[#0E4B32] bg-white px-5 py-3 text-sm font-bold text-[#0E4B32] transition hover:bg-[#0E4B32] hover:text-white"
+          >
+            📄 Download Invoice
+          </button>
+
+          <Link
+            to={`/tracking/${order.id}`}
+            className="flex min-h-[50px] items-center justify-center rounded-xl bg-[#0E4B32] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#111111]"
+          >
+            🚚 Track Shipment
+          </Link>
+
+        </div>
+      </section>
+
+      {/* ================= TRACKING TIMELINE ================= */}
+      <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:mt-8 sm:p-6">
+
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+            2
+          </div>
+
+          <div>
+            <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+              Order Tracking
+            </h2>
+
+            <p className="text-xs text-gray-500 sm:text-sm">
+              Follow your order progress
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-gray-100 bg-gray-50 p-4 sm:p-6">
+          <OrderTimeline status={order.status} />
+        </div>
+      </section>
+
+      {/* ================= DELIVERY ADDRESS ================= */}
       {order.address && (
-        <div style={{ margin: "25px 0", padding: "20px", background: "#f4f7f5", borderRadius: "8px", borderLeft: "4px solid #0E4B32" }}>
-          <h4 style={{ marginTop: 0, marginBottom: "10px", color: "#0E4B32" }}>Delivery Address</h4>
-          <p style={{ margin: "0 0 5px 0", fontWeight: "bold" }}>{order.address.fullName}</p>
-          <p style={{ margin: "0 0 5px 0", color: "#555" }}>{order.address.street}</p>
-          <p style={{ margin: "0", color: "#555" }}>{order.address.city}</p>
-        </div>
+        <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:mt-8 sm:p-6">
+
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+              3
+            </div>
+
+            <div>
+              <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+                Delivery Address
+              </h2>
+
+              <p className="text-xs text-gray-500 sm:text-sm">
+                Shipping destination for this order
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border-l-4 border-[#0E4B32] bg-[#F4F7F5] p-4 sm:p-5">
+
+            <p className="text-sm font-extrabold text-gray-900">
+              {order.address.fullName}
+            </p>
+
+            <p className="mt-1 text-sm text-gray-600">
+              {order.address.street}
+            </p>
+
+            <p className="mt-1 text-sm text-gray-600">
+              {order.address.city}
+            </p>
+
+            {order.address.country && (
+              <p className="mt-1 text-sm text-gray-600">
+                {order.address.country}
+              </p>
+            )}
+
+          </div>
+        </section>
       )}
 
-      <hr style={{ border: "0", height: "1px", background: "#eee", margin: "25px 0" }} />
+      {/* ================= PRODUCTS ================= */}
+      <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:mt-8 sm:p-6">
 
-      <h3 style={{ color: "#333", marginBottom: "15px" }}>Products Ordered</h3>
-      {order.items?.map((item: any) => (
-        <div
-          key={item.id}
-          style={{
-            border: "1px solid #eaeaea",
-            padding: "20px",
-            marginBottom: "15px",
-            borderRadius: "8px",
-            backgroundColor: "#fff",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "10px"
-          }}
-        >
-          <p style={{ margin: 0 }}><strong>SKU :</strong> {item.productVariant?.sku}</p>
-          <p style={{ margin: 0 }}><strong>Weight :</strong> {item.productVariant?.weight}</p>
-          <p style={{ margin: 0 }}><strong>Price :</strong> USD {item.price}</p>
-          <p style={{ margin: 0 }}><strong>Quantity :</strong> {item.quantity}</p>
-          <p style={{ margin: "10px 0 0 0", gridColumn: "span 2", borderTop: "1px dashed #eee", paddingTop: "10px" }}>
-            <strong>Subtotal :</strong> <span style={{ color: "#0E4B32", fontWeight: "bold" }}>USD {item.price * item.quantity}</span>
-          </p>
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+            4
+          </div>
+
+          <div>
+            <h2 className="text-lg font-extrabold text-gray-900 sm:text-xl">
+              Products Ordered
+            </h2>
+
+            <p className="text-xs text-gray-500 sm:text-sm">
+              Items included in this order
+            </p>
+          </div>
         </div>
-      ))}
+
+        <div className="space-y-4">
+          {order.items?.map((item: any) => (
+            <article
+              key={item.id}
+              className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
+            >
+              <div className="flex flex-col gap-4">
+
+                {/* PRODUCT HEADER */}
+                <div className="min-w-0">
+                  <h3 className="break-words text-base font-extrabold text-gray-900">
+                    {item.productVariant?.product?.name ||
+                      item.productName ||
+                      "Product"}
+                  </h3>
+
+                  {item.productVariant?.sku && (
+                    <p className="mt-1 break-all text-xs text-gray-500">
+                      SKU: {item.productVariant.sku}
+                    </p>
+                  )}
+                </div>
+
+                {/* PRODUCT DETAILS */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="text-[11px] font-semibold uppercase text-gray-400">
+                      Weight
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-gray-800">
+                      {item.productVariant?.weight || "N/A"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="text-[11px] font-semibold uppercase text-gray-400">
+                      Price
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-gray-800">
+                      USD {Number(item.price || 0).toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="text-[11px] font-semibold uppercase text-gray-400">
+                      Quantity
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-gray-800">
+                      {item.quantity}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-emerald-50 p-3">
+                    <p className="text-[11px] font-semibold uppercase text-emerald-700">
+                      Subtotal
+                    </p>
+
+                    <p className="mt-1 text-sm font-extrabold text-[#0E4B32]">
+                      USD{" "}
+                      {(
+                        Number(item.price || 0) *
+                        Number(item.quantity || 0)
+                      ).toFixed(2)}
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }

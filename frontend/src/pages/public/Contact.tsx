@@ -1,120 +1,267 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope } from "react-icons/fa";
+import {
+  FaMapMarkerAlt,
+  FaPhoneAlt,
+  FaEnvelope,
+} from "react-icons/fa";
+import {
+  Send,
+  CheckCircle2,
+  MessageCircle,
+} from "lucide-react";
 
 export default function Contact() {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // இங்கு உங்கள் API Call அல்லது Form submission லாஜிக்கைச் சேர்க்கலாம்
+
+    // Existing placeholder submission behaviour
     setSubmitted(true);
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-16 px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#FFF8EE] px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+      <div className="mx-auto w-full max-w-6xl">
+
         {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-[#0E4B32]">Contact Us</h1>
-          <p className="text-gray-600 mt-4 text-lg">We would love to hear from you. Get in touch with us!</p>
+        <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-12 lg:mb-16">
+          <div className="mb-3 inline-flex items-center rounded-full bg-[#0E4B32]/10 px-4 py-2 text-xs font-bold text-[#0E4B32]">
+            <MessageCircle size={14} className="mr-2" />
+            Contact Purely Ceylon
+          </div>
+
+          <h1 className="text-3xl font-extrabold leading-tight text-[#0E4B32] sm:text-4xl lg:text-5xl">
+            Contact Us
+          </h1>
+
+          <p className="mt-4 text-sm leading-7 text-gray-600 sm:text-base lg:text-lg">
+            We would love to hear from you. Get in touch with
+            us for product inquiries, bulk orders and export
+            opportunities.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Left: Contact Info */}
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
+
+          {/* Contact Information */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-[#0E4B32] text-white p-8 md:p-12 rounded-3xl shadow-lg flex flex-col justify-between"
+            transition={{ duration: 0.5 }}
+            className="flex flex-col justify-between overflow-hidden rounded-3xl bg-[#0E4B32] p-6 text-white shadow-xl sm:p-8 lg:p-10"
           >
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-[#D4AF37]">Get In Touch</h3>
-              <p className="text-green-100 mb-8 leading-relaxed">
-                For inquiries regarding our organic products, bulk orders, or global export, please reach out to us using the details below.
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-[#D4AF37]">
+                <MessageCircle size={24} />
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-[#D4AF37] sm:text-3xl">
+                Get In Touch
+              </h2>
+
+              <p className="mt-4 text-sm leading-7 text-green-100 sm:text-base">
+                For inquiries regarding our organic products,
+                bulk orders, or global export, please reach out
+                to us using the details below.
               </p>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <FaMapMarkerAlt className="text-[#D4AF37] text-xl mt-1" />
-                  <p>Puluthi Vayal, Palavi, Puttalam, Sri Lanka.</p>
+              <div className="mt-8 space-y-4">
+
+                <div className="flex items-start gap-4 rounded-2xl bg-white/5 p-4">
+                  <FaMapMarkerAlt className="mt-1 shrink-0 text-xl text-[#D4AF37]" />
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-green-200">
+                      Address
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-white">
+                      Puluthi Vayal, Palavi, Puttalam,
+                      Sri Lanka.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <FaPhoneAlt className="text-[#D4AF37] text-xl" />
-                  <p>+94 76 8989 027</p>
+
+                <div className="flex items-center gap-4 rounded-2xl bg-white/5 p-4">
+                  <FaPhoneAlt className="shrink-0 text-lg text-[#D4AF37]" />
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-green-200">
+                      Phone
+                    </p>
+
+                    <p className="mt-1 text-sm text-white">
+                      +94 76 8989 027
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <FaEnvelope className="text-[#D4AF37] text-xl" />
-                  <p>support@purelyceylonorganic.com</p>
+
+                <div className="flex items-center gap-4 rounded-2xl bg-white/5 p-4">
+                  <FaEnvelope className="shrink-0 text-lg text-[#D4AF37]" />
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-green-200">
+                      Email
+                    </p>
+
+                    <p className="mt-1 break-all text-sm text-white">
+                      support@purelyceylonorganic.com
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 pt-8 border-t border-green-700/50">
-              <p className="text-sm text-green-200">Purely Ceylon Organic (PVT) LTD — Premium Organic Export Ecosystem</p>
+            <div className="mt-8 border-t border-green-700/50 pt-6">
+              <p className="text-xs leading-6 text-green-200">
+                Purely Ceylon Organic (PVT) LTD — Premium
+                Organic Export Ecosystem
+              </p>
             </div>
           </motion.div>
 
-          {/* Right: Contact Form */}
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
+          {/* Form */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white p-8 md:p-12 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center"
+            transition={{ duration: 0.5 }}
+            className="rounded-3xl border border-gray-100 bg-white p-5 shadow-lg sm:p-8 lg:p-10"
           >
             {submitted ? (
-              <div className="text-center py-12">
-                <div className="text-5xl mb-4">🎉</div>
-                <h3 className="text-2xl font-bold text-[#0E4B32]">Thank You!</h3>
-                <p className="text-gray-600 mt-2">Your message has been sent successfully. We will contact you soon.</p>
-                <button 
-                  onClick={() => setSubmitted(false)}
-                  className="mt-6 bg-[#0E4B32] text-white px-6 py-2 rounded-full font-semibold hover:bg-green-800 transition"
+              <div className="flex min-h-[420px] flex-col items-center justify-center px-2 py-10 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+                  <CheckCircle2
+                    size={46}
+                    className="text-[#0E4B32]"
+                  />
+                </div>
+
+                <h3 className="mt-6 text-2xl font-extrabold text-[#0E4B32]">
+                  Thank You!
+                </h3>
+
+                <p className="mt-3 max-w-md text-sm leading-7 text-gray-600 sm:text-base">
+                  Your message has been sent successfully.
+                  We will contact you soon.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubmitted(false);
+                    setFormData({
+                      name: "",
+                      email: "",
+                      message: "",
+                    });
+                  }}
+                  className="mt-7 min-h-[48px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#111111] sm:w-auto"
                 >
                   Send Another Message
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h3>
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-5"
+              >
+                <div className="mb-6">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#0E4B32]">
+                    Message
+                  </p>
+
+                  <h2 className="mt-1 text-2xl font-extrabold text-gray-900">
+                    Send Us a Message
+                  </h2>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
-                  <input 
-                    type="text" 
+                  <label
+                    htmlFor="contact-name"
+                    className="mb-1.5 block text-sm font-bold text-gray-700"
+                  >
+                    Your Name
+                  </label>
+
+                  <input
+                    id="contact-name"
+                    type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        name: e.target.value,
+                      })
+                    }
+                    autoComplete="name"
+                    className={inputClass}
                     placeholder="Enter your name"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                  <input 
-                    type="email" 
+                  <label
+                    htmlFor="contact-email"
+                    className="mb-1.5 block text-sm font-bold text-gray-700"
+                  >
+                    Email Address
+                  </label>
+
+                  <input
+                    id="contact-email"
+                    type="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
-                    placeholder="Enter your email"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        email: e.target.value,
+                      })
+                    }
+                    autoComplete="email"
+                    className={inputClass}
+                    placeholder="example@gmail.com"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                  <textarea 
-                    rows={4}
+                  <label
+                    htmlFor="contact-message"
+                    className="mb-1.5 block text-sm font-bold text-gray-700"
+                  >
+                    Message
+                  </label>
+
+                  <textarea
+                    id="contact-message"
+                    rows={5}
                     required
                     value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        message: e.target.value,
+                      })
+                    }
+                    className={`${inputClass} resize-y`}
                     placeholder="How can we help you?"
-                  ></textarea>
+                  />
                 </div>
-                <button 
-                  type="submit" 
-                  className="w-full bg-[#0E4B32] text-white py-4 rounded-xl font-bold hover:bg-green-800 transition shadow-lg"
+
+                <button
+                  type="submit"
+                  className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-extrabold text-white shadow-md transition hover:bg-[#111111] active:scale-[0.98]"
                 >
+                  <Send size={18} />
                   Send Message
                 </button>
               </form>
@@ -125,3 +272,6 @@ export default function Contact() {
     </div>
   );
 }
+
+const inputClass =
+  "min-h-[50px] w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10";
