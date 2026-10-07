@@ -294,31 +294,24 @@ export default function ProductDetails() {
   }
 
   return (
-    <div style={{ maxWidth: "1300px", margin: "40px auto", padding: "20px" }}>
+    <div className="mx-auto w-full max-w-[1300px] overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       
       {/* PRODUCT DETAILS GRID */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-          gap: "50px",
-          alignItems: "start",
-        }}
-      >
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:gap-12">
         {/* LEFT */}
         <ProductGallery images={product.images} />
 
         {/* RIGHT */}
         <div>
-          <span style={{ color: "#0E4B32", fontWeight: "bold", fontSize: "22px" }}>
-            🌿 Organic Product
-          </span>
+          <span className="inline-flex rounded-full bg-[#0E4B32]/10 px-3 py-1.5 text-sm font-bold text-[#0E4B32]">
+  🌿 Organic Product
+</span>
 
-          <h1 style={{ marginTop: "10px", fontSize: "38px" }}>
-            {product.name}
-          </h1>
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight text-[#111111] sm:text-4xl lg:text-[42px]">
+  {product.name}
+</h1>
 
-          <p style={{ color: "#666", lineHeight: 1.8, marginTop: "20px" }}>
+          <p className="mt-5 text-sm leading-7 text-gray-600 sm:text-base">
             {product.description}
           </p>
 
@@ -330,18 +323,51 @@ export default function ProductDetails() {
 
           <hr style={{ margin: "20px 0" }} />
 
-          <h2 style={{ color: "#b12704", fontSize: "34px" }}>
-            LKR {(selectedVariant?.price ?? product?.basePrice ?? 0).toFixed(2)}
-          </h2>
+          <h2 className="mt-5 text-3xl font-extrabold text-[#0E4B32] sm:text-4xl">
+  LKR{" "}
+  {Number(
+    selectedVariant?.price ??
+      product?.basePrice ??
+      0
+  ).toLocaleString("en-LK", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}
+</h2>
 
-          <div style={{ marginTop: "15px" }}>
-            <p><strong>Category :</strong> {product.category?.name ?? "N/A"}</p>
-            <p>
-              <strong>Weight :</strong>{" "}
-              {selectedVariant?.weight ?? product.weight ?? "N/A"} g
-            </p>
-            <p><strong>SKU :</strong> {selectedVariant?.sku ?? product.sku}</p>
-          </div>
+          <div className="mt-5 grid grid-cols-1 gap-2 rounded-xl border border-gray-100 bg-gray-50 p-4 sm:grid-cols-3">
+  <div>
+    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+      Category
+    </p>
+    <p className="mt-1 text-sm font-semibold text-gray-800">
+      {product.category?.name ?? "N/A"}
+    </p>
+  </div>
+
+  <div>
+    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+      Weight
+    </p>
+    <p className="mt-1 text-sm font-semibold text-gray-800">
+      {selectedVariant?.weight ??
+        product.weight ??
+        "N/A"}{" "}
+      g
+    </p>
+  </div>
+
+  <div>
+    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+      SKU
+    </p>
+    <p className="mt-1 break-all text-sm font-semibold text-gray-800">
+      {selectedVariant?.sku ??
+        product.sku ??
+        "N/A"}
+    </p>
+  </div>
+</div>
 
           <StockBadge stock={selectedVariant?.stock ?? product.stock} />
 
@@ -390,11 +416,14 @@ export default function ProductDetails() {
       {/* ======================================================== */}
       {/* 🙋‍♂️ STEP 5 & 9: AMAZON STYLE CUSTOMER Q&A SECTION */}
       {/* ======================================================== */}
-      <div style={{ marginTop: 60, borderTop: "1px solid #eee", paddingTop: 40 }}>
+      <div className="mt-12 border-t border-gray-200 pt-8 sm:mt-16 sm:pt-10">
         <h2 style={{ fontSize: "24px", color: "#0E4B32", marginBottom: 20 }}>Customer Questions & Answers</h2>
 
         {/* WRITE A QUESTION FORM (Step 6) */}
-        <form onSubmit={handleQuestionSubmit} style={{ display: "flex", gap: "10px", marginBottom: "40px" }}>
+        <form
+  onSubmit={handleQuestionSubmit}
+  className="mb-10 flex w-full flex-col gap-3 sm:flex-row"
+>
           <input
             type="text"
             value={userQuestion}
@@ -404,35 +433,35 @@ export default function ProductDetails() {
             required
           />
           <button
-            type="submit"
-            disabled={submittingQuestion}
-            style={{ padding: "0 30px", background: "#0E4B32", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", fontSize: "15px" }}
-          >
-            {submittingQuestion ? "Asking..." : "Ask"}
-          </button>
+  type="submit"
+  disabled={submittingQuestion}
+  className="min-h-[50px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#111111] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+>
+  {submittingQuestion ? "Asking..." : "Ask"}
+</button>
         </form>
 
         {/* QUESTIONS AND ANSWERS LIST */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
+        <div className="flex flex-col gap-6">
           {questions.length === 0 ? (
-            <p style={{ color: "#777", fontStyle: "italic" }}>No questions asked yet. Be the first to ask!</p>
+            <p className="text-gray-500 italic">No questions asked yet. Be the first to ask!</p>
           ) : (
             questions.map((q: any) => (
-              <div key={q.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div key={q.id} className="flex flex-col gap-2">
                 
                 {/* QUESTION DISPLAY ROW */}
-                <div style={{ display: "flex", gap: "15px", alignItems: "start" }}>
-                  <span style={{ fontWeight: "bold", color: "#666", fontSize: "16px" }}>Q:</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontWeight: "bold", color: "#333", fontSize: "16px" }}>{q.question}</p>
-                    <small style={{ color: "#999" }}>Asked by {q.user?.fullName ?? "Customer"}</small>
+                <div className="flex gap-3.5 items-start">
+                  <span className="font-bold text-gray-600">Q:</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-800" style={{ margin: 0, fontSize: "16px" }}>{q.question}</p>
+                    <small className="text-gray-500">Asked by {q.user?.fullName ?? "Customer"}</small>
                   </div>
 
                   {/* DELETE QUESTION BUTTON */}
                   {(user?.id === q.userId || user?.role === "SELLER" || user?.role === "ADMIN") && (
                     <button
                       onClick={() => handleDeleteQuestion(q.id)}
-                      style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "14px" }}
+                      className="text-red-500 hover:text-red-700 focus:outline-none"
                     >
                       🗑 Delete
                     </button>
@@ -440,9 +469,9 @@ export default function ProductDetails() {
                 </div>
 
                 {/* ANSWER DISPLAY ROW */}
-                <div style={{ display: "flex", gap: "15px", alignItems: "start", paddingLeft: "5px" }}>
-                  <span style={{ fontWeight: "bold", color: "#0E4B32", fontSize: "16px" }}>A:</span>
-                  <div style={{ flex: 1 }}>
+                <div className="flex gap-3.5 items-start" style={{ paddingLeft: "5px" }}>
+                  <span className="font-bold text-green-600" style={{ fontSize: "16px" }}>A:</span>
+                  <div className="flex-1">
                     {q.answer ? (
                       <div>
                         <p style={{ margin: 0, color: "#444", lineHeight: "1.6" }}>{q.answer}</p>
@@ -501,12 +530,12 @@ export default function ProductDetails() {
       {/* ======================================================== */}
       {/* ⭐ REVIEWS & RATINGS SECTION */}
       {/* ======================================================== */}
-      <div style={{ marginTop: 60, borderTop: "1px solid #eee", paddingTop: 40 }}>
-        <h2 style={{ fontSize: "24px", color: "#0E4B32", marginBottom: 20 }}>Customer Reviews & Ratings</h2>
+      <div className="mt-12 border-t border-gray-200 pt-8 sm:mt-16 sm:pt-10">
+        <h2 className="text-xl font-bold text-gray-800">Customer Reviews & Ratings</h2>
 
         {/* RATING OVERVIEW */}
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px" }}>
-          <span style={{ fontSize: "30px", color: "#f59e0b", fontWeight: "bold" }}>
+        <div className="flex items-center gap-3.5 mb-7">
+          <span className="text-3xl font-bold" style={{ color: "#f59e0b" }}>
             {"⭐".repeat(Math.round(averageRating))}
           </span>
           <div>
@@ -516,15 +545,18 @@ export default function ProductDetails() {
         </div>
 
         {/* WRITE A REVIEW FORM */}
-        <form onSubmit={handleReviewSubmit} style={{ background: "#f9f9f9", padding: 25, borderRadius: 12, marginBottom: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-          <h3 style={{ margin: "0 0 15px 0", fontSize: "18px", color: "#333" }}>Write a Review</h3>
-          
-          <div style={{ marginBottom: 15 }}>
-            <label style={{ display: "block", marginBottom: 5, fontWeight: "bold", color: "#555" }}>Rating:</label>
+        <form
+  onSubmit={handleReviewSubmit}
+  className="mb-10 rounded-2xl border border-gray-100 bg-gray-50 p-4 shadow-sm sm:p-6"
+>
+          <h3 className="mb-4 text-lg font-bold text-gray-800">Write a Review</h3>
+
+          <div className="mb-5">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">Rating:</label>
             <select 
               value={userRating} 
               onChange={(e) => setUserRating(Number(e.target.value))}
-              style={{ padding: "10px 15px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: "14px" }}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10 sm:w-auto"
             >
               <option value="5">5 ⭐⭐⭐⭐⭐ (Excellent)</option>
               <option value="4">4 ⭐⭐⭐⭐ (Good)</option>
@@ -541,7 +573,7 @@ export default function ProductDetails() {
               value={userComment}
               onChange={(e) => setUserComment(e.target.value)}
               placeholder="Share your genuine experience with this purely organic product..."
-              style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #ccc", boxSizing: "border-box", fontSize: "14px", resize: "vertical" }}
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
               required
             />
           </div>
@@ -549,7 +581,7 @@ export default function ProductDetails() {
           <button 
             type="submit" 
             disabled={submittingReview}
-            style={{ padding: "12px 28px", background: "#0E4B32", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: "bold", fontSize: "15px" }}
+            className="min-h-[48px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#111111] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             {submittingReview ? "Submitting..." : "Submit Review"}
           </button>
@@ -601,32 +633,16 @@ export default function ProductDetails() {
       {/* EDIT REVIEW POPUP MODAL */}
       {editingReviewId && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              padding: 30,
-              borderRadius: 10,
-              width: 450,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
-            }}
-          >
-            <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>Edit Review</h2>
+  className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4"
+>
+          <div className="max-h-[90vh] w-full max-w-[450px] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">Edit Review</h2>
 
-            <label style={{ display: "block", marginBottom: 5, fontWeight: "bold", color: "#555" }}>Rating:</label>
+            <label className="mb-2 block text-sm font-semibold text-gray-700">Rating:</label>
             <select
               value={editRating}
               onChange={(e) => setEditRating(Number(e.target.value))}
-              style={{ width: "100%", padding: "10px", borderRadius: 6, border: "1px solid #ccc", background: "#fff", fontSize: "14px" }}
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
             >
               <option value={5}>⭐⭐⭐⭐⭐</option>
               <option value={4}>⭐⭐⭐⭐</option>
@@ -635,21 +651,18 @@ export default function ProductDetails() {
               <option value={1}>⭐</option>
             </select>
 
-            <label style={{ display: "block", marginTop: 20, marginBottom: 5, fontWeight: "bold", color: "#555" }}>Comment:</label>
+            <label className="mb-2 block text-sm font-semibold text-gray-700" style={{ marginTop: 20 }}>
+              Comment:
+            </label>
             <textarea
               rows={5}
               value={editComment}
               onChange={(e) => setEditComment(e.target.value)}
-              style={{ width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc", boxSizing: "border-box", fontSize: "14px", resize: "none" }}
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#0E4B32]"
             />
 
             <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 20,
-              }}
+              className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
             >
               <button
                 onClick={() => setEditingReviewId(null)}

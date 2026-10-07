@@ -1,17 +1,17 @@
 import Navbar from "./Navbar";
 
-export default function MainLayout({ children }: any) {
-  return (
-    <div className="min-h-screen bg-[#FFF8EE]">
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
 
-      {/* NAVBAR */}
+export default function MainLayout({ children }: MainLayoutProps) {
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#FFF8EE] text-[#111111]">
       <Navbar />
 
-      {/* PAGE CONTENT */}
-      <main className="flex justify-center items-center min-h-[80vh]">
+      <main className="w-full overflow-x-hidden">
         {children}
       </main>
-
     </div>
   );
 }

@@ -1,101 +1,449 @@
-/* ===== Product Card ===== */
+/* =========================================================
+   PURELY CEYLON
+   PREMIUM PRODUCT CARD
+   Mobile + Desktop Responsive
+   ========================================================= */
 
 .product-card {
-  background: #ffffff;
-  border-radius: 16px;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  background: #ffffff;
+  border: 1px solid rgba(14, 75, 50, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.18);
+  transform: translateY(-6px);
+  border-color: rgba(14, 75, 50, 0.18);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.12);
 }
 
-/* ===== Product Image ===== */
+
+/* =========================================================
+   IMAGE
+   ========================================================= */
+
+.product-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f7f3ea;
+}
 
 .product-image {
+  display: block;
   width: 100%;
-  height: 220px;
+  height: 100%;
   object-fit: cover;
+
+  transition:
+    transform 0.5s ease;
 }
 
-/* ===== Content ===== */
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+
+/* =========================================================
+   ORGANIC BADGE
+   ========================================================= */
+
+.organic-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #0e4b32;
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.02em;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================================================
+   WISHLIST
+   ========================================================= */
+
+.wishlist-icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.92);
+  color: #333;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.wishlist-icon-btn:hover {
+  transform: scale(1.08);
+  background: #ffffff;
+  color: #b91c1c;
+}
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
 
 .product-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  min-width: 0;
+
   padding: 16px;
 }
 
-/* ===== Organic Badge ===== */
 
-.organic-badge {
-  display: inline-block;
-  background: #0E4B32;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
+/* =========================================================
+   CATEGORY
+   ========================================================= */
+
+.product-category {
+  margin: 0 0 5px;
+
+  color: #777;
+
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-/* ===== Product Name ===== */
+
+/* =========================================================
+   NAME
+   ========================================================= */
 
 .product-name {
-  margin: 15px 0 10px;
-  color: #222;
-  font-size: 20px;
+  margin: 0;
+
+  color: #171717;
+
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 700;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
 }
 
-/* ===== Price ===== */
+
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
+
+.product-description {
+  margin: 8px 0 0;
+
+  color: #666;
+
+  font-size: 13px;
+  line-height: 1.55;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   PRICE
+   ========================================================= */
+
+.product-price-row {
+  margin-top: 14px;
+}
 
 .product-price {
-  color: #D4AF37;
-  font-size: 24px;
-  font-weight: bold;
+  margin: 0;
+
+  color: #0e4b32;
+
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 800;
 }
 
-/* ===== Stock ===== */
 
-.product-stock {
+/* =========================================================
+   META
+   ========================================================= */
+
+.product-meta {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
   margin-top: 10px;
-  color: #666;
 }
 
-/* ===== Buttons ===== */
+.product-meta span {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #666;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-meta svg {
+  flex-shrink: 0;
+}
+
+.stock-in {
+  color: #15803d !important;
+}
+
+.stock-out {
+  color: #dc2626 !important;
+}
+
+
+/* =========================================================
+   SKU
+   ========================================================= */
+
+.product-sku {
+  margin: 8px 0 0;
+
+  color: #999;
+
+  font-size: 11px;
+  font-family: monospace;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
 
 .product-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+
+  margin-top: auto;
+  padding-top: 16px;
 }
 
 .details-btn,
 .cart-btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
+  min-width: 0;
+  min-height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  padding: 10px 12px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 700;
+
   text-align: center;
   text-decoration: none;
+
   cursor: pointer;
-  font-weight: bold;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .details-btn {
-  background: #0E4B32;
-  color: white;
-}
-
-.cart-btn {
-  background: #D4AF37;
-  color: black;
-  border: none;
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .details-btn:hover {
-  background: #0a3a27;
+  background: #e5e7eb;
+  transform: translateY(-1px);
 }
 
-.cart-btn:hover {
-  opacity: .9;
+.cart-btn {
+  border: none;
+
+  background: #0e4b32;
+  color: #ffffff;
+}
+
+.cart-btn:hover:not(:disabled) {
+  background: #0a3a27;
+  transform: translateY(-1px);
+}
+
+.cart-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .product-card {
+    border-radius: 16px;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.07);
+  }
+
+  .product-image-wrapper {
+    aspect-ratio: 1 / 1;
+  }
+
+  .organic-badge {
+    top: 10px;
+    left: 10px;
+
+    padding: 5px 9px;
+
+    font-size: 10px;
+  }
+
+  .wishlist-icon-btn {
+    top: 10px;
+    right: 10px;
+
+    width: 38px;
+    height: 38px;
+  }
+
+  .product-content {
+    padding: 14px;
+  }
+
+  .product-name {
+    font-size: 17px;
+  }
+
+  .product-description {
+    font-size: 12px;
+  }
+
+  .product-price {
+    font-size: 20px;
+  }
+
+  .product-buttons {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .details-btn,
+  .cart-btn {
+    width: 100%;
+    min-height: 46px;
+  }
+}
+
+
+/* =========================================================
+   SMALL PHONES — 360px
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .product-content {
+    padding: 12px;
+  }
+
+  .product-name {
+    font-size: 16px;
+  }
+
+  .product-price {
+    font-size: 19px;
+  }
+
+  .product-meta {
+    gap: 6px;
+  }
+
+  .product-meta span {
+    font-size: 11px;
+  }
+
+  .product-sku {
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================================
+   REDUCE MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-image,
+  .wishlist-icon-btn,
+  .details-btn,
+  .cart-btn {
+    transition: none;
+  }
+
+  .product-card:hover {
+    transform: none;
+  }
+
+  .product-card:hover .product-image {
+    transform: none;
+  }
 }

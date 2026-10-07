@@ -96,46 +96,72 @@ const [subscribing, setSubscribing] =
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="w-full min-w-0 overflow-x-hidden bg-gray-50">
       {/* 3. HERO SECTION (With Image layout) */}
-      <section className="bg-[#0E4B32] text-white py-24 px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-          <div className="md:w-1/2">
-            <motion.h1 {...animationProps} className="text-6xl font-extrabold">PCO PRODUCTION</motion.h1>
-            <p className="mt-6 text-xl text-green-100">Premium Sri Lankan Organic Products with complete traceability.</p>
-            <div className="flex gap-5 mt-10">
-              <Link to="/products" className="bg-[#D4AF37] text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition">Shop Now</Link>
-              <Link to="/contact" className="border border-white px-8 py-4 rounded-full hover:bg-white hover:text-[#0E4B32] transition">Contact Us</Link>
-            </div>
-          </div>
-          <div className="md:w-1/3 mt-10 md:mt-0">
-            <div className="h-64 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
-              {/* Product Hero Image PlaceHolder */}
-              <span className="text-white/50">musab hafiz </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="bg-[#0E4B32] text-white px-4 py-14 sm:px-6 sm:py-18 lg:px-8 lg:py-24">
+  <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col items-center justify-between gap-10 md:flex-row md:gap-12">
+
+    <div className="w-full text-center md:w-1/2 md:text-left">
+      <motion.h1
+        {...animationProps}
+        className="max-w-full break-words text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl"
+      >
+        PCO PRODUCTION
+      </motion.h1>
+
+      <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-green-100 sm:mt-6 sm:text-lg lg:text-xl md:mx-0">
+        Premium Sri Lankan Organic Products with complete traceability.
+      </p>
+
+      <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+        <Link
+          to="/products"
+          className="flex min-h-[50px] items-center justify-center rounded-full bg-[#D4AF37] px-7 py-3 font-bold text-black transition hover:scale-105"
+        >
+          Shop Now
+        </Link>
+
+        <Link
+          to="/contact"
+          className="flex min-h-[50px] items-center justify-center rounded-full border border-white px-7 py-3 transition hover:bg-white hover:text-[#0E4B32]"
+        >
+          Contact Us
+        </Link>
+      </div>
+    </div>
+
+    <div className="mt-2 w-full max-w-md md:mt-0 md:w-1/3">
+      <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-white/20 bg-white/10 sm:h-64">
+        <span className="text-sm text-white/50">
+          Premium Ceylon Organic
+        </span>
+      </div>
+    </div>
+
+  </div>
+</section>
 
       {/* 5. STATISTICS (Background: White) */}
-      <section className="py-16 bg-white">
-        <div className="grid md:grid-cols-4 gap-8 max-w-7xl mx-auto px-6">
+      <section className="bg-white py-12 sm:py-16">
+  <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 sm:px-6 md:grid-cols-4">
           {[ {n: "50+", l: "Products"}, {n: "25+", l: "Countries"}, {n: "1000+", l: "Customers"}, {n: "100%", l: "Certified"} ].map((s, i) => (
             <motion.div {...animationProps} key={i} className="text-center">
-              <h2 className="text-5xl font-bold text-[#0E4B32]">{s.n}</h2>
-              <p className="mt-2 text-gray-600">{s.l}</p>
+              <h2 className="text-3xl font-bold text-[#0E4B32] sm:text-4xl lg:text-5xl">{s.n}</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500 sm:text-base">{s.l}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* 6 & 10. FEATURED PRODUCTS (Background: Light Gray) */}
-      <section className="py-20 bg-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="bg-gray-100 px-4 py-14 sm:px-6 sm:py-20">
+  <div className="mx-auto w-full max-w-7xl">
           {/* Task 3.9 & 3.10 — Section Header & View All Button */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
             <div>
-              <h2 className="text-5xl font-bold text-[#0E4B32]">Featured Products</h2>
+              <h2 className="text-3xl font-bold leading-tight text-[#0E4B32] sm:text-4xl lg:text-5xl">
+  Featured Products
+</h2>
               <p className="text-gray-500 mt-3">Handpicked Premium Organic Products from Sri Lanka</p>
             </div>
             <Link
@@ -150,7 +176,7 @@ const [subscribing, setSubscribing] =
             <div className="text-center py-20 text-gray-500">No Products Available</div>
           ) : (
             /* Task 3.8 — Responsive Grid */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8 xl:grid-cols-4">
               {products.map((p) => (
                 <motion.div 
                   {...animationProps} 
@@ -172,7 +198,7 @@ const [subscribing, setSubscribing] =
                           "/placeholder.png"
                         }
                         alt={p.name}
-                        className="w-full h-56 object-cover transition-transform duration-500 hover:scale-110"
+                        className="h-52 w-full object-cover transition-transform duration-500 hover:scale-105 sm:h-56"
                       />
                     </div>
 
@@ -204,17 +230,21 @@ const [subscribing, setSubscribing] =
                     </div>
 
                     {/* Task 3.6 — Button Design */}
-                    <div className="flex gap-2">
-                      <Link
-                        to={`/products/${p.id}`}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-3 flex justify-center items-center text-gray-700 transition font-semibold"
-                      >
-                        👁 View Product
-                      </Link>
-                      <button className="flex-1 bg-[#0E4B32] text-white rounded-lg py-3 font-semibold hover:bg-green-800 transition">
-                        🛒 Add to Cart
-                      </button>
-                    </div>
+<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+  <Link
+    to={`/products/${p.id}`}
+    className="flex min-h-[46px] items-center justify-center rounded-lg bg-gray-100 px-3 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-200"
+  >
+    👁 View Product
+  </Link>
+
+  <button
+    type="button"
+    className="flex min-h-[46px] items-center justify-center rounded-lg bg-[#0E4B32] px-3 py-3 text-sm font-semibold text-white transition hover:bg-green-800"
+  >
+    🛒 Add to Cart
+  </button>
+</div>
                   </div>
                 </motion.div>
               ))}
@@ -235,16 +265,16 @@ const [subscribing, setSubscribing] =
   </p>
 
   <form
-    onSubmit={handleNewsletterSubscribe}
-    className="max-w-md mx-auto flex gap-2 px-6"
-  >
+  onSubmit={handleNewsletterSubscribe}
+  className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 sm:flex-row sm:px-6"
+>
     <input
       type="email"
       value={newsletterEmail}
       onChange={(e) =>
         setNewsletterEmail(e.target.value)
       }
-      className="w-full p-4 rounded-full text-black outline-none"
+      className="w-full rounded-full p-4 text-black outline-none"
       placeholder="Email Address"
       autoComplete="email"
       required
@@ -254,7 +284,7 @@ const [subscribing, setSubscribing] =
     <button
       type="submit"
       disabled={subscribing}
-      className="bg-[#D4AF37] px-8 rounded-full font-bold text-black hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+      className="min-h-[50px] w-full rounded-full bg-[#D4AF37] px-8 font-bold text-black transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
     >
       {subscribing ? "..." : "Subscribe"}
     </button>
@@ -262,13 +292,21 @@ const [subscribing, setSubscribing] =
 </section>
 
       {/* 8 & 9. FOOTER (Background: Black) */}
-      <footer className="bg-black text-gray-400 py-16 px-6">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12">
-          <div>
+      <footer className="bg-black px-4 py-12 text-gray-400 sm:px-6 sm:py-16">
+  <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-3 md:gap-12">
+          <div className="min-w-0">
             <h4 className="text-white font-bold mb-4">PCO PRODUCTION</h4>
-            <p>Puluthi Vayal, Palavi, Puttalam, Sri Lanka.</p>
-            <p className="mt-2">Email: support@purelyceylonorganic.com</p>
-            <p>Phone: +94 76 8989 027</p>
+            <p className="break-words">
+  Puluthi Vayal, Palavi, Puttalam, Sri Lanka.
+</p>
+
+<p className="mt-2 break-words">
+  Email: musabmohammed678@gmail.com
+</p>
+
+<p className="break-words">
+  Phone: +94 76 8989 027
+</p>
           </div>
           <div>
             <h4 className="text-white font-bold mb-4">Follow Us</h4>
@@ -298,7 +336,7 @@ const [subscribing, setSubscribing] =
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Chat on WhatsApp"
-  className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-green-500 text-white flex items-center justify-center shadow-xl hover:bg-green-600 hover:scale-110 transition-all duration-300"
+  className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl transition-all duration-300 hover:scale-110 hover:bg-green-600 sm:bottom-6 sm:right-6"
 >
   <FaWhatsapp size={30} />
 </a>

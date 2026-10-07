@@ -1,3 +1,113 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================
+   PURELY CEYLON - GLOBAL RESPONSIVE SYSTEM
+   ========================================= */
+
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: #fff8ee;
+  color: #111111;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Prevent accidental horizontal overflow */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Images should never overflow mobile screens */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Better mobile tap experience */
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile inputs */
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+/* Prevent long text / SKU / URLs from breaking layouts */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a,
+td,
+th {
+  overflow-wrap: anywhere;
+}
+
+/* Premium scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff8ee;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0e4b32;
+  border-radius: 999px;
+}
+
+/* Mobile utility */
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 360px) {
+  html {
+    font-size: 14px;
+  }
+}

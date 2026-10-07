@@ -1,6 +1,15 @@
 import { Link } from "react-router-dom";
+import {
+  Heart,
+  ShoppingCart,
+  Eye,
+  Package,
+  Scale,
+} from "lucide-react";
+
 import type { Product } from "../../types/product.types";
 import "./ProductCard.css";
+
 import { cartService } from "../../services/cart.service";
 import { wishlistService } from "../../services/wishlist.service";
 
@@ -9,136 +18,175 @@ type Props = {
 };
 
 export default function ProductCard({ product }: Props) {
-  async function handleAddToCart() {
   const variant = product.variants?.[0];
 
-  if (!variant) {
-    alert("No variant available.");
-    return;
-  }
-
-  try {
-    const response = await cartService.addToCart(
-      variant.id,
-      1
-    );
-
-    alert(response.message);
-  } catch (error: any) {
-    console.error(error);
-
-    alert(
-      error?.response?.data?.message ||
-      "Add to cart failed."
-    );
-  }
-}
-
-async function handleAddToWishlist() {
-  const variant = product.variants?.[0];
-
-  if (!variant) {
-    alert("No variant available.");
-    return;
-  }
-
-  try {
-    const response = await wishlistService.addToWishlist(
-      variant.id
-    );
-
-    alert(response.message);
-
-    window.location.reload();
-  } catch (error: any) {
-    console.error(error);
-
-    alert(
-      error?.response?.data?.message ||
-      "Add to wishlist failed."
-    );
-  }
-}
-  // Product Image
   const image =
-    product.images.length > 0
-      ? product.images[0].url
-      : "/no-image.png";
+    product.images?.find((img) => img.isPrimary)?.url ||
+    product.images?.[0]?.url ||
+    "/no-image.png";
 
-  // First Variant
-  const variant = product.variants?.[0];
-  const variantWeight = (variant as any)?.weight ?? "N/A";
+  const price = variant?.price;
+  const weight = (variant as any)?.weight;
+  const stock = variant?.stock ?? 0;
+
+  async function handleAddToCart() {
+    if (!variant) {
+      alert("No variant available.");
+      return;
+    }
+
+    try {
+      const response = await cartService.addToCart(
+        variant.id,
+        1
+      );
+
+      alert(response.message);
+    } catch (error: any) {
+      console.error(error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Add to cart failed."
+      );
+    }
+  }
+
+  async function handleAddToWishlist() {
+    if (!variant) {
+      alert("No variant available.");
+      return;
+    }
+
+    try {
+      const response =
+        await wishlistService.addToWishlist(
+          variant.id
+        );
+
+      alert(response.message);
+
+      window.location.reload();
+    } catch (error: any) {
+      console.error(error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Add to wishlist failed."
+      );
+    }
+  }
 
   return (
-    <div className="product-card">
-      {/* Product Image */}
-      <img
-        src={image}
-        alt={product.name}
-        className="product-image"
-      />
+    <article className="product-card">
+      {/* ================= IMAGE ================= */}
+      <div className="product-image-wrapper">
+        <img
+          src={image}
+          alt={product.name}
+          className="product-image"
+          loading="lazy"
+        />
 
-      {/* Product Content */}
-      <div className="product-content">
-        {/* Organic Badge */}
         <span className="organic-badge">
           🌿 Organic
         </span>
 
-        {/* Product Name */}
+        <button
+          type="button"
+          onClick={handleAddToWishlist}
+          aria-label={`Add ${product.name} to wishlist`}
+          className="wishlist-icon-btn"
+        >
+          <Heart size={18} />
+        </button>
+      </div>
+
+      {/* ================= CONTENT ================= */}
+      <div className="product-content">
+        {product.category?.name && (
+          <p className="product-category">
+            {product.category.name}
+          </p>
+        )}
+
         <h3 className="product-name">
           {product.name}
         </h3>
 
-        {/* Description */}
-        <p className="product-description">
-          {product.description}
-        </p>
+        {product.description && (
+          <p className="product-description">
+            {product.description}
+          </p>
+        )}
 
-        {/* Price */}
-        <p className="product-price">
-          LKR {variant?.price?.toFixed(2) ?? "Price Not Available"}
-        </p>
+        {/* ================= PRICE ================= */}
+        <div className="product-price-row">
+          <p className="product-price">
+            {price !== undefined
+              ? `LKR ${Number(price).toLocaleString(
+                  "en-LK",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }
+                )}`
+              : "Price unavailable"}
+          </p>
+        </div>
 
-        {/* Weight */}
-        <p className="product-weight">
-          ⚖️ Weight : {variantWeight}
-        </p>
+        {/* ================= DETAILS ================= */}
+        <div className="product-meta">
+          <span>
+            <Scale size={15} />
+            {weight ?? "N/A"}
+          </span>
 
-        {/* Stock */}
-        <p className="product-stock">
-          📦 Stock : {variant?.stock ?? "N/A"}
-        </p>
+          <span
+            className={
+              stock > 0
+                ? "stock-in"
+                : "stock-out"
+            }
+          >
+            <Package size={15} />
+            {stock > 0
+              ? `${stock} in stock`
+              : "Out of stock"}
+          </span>
+        </div>
 
-        {/* SKU */}
-        <p className="product-sku">
-          SKU : {variant?.sku ?? "N/A"}
-        </p>
+        {variant?.sku && (
+          <p className="product-sku">
+            SKU: {variant.sku}
+          </p>
+        )}
 
-        {/* Buttons */}
+        {/* ================= ACTIONS ================= */}
         <div className="product-buttons">
-  <Link
-    to={`/products/${product.id}`}
-    className="details-btn"
-  >
-    View Details
-  </Link>
+          <Link
+            to={`/products/${product.id}`}
+            className="details-btn"
+          >
+            <Eye size={17} />
+            <span>View</span>
+          </Link>
 
-  <button
-    className="cart-btn"
-    onClick={handleAddToCart}
-  >
-    🛒 Add to Cart
-  </button>
-
-  <button
-    className="cart-btn"
-    onClick={handleAddToWishlist}
-  >
-    ❤️ Wishlist
-  </button>
-</div>
+          <button
+            type="button"
+            className="cart-btn"
+            onClick={handleAddToCart}
+            disabled={!variant || stock <= 0}
+          >
+            <ShoppingCart size={17} />
+            <span>
+              {stock > 0
+                ? "Add to Cart"
+                : "Out of Stock"}
+            </span>
+          </button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
