@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaPinterest, FaWhatsapp, FaYoutube } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaPinterest, FaYoutube } from "react-icons/fa";
 import { productService } from "../../services/product.service";
 import type { Product } from "../../types/product.types";
 import { newsletterService } from "../../services/newsletter.service";
@@ -106,7 +106,7 @@ const [subscribing, setSubscribing] =
         {...animationProps}
         className="max-w-full break-words text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl"
       >
-        PCO PRODUCTION
+        PURELY CEYLON ORGANIC
       </motion.h1>
 
       <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-green-100 sm:mt-6 sm:text-lg lg:text-xl md:mx-0">
@@ -131,12 +131,14 @@ const [subscribing, setSubscribing] =
     </div>
 
     <div className="mt-2 w-full max-w-md md:mt-0 md:w-1/3">
-      <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-white/20 bg-white/10 sm:h-64">
-        <span className="text-sm text-white/50">
-          Premium Ceylon Organic
-        </span>
-      </div>
-    </div>
+  <div className="flex h-56 w-full items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-6 sm:h-64 sm:p-8">
+    <img
+      src="/logo/pco-logo.png"
+      alt="PCO - Purely Ceylon Organic"
+      className="max-h-full w-auto max-w-full object-contain drop-shadow-2xl"
+    />
+  </div>
+</div>
 
   </div>
 </section>
@@ -295,85 +297,169 @@ const [subscribing, setSubscribing] =
       <footer className="bg-black px-4 py-12 text-gray-400 sm:px-6 sm:py-16">
   <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-3 md:gap-12">
           <div className="min-w-0">
-            <h4 className="text-white font-bold mb-4">PCO PRODUCTION</h4>
-            <p className="break-words">
-  Puluthi Vayal, Palavi, Puttalam, Sri Lanka.
-</p>
+  <div className="mb-5">
+    <img
+      src="/logo/pco-logo.png"
+      alt="PCO - Purely Ceylon Organic"
+      className="h-16 w-auto max-w-[220px] object-contain"
+    />
+  </div>
 
-<p className="mt-2 break-words">
-  Email: musabmohammed678@gmail.com
-</p>
+  <p className="max-w-sm break-words leading-7 text-gray-400">
+    Premium Sri Lankan Organic Products with complete traceability.
+  </p>
 
-<p className="break-words">
-  Phone: +94 76 8989 027
-</p>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Follow Us</h4>
-            <div className="flex gap-6 text-2xl">
-  <a
-    href="https://www.facebook.com/profile.php?id=61590394625758"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Facebook"
-    className="hover:text-white transition"
-  >
-    <FaFacebook />
-  </a>
+  <div className="mt-5 space-y-2 text-sm">
+    <p className="break-words">
+      <span className="font-semibold text-gray-300">Address:</span>{" "}
+      Puluthi Vayal, Palavi, Puttalam, Sri Lanka.
+    </p>
 
-  <a
-    href="https://www.instagram.com/purelyceylonorganic?igsh=cGp6OWtuM2JzMXZy"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Instagram"
-    className="hover:text-white transition"
-  >
-    <FaInstagram />
-  </a>
+    <p className="break-words">
+      <span className="font-semibold text-gray-300">Email:</span>{" "}
+      musabmohammed678@gmail.com
+    </p>
 
-<a
-  href="https://wa.me/94768989027?text=Hello%20Purely%20Ceylon%20Organic"
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="Chat on WhatsApp"
-  className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl transition-all duration-300 hover:scale-110 hover:bg-green-600 sm:bottom-6 sm:right-6"
->
-  <FaWhatsapp size={30} />
-</a>
-
-  <a
-    href="https://pin.it/AtoB6QSlT"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Pinterest"
-    className="hover:text-white transition"
-  >
-    <FaPinterest />
-  </a>
-
-<a
-    href="YOUR_LINKEDIN_URL"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="LinkedIn"
-    className="hover:text-white transition"
-  >
-    <FaLinkedin />
-  </a>
-
-  <a
-    href="https://youtube.com/@musabhafiz?si=A-LgrFBAMhTtMBrJ"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="YouTube"
-    className="hover:text-white transition"
-  >
-    <FaYoutube />
-  </a>
-
+    <p className="break-words">
+      <span className="font-semibold text-gray-300">Phone:</span>{" "}
+      +94 76 8989 027
+    </p>
+  </div>
 </div>
+          <div>
+  <h4 className="mb-5 text-lg font-bold text-white">
+    Follow Us
+  </h4>
+
+  <p className="mb-5 max-w-sm text-sm leading-6 text-gray-400">
+    Follow Purely Ceylon Organic for our latest products, updates,
+    offers and organic stories from Sri Lanka.
+  </p>
+
+  <div className="flex flex-wrap items-center gap-3">
+    {/* Facebook */}
+    <a
+      href="https://www.facebook.com/profile.php?id=61590394625758"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Follow Purely Ceylon Organic on Facebook"
+      title="Facebook"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-700 bg-[#111111] text-gray-300 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
+    >
+      <FaFacebook size={19} />
+    </a>
+
+    {/* Instagram */}
+    <a
+      href="https://www.instagram.com/purelyceylonorganic?igsh=cGp6OWtuM2JzMXZy"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Follow Purely Ceylon Organic on Instagram"
+      title="Instagram"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-700 bg-[#111111] text-gray-300 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
+    >
+      <FaInstagram size={19} />
+    </a>
+
+    {/* Pinterest */}
+    <a
+      href="https://pin.it/AtoB6QSlT"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Follow Purely Ceylon Organic on Pinterest"
+      title="Pinterest"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-700 bg-[#111111] text-gray-300 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
+    >
+      <FaPinterest size={19} />
+    </a>
+
+    {/* YouTube */}
+    <a
+      href="https://youtube.com/@musabhafiz?si=A-LgrFBAMhTtMBrJ"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Subscribe to Purely Ceylon Organic on YouTube"
+      title="YouTube"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-700 bg-[#111111] text-gray-300 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
+    >
+      <FaYoutube size={19} />
+    </a>
+  </div>
+
+  <div className="mt-6">
+    <p className="text-xs uppercase tracking-[0.18em] text-[#D4AF37]">
+      Premium Organic • Sri Lanka
+    </p>
+  </div>
           </div>
         </div>
+
+        {/* FOOTER LEGAL / COPYRIGHT */}
+<div className="mx-auto mt-12 max-w-7xl border-t border-gray-800 pt-8">
+  <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+
+    {/* COPYRIGHT */}
+    <div className="text-center text-xs leading-6 text-gray-500 md:text-left">
+      <p>
+        © {new Date().getFullYear()} Purely Ceylon Organic (Pvt) Ltd.
+      </p>
+
+      <p>
+        All Rights Reserved.
+      </p>
+    </div>
+
+    {/* LEGAL LINKS */}
+    <nav
+      aria-label="Footer legal links"
+      className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs"
+    >
+      <a
+        href="/privacy-policy"
+        className="text-gray-400 transition hover:text-[#D4AF37]"
+      >
+        Privacy Policy
+      </a>
+
+      <span className="text-gray-700">•</span>
+
+      <a
+        href="/terms"
+        className="text-gray-400 transition hover:text-[#D4AF37]"
+      >
+        Terms & Conditions
+      </a>
+
+      <span className="text-gray-700">•</span>
+
+      <a
+        href="/shipping-policy"
+        className="text-gray-400 transition hover:text-[#D4AF37]"
+      >
+        Shipping Policy
+      </a>
+
+      <span className="text-gray-700">•</span>
+
+      <a
+        href="/refund-policy"
+        className="text-gray-400 transition hover:text-[#D4AF37]"
+      >
+        Refund / Return Policy
+      </a>
+
+      <span className="text-gray-700">•</span>
+
+      <a
+        href="/contact"
+        className="text-gray-400 transition hover:text-[#D4AF37]"
+      >
+        Contact Us
+      </a>
+    </nav>
+
+  </div>
+</div>
       </footer>
     </div>
   );

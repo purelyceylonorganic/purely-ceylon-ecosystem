@@ -98,22 +98,19 @@ export default function Navbar() {
       <nav className="border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex min-h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
           
-          {/* BRAND */}
-          <Link
-            to="/"
-            onClick={closeMenu}
-            className="flex min-w-0 items-center"
-          >
-            <div className="leading-none">
-              <div className="whitespace-nowrap text-base font-black tracking-tight text-[#0E4B32] sm:text-xl">
-                PURELY CEYLON
-              </div>
-
-              <div className="hidden text-[8px] font-medium uppercase tracking-[0.22em] text-[#D4AF37] sm:block">
-                Organic • Premium • Export Grade
-              </div>
-            </div>
-          </Link>
+          {/* BRAND LOGO */}
+<Link
+  to="/"
+  onClick={closeMenu}
+  aria-label="Purely Ceylon Organic Home"
+  className="flex min-w-0 shrink-0 items-center"
+>
+  <img
+    src="/logo/pco-logo.png"
+    alt="PCO - Purely Ceylon Organic"
+    className="h-10 w-auto max-w-[155px] object-contain sm:h-12 sm:max-w-[220px]"
+  />
+</Link>
 
           {/* DESKTOP NAV */}
           <ul className="hidden items-center gap-5 text-sm font-semibold text-gray-600 lg:flex">

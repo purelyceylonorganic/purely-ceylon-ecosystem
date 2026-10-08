@@ -55,6 +55,10 @@ import CreateDraftOrder from "../pages/admin/CreateDraftOrder";
 import FinanceDashboard from "../pages/admin/finance/FinanceDashboard";
 import ExpenseManagement from "../pages/admin/finance/ExpenseManagement";
 import NewsletterSubscribers from "../pages/admin/newsletter/NewsletterSubscribers";
+import PrivacyPolicy from "../pages/public/legal/PrivacyPolicy";
+import TermsAndConditions from "../pages/public/legal/TermsAndConditions";
+import ShippingPolicy from "../pages/public/legal/ShippingPolicy";
+import RefundPolicy from "../pages/public/legal/RefundPolicy";
 
 
 
@@ -66,6 +70,10 @@ export default function AppRoutes() {
       <Routes>
         {/* 🌐 Public Pages */}
         <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+<Route path="/terms" element={<TermsAndConditions />} />
+<Route path="/shipping-policy" element={<ShippingPolicy />} />
+<Route path="/refund-policy" element={<RefundPolicy />} />
 
         
         {/* 🚧 Future Modules */}
