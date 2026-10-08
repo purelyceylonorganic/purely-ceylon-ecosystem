@@ -23,72 +23,14 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password } = req.body;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const generateOtp = (): string => {
-  return crypto.randomInt(100000, 1000000).toString();
-};
-    const otpHash = await bcrypt.hash(otp, 10);
-    
-    await prisma.user.create({
-      data: {
-        fullName,
-        email,
-        passwordHash: hashedPassword,
-        role: ROLES.CUSTOMER, // 👈 Role இம்போர்ட் எரரைத் தவிர்க்க நேரடியாக ஸ்ட்ரிங்காக மாற்றப்பட்டுள்ளது
-
-        verificationOtp: otpHash,
-        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-        otpLastSentAt: new Date(),
-      },
-    });
-
-    await sendOtpEmail(email, otp);
-
-    return res.status(201).json({
-      success: true,
-      message: "Registration successful. Check your email for OTP.",
-    });
-  } catch (error) {
-    logger.error("Registration failed", error);
-    return res.status(500).json({
-      success: false,
-      message: "Registration failed",
-    });
-  }
-};
-
-
-// =====================================================
-// ✅ REGISTER USER WITH PHONE
-// =====================================================
-
-export const registerWithPhone = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const { fullName, phone, password } = req.body;
-
     // =========================
     // Validate input
     // =========================
 
-    if (!fullName || !phone || !password) {
+    if (!fullName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Full Name, Phone and Password are required",
+        message: "Full Name, Email and Password are required",
       });
     }
 
@@ -100,38 +42,57 @@ export const registerWithPhone = async (
     }
 
     // =========================
-    // Normalize phone
+    // Normalize email
     // =========================
 
-    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedEmail = String(email)
+      .trim()
+      .toLowerCase();
 
     // =========================
-    // Basic Sri Lanka validation
+    // Validate email
     // =========================
 
-    if (!/^94\d{9}$/.test(normalizedPhone)) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a valid Sri Lankan phone number",
+        message: "Please enter a valid email address",
       });
     }
 
     // =========================
-    // Check duplicate phone
+    // Check existing user
     // =========================
 
     const existingUser = await prisma.user.findUnique({
       where: {
-        phone: normalizedPhone,
+        email: normalizedEmail,
       },
     });
 
     if (existingUser) {
+      // Allow retry if registration was never verified
+      if (!existingUser.isVerified) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This email is already registered but not verified. Please use Resend OTP.",
+        });
+      }
+
       return res.status(400).json({
         success: false,
-        message: "Phone number is already registered",
+        message: "User already exists",
       });
     }
+
+    // =========================
+    // Hash password
+    // =========================
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // =========================
     // Generate secure OTP
@@ -141,28 +102,169 @@ export const registerWithPhone = async (
       .randomInt(100000, 1000000)
       .toString();
 
-    // =========================
-    // Hash OTP
-    // =========================
-
     const otpHash = await bcrypt.hash(otp, 10);
-
-    // =========================
-    // OTP expiry - 10 minutes
-    // =========================
 
     const otpExpiresAt = new Date(
       Date.now() + 10 * 60 * 1000
     );
 
     // =========================
-    // Hash password
+    // Create unverified user
     // =========================
 
-    const hashedPassword = await bcrypt.hash(
+    const user = await prisma.user.create({
+      data: {
+        fullName: fullName.trim(),
+        email: normalizedEmail,
+        passwordHash: hashedPassword,
+        role: ROLES.CUSTOMER,
+
+        isActive: false,
+        isVerified: false,
+
+        verificationOtp: otpHash,
+        otpExpiresAt,
+        otpLastSentAt: new Date(),
+
+        otpAttempts: 0,
+        otpLockedUntil: null,
+      },
+    });
+
+    // =========================
+    // Send OTP
+    // =========================
+
+    try {
+      await sendOtpEmail(normalizedEmail, otp);
+    } catch (emailError) {
+      // Remove the newly-created unverified user
+      // if OTP email sending fails.
+      await prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+
+      throw emailError;
+    }
+
+    // =========================
+    // Success
+    // =========================
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "Registration successful. Check your email for OTP.",
+    });
+  } catch (error: any) {
+    logger.error("Registration failed", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Registration failed",
+    });
+  }
+};
+
+// =====================================================
+// ✅ REGISTER WITH PHONE
+// =====================================================
+
+export const registerWithPhone = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const {
+      fullName,
+      phone,
       password,
-      10
+    } = req.body;
+
+    // =========================
+    // Validate input
+    // =========================
+
+    if (!fullName || !phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Full Name, Phone Number and Password are required",
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters",
+      });
+    }
+
+    // =========================
+    // Normalize phone
+    // =========================
+
+    const normalizedPhone =
+      normalizePhoneNumber(phone);
+
+    if (!normalizedPhone) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please enter a valid Sri Lankan phone number",
+      });
+    }
+
+    // =========================
+    // Check existing user
+    // =========================
+
+    const existingUser =
+      await prisma.user.findUnique({
+        where: {
+          phone: normalizedPhone,
+        },
+      });
+
+    if (existingUser) {
+      if (!existingUser.isVerified) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This phone number is already registered but not verified. Please use Resend OTP.",
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Phone number already registered",
+      });
+    }
+
+    // =========================
+    // Generate OTP
+    // =========================
+
+    const otp = crypto
+      .randomInt(100000, 1000000)
+      .toString();
+
+    const otpHash =
+      await bcrypt.hash(otp, 10);
+
+    const otpExpiresAt = new Date(
+      Date.now() + 10 * 60 * 1000
     );
+
+    const hashedPassword =
+      await bcrypt.hash(password, 10);
 
     // =========================
     // Create user
@@ -170,10 +272,8 @@ export const registerWithPhone = async (
 
     const user = await prisma.user.create({
       data: {
-        fullName,
+        fullName: fullName.trim(),
         phone: normalizedPhone,
-        email: null,
-
         passwordHash: hashedPassword,
 
         role: ROLES.CUSTOMER,
@@ -181,26 +281,12 @@ export const registerWithPhone = async (
         isActive: false,
         isVerified: false,
 
-        // 🔐 HASHED OTP
         phoneVerificationOtp: otpHash,
-
         phoneOtpExpiresAt: otpExpiresAt,
-
         phoneOtpLastSentAt: new Date(),
 
         phoneOtpAttempts: 0,
-
         phoneOtpLockedUntil: null,
-      },
-
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        role: true,
-        isActive: true,
-        isVerified: true,
-        createdAt: true,
       },
     });
 
@@ -208,40 +294,45 @@ export const registerWithPhone = async (
     // Send SMS
     // =========================
 
-    await sendSms(
-      normalizedPhone,
-      `Your PURELY CEYLON verification OTP is ${otp}. It is valid for 10 minutes.`
-    );
+    try {
+      await sendSms(
+        normalizedPhone,
+        `Your PURELY CEYLON verification OTP is ${otp}. It expires in 10 minutes.`
+      );
+    } catch (smsError) {
+      // Remove user if SMS fails
+      await prisma.user.delete({
+        where: {
+          id: user.id,
+        },
+      });
+
+      throw smsError;
+    }
 
     // =========================
-    // Response
+    // Success
     // =========================
 
     return res.status(201).json({
       success: true,
       message:
-        "Registration successful. OTP sent to your phone.",
-      data: {
-        userId: user.id,
-        phone: user.phone,
-      },
+        "Registration successful. Check your phone for OTP.",
     });
+
   } catch (error: any) {
-    logger.error(
-      "Phone Registration Error",
-      error
-    );
+    logger.error("Phone registration failed", {
+      message: error?.message,
+      stack: error?.stack,
+    });
 
     return res.status(500).json({
       success: false,
       message:
-        error.message ||
         "Phone registration failed",
     });
   }
 };
-
-
 
 // =====================================================
 // ✅ VERIFY PHONE OTP
