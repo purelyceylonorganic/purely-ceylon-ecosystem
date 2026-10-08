@@ -1281,17 +1281,17 @@ export const login = async (req: Request, res: Response) => {
     // ============================
 
     const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email ?? undefined,
-        phone: user.phone ?? undefined,
-        role: user.role,
-      },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "1d",
-      }
-    );
+  {
+    userId: user.id,
+    email: user.email ?? undefined,
+    phone: user.phone ?? undefined,
+    role: user.role,
+  },
+  process.env.JWT_SECRET as string,
+  {
+    expiresIn: "1d",
+  }
+);
 
     // ============================
     // 🍪 SET COOKIE
