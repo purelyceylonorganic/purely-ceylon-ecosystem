@@ -6,8 +6,8 @@ import {
 } from "react";
 
 import type { ReactNode } from "react";
+import api from "../api/axios";
 
-// ✅ STEP 1: User மற்றும் AuthContextType வகைகளை வரையறுத்தல்
 type User = {
   id: string;
   email: string;
@@ -17,6 +17,7 @@ type User = {
 type AuthContextType = {
   token: string | null;
   user: User | null;
+  loading: boolean;
   login: (token: string) => void;
   logout: () => void;
 };
@@ -30,70 +31,79 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
-  const [token, setToken] = useState(
+  const [token, setToken] = useState<string | null>(
     localStorage.getItem("token")
   );
 
-  // ✅ STEP 2: User-க்கான புதிய State
   const [user, setUser] = useState<User | null>(null);
 
-  // ✅ STEP 6: Page Refresh ஆனாலும் JWT டோக்கனை டீகோட் செய்து பயனர் விவரங்களை தக்கவைத்தல்
+  const [loading, setLoading] = useState(true);
+
+  // Validate token with backend
   useEffect(() => {
-    if (!token) {
-      setUser(null);
-      return;
-    }
+    const validateSession = async () => {
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
-    try {
-      const payload = JSON.parse(
-        atob(token.split(".")[1])
-      );
+      try {
+        const response = await api.get("/profile/me");
 
-      setUser({
-        id: payload.id,
-        email: payload.email,
-        role: payload.role,
-      });
-    } catch (err) {
-      console.error("Token decoding failed on refresh:", err);
-      setUser(null);
-    }
+        const result = response.data;
+
+        if (result.success && result.data) {
+          const profile = result.data;
+
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            role: profile.role,
+          });
+        } else {
+          throw new Error("Invalid user session");
+        }
+      } catch (error: any) {
+        console.error("Session validation failed:", error);
+
+        if (error?.response?.status === 401) {
+          localStorage.removeItem("token");
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateSession();
   }, [token]);
 
-  // ✅ STEP 3: லாக்-இன் செய்யும் போது டோக்கனை பிரித்து பயனர் விவரங்களை சேமித்தல்
   function login(newToken: string) {
     localStorage.setItem("token", newToken);
     setToken(newToken);
 
-    try {
-      const payload = JSON.parse(
-        atob(newToken.split(".")[1])
-      );
-
-      setUser({
-        id: payload.id,
-        email: payload.email,
-        role: payload.role,
-      });
-    } catch (err) {
-      console.error("Token decoding failed on login:", err);
-      setUser(null);
-    }
+    // User details will be loaded from backend
+    // through the session validation effect.
+    setUser(null);
+    setLoading(true);
   }
 
-  // ✅ STEP 4: லாக்-அவுட் செய்யும் போது LocalStorage மற்றும் ஸ்டேட்களை காலி செய்தல்
   function logout() {
     localStorage.removeItem("token");
+
     setToken(null);
     setUser(null);
+    setLoading(false);
   }
 
   return (
-    // ✅ STEP 5: 'user' விவரங்களையும் Provider Value-ல் அனுப்புதல்
     <AuthContext.Provider
       value={{
         token,
         user,
+        loading,
         login,
         logout,
       }}

@@ -8,21 +8,35 @@ type AdminRouteProps = {
 export default function AdminRoute({
   children,
 }: AdminRouteProps) {
-  const { token, user } = useAuth();
+  const { token, user, loading } = useAuth();
 
-  // Login செய்யவில்லை
-  if (!token) {
+  // Wait until authentication is verified
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FFF8EE] px-4">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#0E4B32]/20 border-t-[#0E4B32]" />
+
+          <p className="text-sm font-medium text-[#0E4B32]">
+            Verifying secure access...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No authenticated session
+  if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Admin அல்ல
+  // Admin-only access
   if (
-    user?.role !== "ADMIN" &&
-    user?.role !== "SUPER_ADMIN"
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN"
   ) {
     return <Navigate to="/access-denied" replace />;
   }
 
-  // Admin
   return <>{children}</>;
 }
