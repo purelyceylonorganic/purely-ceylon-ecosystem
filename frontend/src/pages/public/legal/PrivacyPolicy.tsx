@@ -1,4 +1,16 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { setSEO } from "../../../utils/seo";
+
+
+useEffect(() => {
+  setSEO({
+    title: "Privacy Policy | Purely Ceylon Organic",
+    description:
+      "Read the Purely Ceylon Organic privacy policy and learn how customer information is collected, used and protected.",
+  });
+}, []);
+
 
 export default function PrivacyPolicy() {
   return (

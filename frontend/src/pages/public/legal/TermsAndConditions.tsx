@@ -1,4 +1,15 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { setSEO } from "../../../utils/seo";
+
+useEffect(() => {
+  setSEO({
+    title: "Terms & Conditions | Purely Ceylon Organic",
+    description:
+      "Read the Terms & Conditions governing the use of the Purely Ceylon Organic website and services.",
+  });
+}, []);
+
 
 export default function TermsAndConditions() {
   return (

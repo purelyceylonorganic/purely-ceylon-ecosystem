@@ -3,6 +3,7 @@ import ProductCard from "../../components/product/ProductCard";
 import { productService } from "../../services/product.service";
 import { categoryService } from "../../services/category.service";
 import type { Product } from "../../types/product.types";
+import { setSEO } from "../../utils/seo";
 
 type Category = {
   id: string;
@@ -18,6 +19,15 @@ export default function ProductList() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  useEffect(() => {
+  setSEO({
+    title:
+      "Shop Premium Ceylon Organic Products | Purely Ceylon",
+    description:
+      "Explore premium Sri Lankan organic spices, Ceylon tea and export-grade natural products from Purely Ceylon Organic.",
+  });
+}, []);
 
   async function loadCategories() {
     try {

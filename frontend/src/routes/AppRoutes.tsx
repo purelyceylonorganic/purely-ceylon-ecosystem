@@ -59,7 +59,7 @@ import PrivacyPolicy from "../pages/public/legal/PrivacyPolicy";
 import TermsAndConditions from "../pages/public/legal/TermsAndConditions";
 import ShippingPolicy from "../pages/public/legal/ShippingPolicy";
 import RefundPolicy from "../pages/public/legal/RefundPolicy";
-
+import B2B from "../pages/public/B2B";
 
 
 export default function AppRoutes() {
@@ -74,7 +74,7 @@ export default function AppRoutes() {
 <Route path="/terms" element={<TermsAndConditions />} />
 <Route path="/shipping-policy" element={<ShippingPolicy />} />
 <Route path="/refund-policy" element={<RefundPolicy />} />
-
+<Route path="/b2b" element={<B2B />} />
         
         {/* 🚧 Future Modules */}
 

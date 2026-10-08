@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FaMapMarkerAlt,
@@ -10,6 +10,16 @@ import {
   CheckCircle2,
   MessageCircle,
 } from "lucide-react";
+import { setSEO } from "../../utils/seo";
+
+useEffect(() => {
+  setSEO({
+    title:
+      "Contact Purely Ceylon Organic | Sri Lanka",
+    description:
+      "Contact Purely Ceylon Organic for product enquiries, orders, wholesale, export and customer support.",
+  });
+}, []);
 
 export default function Contact() {
   const [formData, setFormData] = useState({

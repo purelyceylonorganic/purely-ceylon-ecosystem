@@ -1,4 +1,14 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { setSEO } from "../../../utils/seo";
+
+useEffect(() => {
+  setSEO({
+    title: "Refund & Return Policy | Purely Ceylon Organic",
+    description:
+      "Read the Purely Ceylon Organic refund, return, replacement and cancellation policy.",
+  });
+}, []);
 
 export default function RefundPolicy() {
   return (

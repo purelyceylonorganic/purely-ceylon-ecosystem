@@ -6,15 +6,21 @@ import { productService } from "../../services/product.service";
 import type { Product } from "../../types/product.types";
 import { newsletterService } from "../../services/newsletter.service";
 import { toast } from "react-hot-toast";
+import { setSEO } from "../../utils/seo";
+
+useEffect(() => {
+  setSEO({
+    title: "Purely Ceylon Organic | Premium Sri Lankan Organic Products",
+    description:
+      "Premium Sri Lankan Organic Products with complete traceability.",
+  });
+}, []);
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [newsletterEmail, setNewsletterEmail] =
-  useState("");
-
-const [subscribing, setSubscribing] =
-  useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
 
   const loadProducts = async () => {
     try {

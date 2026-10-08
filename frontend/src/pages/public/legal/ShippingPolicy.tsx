@@ -1,4 +1,15 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { setSEO } from "../../../utils/seo";
+
+useEffect(() => {
+  setSEO({
+    title: "Shipping Policy | Purely Ceylon Organic",
+    description:
+      "Learn about Purely Ceylon Organic order processing, shipping, delivery, tracking and international shipping requirements.",
+  });
+}, []);
+
 
 export default function ShippingPolicy() {
   return (
