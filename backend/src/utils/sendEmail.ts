@@ -1,20 +1,12 @@
-import nodemailer from "nodemailer";
-import dns from "node:dns";
+import { Resend } from "resend";
 
-// Force Node.js DNS resolution to prefer IPv4
-dns.setDefaultResultOrder("ipv4first");
+const resend = new Resend(
+  process.env.RESEND_API_KEY
+);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: Number(process.env.EMAIL_PORT || 587),
-  secure: false,
-
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
-
+const FROM_EMAIL =
+  process.env.EMAIL_FROM ||
+  "Purely Ceylon <onboarding@resend.dev>";
 
 // =====================================================
 // GENERIC EMAIL
@@ -25,12 +17,22 @@ export const sendEmail = async (
   subject: string,
   html: string
 ) => {
-  await transporter.sendMail({
-    from: `"Purely Ceylon Organic" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  });
+  const { data, error } =
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject,
+      html,
+    });
+
+  if (error) {
+    console.error("RESEND EMAIL ERROR:", error);
+    throw new Error(
+      error.message || "Failed to send email"
+    );
+  }
+
+  return data;
 };
 
 // =====================================================
@@ -42,33 +44,27 @@ export const sendOtpEmail = async (
   otp: string
 ) => {
   const html = `
-    <div
-      style="
-        font-family: Arial, sans-serif;
-        max-width: 600px;
-        margin: auto;
-        padding: 30px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-      "
-    >
+    <div style="
+      font-family:Arial,sans-serif;
+      max-width:600px;
+      margin:auto;
+      padding:30px;
+      border:1px solid #ddd;
+      border-radius:10px;
+    ">
       <h2 style="color:#0E4B32;">
         Welcome to Purely Ceylon
       </h2>
 
-      <p>
-        Your verification code is:
-      </p>
+      <p>Your verification code is:</p>
 
-      <div
-        style="
-          font-size:32px;
-          font-weight:bold;
-          letter-spacing:8px;
-          color:#D4AF37;
-          margin:20px 0;
-        "
-      >
+      <div style="
+        font-size:32px;
+        font-weight:bold;
+        letter-spacing:8px;
+        color:#D4AF37;
+        margin:20px 0;
+      ">
         ${otp}
       </div>
 
@@ -90,7 +86,7 @@ export const sendOtpEmail = async (
     </div>
   `;
 
-  await sendEmail(
+  return sendEmail(
     email,
     "Purely Ceylon Verification Code",
     html
@@ -98,7 +94,7 @@ export const sendOtpEmail = async (
 };
 
 // =====================================================
-// PASSWORD RESET EMAIL
+// PASSWORD RESET
 // =====================================================
 
 export const sendResetPasswordEmail = async (
@@ -114,30 +110,24 @@ export const sendResetPasswordEmail = async (
     `${frontendUrl}/reset-password/${token}`;
 
   const html = `
-    <div
-      style="
-        font-family:Arial,sans-serif;
-        max-width:600px;
-        margin:auto;
-        padding:30px;
-        border:1px solid #ddd;
-        border-radius:10px;
-      "
-    >
+    <div style="
+      font-family:Arial,sans-serif;
+      max-width:600px;
+      margin:auto;
+      padding:30px;
+      border:1px solid #ddd;
+      border-radius:10px;
+    ">
       <h2 style="color:#0E4B32;">
         Hello, ${fullName}
       </h2>
 
       <p>
-        You have requested to reset your
+        You requested to reset your
         Purely Ceylon account password.
       </p>
 
       <p>
-        Click the button below to reset your password:
-      </p>
-
-      <p style="margin:30px 0;">
         <a
           href="${resetUrl}"
           style="
@@ -171,7 +161,7 @@ export const sendResetPasswordEmail = async (
     </div>
   `;
 
-  await sendEmail(
+  return sendEmail(
     email,
     "Purely Ceylon Password Reset",
     html
