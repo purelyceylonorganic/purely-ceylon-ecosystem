@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   addStock,
   removeStock,
@@ -7,22 +8,45 @@ import {
   getTransactions,
 } from "../controllers/inventory.controller";
 
+import { protect } from "../middlewares/auth.middleware";
+import { authorizePermissions } from "../middlewares/permission.middleware";
+import { PERMISSIONS } from "../constants/permissions";
+
 const router = express.Router();
 
-//
-// ============================
-// INVENTORY ROUTES
-// ============================
-//
+router.get(
+  "/",
+  protect,
+  authorizePermissions(PERMISSIONS.INVENTORY_VIEW),
+  getInventory
+);
 
-router.post("/add-stock", addStock);
+router.get(
+  "/low-stock",
+  protect,
+  authorizePermissions(PERMISSIONS.INVENTORY_VIEW),
+  getLowStock
+);
 
-router.post("/remove-stock", removeStock);
+router.get(
+  "/transactions",
+  protect,
+  authorizePermissions(PERMISSIONS.INVENTORY_VIEW),
+  getTransactions
+);
 
-router.get("/", getInventory);
+router.post(
+  "/add-stock",
+  protect,
+  authorizePermissions(PERMISSIONS.INVENTORY_ADD_STOCK),
+  addStock
+);
 
-router.get("/low-stock", getLowStock);
-
-router.get("/transactions", getTransactions);
+router.post(
+  "/remove-stock",
+  protect,
+  authorizePermissions(PERMISSIONS.INVENTORY_REMOVE_STOCK),
+  removeStock
+);
 
 export default router;

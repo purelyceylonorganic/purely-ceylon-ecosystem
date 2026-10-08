@@ -23,6 +23,8 @@ import {
   AuthenticatedRequest
 } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
+import { authorizePermissions } from "../middlewares/permission.middleware";
+import { PERMISSIONS } from "../constants/permissions";
 
 // Constants
 import { ROLES } from "../constants/roles";
@@ -98,16 +100,27 @@ router.get(
   }
 );
 
-// 🚚 UPDATE SHIPMENT STATUS (From File 1)
-// Note: Left unprotected as it was in File 1, but you can add the 'protect' middleware here if needed.
-router.put("/status/:orderId", updateShipmentStatus);
+router.put(
+  "/status/:orderId",
+  protect,
+  authorizeRoles(
+    ROLES.EXPORT_MANAGER,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  ),
+  authorizePermissions(PERMISSIONS.SHIPMENT_UPDATE),
+  updateShipmentStatus
+);
 
-// 🚚 ADMIN UPDATE SHIPPING STATUS (From File 2)
 router.put(
   "/:id",
   protect,
-  authorizeRoles(ROLES.EXPORT_MANAGER, ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  restrictTo("ADMIN", "SUPER_ADMIN"),
+  authorizeRoles(
+    ROLES.EXPORT_MANAGER,
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  ),
+  authorizePermissions(PERMISSIONS.SHIPMENT_UPDATE),
   updateShippingStatus
 );
 

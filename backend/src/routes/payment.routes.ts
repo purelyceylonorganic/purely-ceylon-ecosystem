@@ -1,9 +1,41 @@
 import express, { Router, Request, Response } from 'express';
-import { createPayment, getOrderPayments, voidPayment, refundPayment,reversePayment } from '../controllers/payment.controller';
+import {
+  createPayment,
+  getOrderPayments,
+  voidPayment,
+  reversePayment,
+  refundPayment,
+} from '../controllers/payment.controller';
 import { PaymentService } from '../services/payment.service';
 import { protect, AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { authorizePermissions } from "../middlewares/permission.middleware";
+import { PERMISSIONS } from "../constants/permissions";
+
 
 const router = Router();
+
+
+router.post(
+  "/:paymentId/refund",
+  protect,
+  authorizePermissions(PERMISSIONS.REFUND_CREATE),
+  refundPayment
+);
+
+router.post(
+  "/:paymentId/reverse",
+  protect,
+  authorizePermissions(PERMISSIONS.PAYMENT_UPDATE),
+  reversePayment
+); 
+
+router.patch(
+  "/:paymentId/void",
+  protect,
+  authorizePermissions(PERMISSIONS.PAYMENT_UPDATE),
+  voidPayment
+);
+
 
 // ======================================================
 // 🛡️ WEBHOOK ROUTES
@@ -42,26 +74,26 @@ router.post('/create', protect, createPayment);
 // Payment History for an Order
 router.get('/history/:orderId', protect, getOrderPayments);
 
-// ======================================
-// 💰 Refund Payment
-// ======================================
-
 router.post(
   "/:paymentId/refund",
   protect,
+  authorizePermissions(PERMISSIONS.REFUND_CREATE),
   refundPayment
 );
-
-// ==========================================
-// 🔄 REVERSE PAYMENT
-// ==========================================
 
 router.post(
   "/:paymentId/reverse",
   protect,
+  authorizePermissions(PERMISSIONS.PAYMENT_UPDATE),
   reversePayment
 );
 
+router.patch(
+  "/:paymentId/void",
+  protect,
+  authorizePermissions(PERMISSIONS.PAYMENT_UPDATE),
+  voidPayment
+);
 
 // Stripe Checkout Session
 router.post(
@@ -92,10 +124,5 @@ router.post(
   }
 );
 
-router.patch(
-  "/:paymentId/void",
-  protect,
-  voidPayment
-);
 
 export default router;

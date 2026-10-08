@@ -1,34 +1,65 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import PDFDocument from "pdfkit";
 import { prisma } from "../config/prisma";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { ROLES } from "../constants/roles";
 
 export const downloadInvoice = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
     const { orderId } = req.params;
 
+    // Authentication check
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    // Find order
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: {
+        id: orderId,
+      },
       include: {
         user: true,
         address: true,
         items: {
           include: {
-            productVariant: true
-          }
-        }
-      }
+            productVariant: true,
+          },
+        },
+      },
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Order not found"
+        message: "Order not found",
       });
     }
 
+    // Admin / Finance access
+    const isPrivilegedUser =
+      req.user.role === ROLES.ADMIN ||
+      req.user.role === ROLES.SUPER_ADMIN ||
+      req.user.role === ROLES.FINANCE;
+
+    // Customer can access only their own invoice
+    const isOrderOwner =
+      order.userId === req.user.id;
+
+    if (!isPrivilegedUser && !isOrderOwner) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // Create PDF
     const doc = new PDFDocument();
 
     res.setHeader(
@@ -43,15 +74,16 @@ export const downloadInvoice = async (
 
     doc.pipe(res);
 
-    // Header
-    doc.fontSize(22)
+    doc
+      .fontSize(22)
       .text("PURELY CEYLON ORGANIC", {
-        align: "center"
+        align: "center",
       });
 
     doc.moveDown();
 
-    doc.fontSize(16)
+    doc
+      .fontSize(16)
       .text(`Invoice #${order.id}`);
 
     doc.text(
@@ -88,21 +120,25 @@ export const downloadInvoice = async (
 
     doc.moveDown();
 
-    doc.fontSize(16)
+    doc
+      .fontSize(16)
       .text(
         `Total: USD ${order.totalFinal}`,
         {
-          align: "right"
+          align: "right",
         }
       );
 
     doc.end();
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Invoice generation failed:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Invoice generation failed"
+      message: "Invoice generation failed",
     });
   }
 };

@@ -12,72 +12,60 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
+interface JwtPayload {
+  userId: string;
+  role: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
 export const protect = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
-
-  console.log("========== REQUEST ==========");
-  console.log(req.method, req.originalUrl);
-
-  console.log("Authorization Header:");
-  console.log(req.headers.authorization);
-
-  console.log("All Headers:");
-  console.log(req.headers);
-
-  console.log("=============================");
-
   try {
+    const authHeader = req.headers.authorization;
 
-    let token: string | undefined;
-
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer ")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Token required",
+      });
     }
+
+    const token = authHeader.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "❌ Token இல்லை!"
+        message: "Unauthorized: Token required",
       });
     }
 
-    console.log("JWT_SECRET:");
-    console.log(JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
-    console.log("TOKEN:");
-    console.log(token);
-
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-
-    console.log("DECODED TOKEN:");
-    console.log(decoded);
+    if (!decoded.userId || !decoded.role) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token payload",
+      });
+    }
 
     req.user = {
-      id: decoded.id,
+      id: decoded.userId,
       role: decoded.role,
-      email: decoded.email || ""
+      email: decoded.email || "",
     };
 
     next();
-
   } catch (error: any) {
-
-    console.log("========== JWT ERROR ==========");
-    console.log(error);
-    console.log("Message:", error.message);
-    console.log("Name:", error.name);
-    console.log("===============================");
+    console.error("JWT verification failed:", error?.message);
 
     return res.status(401).json({
       success: false,
-      message: "❌ Invalid token!",
-      error: error.message
+      message: "Unauthorized: Invalid or expired token",
     });
   }
 };
@@ -88,18 +76,17 @@ export const restrictTo = (...allowedRoles: string[]) => {
     res: Response,
     next: NextFunction
   ) => {
-
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "❌ Unauthorized"
+        message: "Unauthorized",
       });
     }
 
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: "❌ Access denied"
+        message: "Access denied",
       });
     }
 

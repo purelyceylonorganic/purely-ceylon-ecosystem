@@ -14,10 +14,20 @@ import {
   getAdminNotifications,
   getKPIAnalytics,
 } from "../controllers/admin.controller";
+import { protect } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 import { ROLES } from "../constants/roles";
 
+
 const router = Router();
+
+router.use(
+  protect,
+  authorizeRoles(
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN
+  )
+);
 
 // ==========================================
 // 📊 DASHBOARD & GENERAL ANALYTICS ROUTES
@@ -57,17 +67,6 @@ router.get("/revenue-pdf", exportRevenuePDF); // மாற்றுப் பா
 // 👤 User Management
 router.get("/users", getAllUsers);
 
-
-// ==========================================
-// 🛡️ PROTECTED ADMIN & SUPER ADMIN ROUTES
-// ==========================================
-
-router.use(
-  authorizeRoles(
-    ROLES.ADMIN,
-    ROLES.SUPER_ADMIN
-  )
-);
 
 // 📦 Order collection management
 router.get("/orders", getAllOrders);

@@ -61,14 +61,39 @@ export class PaymentService {
       throw new Error('✅ Order is already fully paid');
     }
 
-    const currentPaidAmount = (order.paidAmount || 0) + amountPaid;
-    const totalFinal = order.totalFinal;
-    const balance = Math.max(0, totalFinal - currentPaidAmount);
-    
-    let newPaymentStatus: PaymentStatus = PaymentStatus.PARTIAL;
-    if (currentPaidAmount >= totalFinal) {
-      newPaymentStatus = PaymentStatus.PAID;
-    }
+    const currentPaidAmount = Number(order.paidAmount || 0);
+const totalFinal = Number(order.totalFinal);
+const remainingBalance = Math.max(
+  0,
+  totalFinal - currentPaidAmount
+);
+
+if (!Number.isFinite(amountPaid) || amountPaid <= 0) {
+  throw new Error("Invalid payment amount");
+}
+
+if (remainingBalance <= 0) {
+  throw new Error("Order is already fully paid");
+}
+
+if (amountPaid > remainingBalance) {
+  throw new Error(
+    `Payment amount exceeds remaining balance. Maximum payable amount: ${remainingBalance}`
+  );
+}
+
+const newPaidAmount =
+  currentPaidAmount + amountPaid;
+
+const balance =
+  Math.max(0, totalFinal - newPaidAmount);
+
+let newPaymentStatus: PaymentStatus =
+  PaymentStatus.PARTIAL;
+
+if (newPaidAmount >= totalFinal) {
+  newPaymentStatus = PaymentStatus.PAID;
+}
 
     const transactionId = this.generateTransactionId(gateway);
     const now = new Date();
@@ -590,14 +615,14 @@ static async reversePayment(
         id: order.id,
       },
       data: {
-        paymentStatus: newOrderPaymentStatus,
-        paidAmount: newPaidAmount,
-        balance: newBalance,
-        paidAt:
-          newPaidAmount === 0
-            ? null
-            : order.paidAt,
-      },
+  paymentStatus: newOrderPaymentStatus,
+  paidAmount: newPaidAmount,
+  balance: newBalance,
+  paidAt:
+    newPaidAmount === 0
+      ? null
+      : order.paidAt,
+},
     });
 
     // Audit Log
