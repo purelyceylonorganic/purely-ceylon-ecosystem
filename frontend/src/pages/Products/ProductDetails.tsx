@@ -96,19 +96,35 @@ export default function ProductDetails() {
     }
   }
 
-  useEffect(() => {
+ 
+useEffect(() => {
   if (!product) return;
+
+  const rawDescription =
+    product.description?.trim() ||
+    `Discover ${product.name} from Purely Ceylon Organic. Explore premium Sri Lankan products and learn about their origins.`;
+
+  const description =
+    rawDescription.length <= 155
+      ? rawDescription
+      : `${rawDescription.slice(0, 152).trimEnd()}...`;
+
+  const productUrl = new URL(
+    `/products/${encodeURIComponent(product.id)}`,
+    window.location.origin
+  ).href;
+
+  const productImage =
+    product.images?.[0]?.url || "/logo/pco-logo.png";
 
   setSEO({
     title: `${product.name} | Purely Ceylon Organic`,
-    description:
-      product.description?.slice(0, 155) ||
-      `Buy premium ${product.name} from Purely Ceylon Organic. Authentic Sri Lankan organic products with complete traceability.`,
-    image:
-      product.images?.[0]?.url ||
-      "/logo/pco-logo.png",
+    description,
+    image: productImage,
+    url: productUrl,
   });
 }, [product]);
+
 
 
   // ==========================

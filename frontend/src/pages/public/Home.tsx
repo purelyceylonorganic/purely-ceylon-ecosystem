@@ -10,13 +10,18 @@ import { setSEO } from "../../utils/seo";
 
 export default function Home() {
   
-  useEffect(() => {
+  
+useEffect(() => {
   setSEO({
-    title: "Purely Ceylon Organic | Premium Sri Lankan Organic Products",
+    title:
+      "Purely Ceylon Organic | Premium Sri Lankan Organic Products",
     description:
-      "Premium Sri Lankan Organic Products with complete traceability.",
+      "Discover premium Sri Lankan spices, Ceylon tea and selected organic products from Purely Ceylon Organic. Explore our products and learn about product traceability.",
+    image: `${window.location.origin}/logo/pco-logo.png`,
+    url: window.location.origin,
   });
 }, []);
+
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -117,7 +122,7 @@ export default function Home() {
       </motion.h1>
 
       <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-green-100 sm:mt-6 sm:text-lg lg:text-xl md:mx-0">
-        Premium Sri Lankan Organic Products with complete traceability.
+        Discover premium Sri Lankan spices, Ceylon tea and selected organic products from Purely Ceylon Organic. Explore our products and learn about product traceability.
       </p>
 
       <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
@@ -313,7 +318,7 @@ export default function Home() {
   </div>
 
   <p className="max-w-sm break-words leading-7 text-gray-400">
-    Premium Sri Lankan Organic Products with complete traceability.
+    Discover premium Sri Lankan spices, Ceylon tea and selected organic products from Purely Ceylon Organic. Explore our products and learn about product traceability.
   </p>
 
   <div className="mt-5 space-y-2 text-sm">

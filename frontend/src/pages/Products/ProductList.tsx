@@ -20,14 +20,17 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  useEffect(() => {
+  
+useEffect(() => {
   setSEO({
-    title:
-      "Shop Premium Ceylon Organic Products | Purely Ceylon",
+    title: "Shop Organic Ceylon Spices & Tea | Purely Ceylon",
     description:
-      "Explore premium Sri Lankan organic spices, Ceylon tea and export-grade natural products from Purely Ceylon Organic.",
+      "Shop premium Sri Lankan Ceylon spices, organic tea and natural products from Purely Ceylon Organic. Explore authentic products and discover their origins.",
+    image: `${window.location.origin}/logo/pco-logo.png`,
+    url: `${window.location.origin}/products`,
   });
 }, []);
+
 
   async function loadCategories() {
     try {
