@@ -34,7 +34,6 @@ import AdminLayout from "../layout/AdminLayout";
 import EditProduct from "../pages/admin/products/EditProduct";
 import ProductImages from "../pages/admin/products/ProductImages";
 import Contact from "../pages/public/Contact";
-import ComingSoon from "../pages/public/ComingSoon";
 import OrderBuilder from "../pages/admin/OrderBuilder"; // உங்கள் கோப்பு இருப்பிடத்திற்கு ஏற்ப பாதையை மாற்றிக் கொள்ளவும்
 import AdminOrderInvoice from "../pages/admin/orders/AdminOrderInvoice";
 import QuickCreateCustomer from "../pages/admin/QuickCreateCustomer";
@@ -60,7 +59,8 @@ import TermsAndConditions from "../pages/public/legal/TermsAndConditions";
 import ShippingPolicy from "../pages/public/legal/ShippingPolicy";
 import RefundPolicy from "../pages/public/legal/RefundPolicy";
 import B2B from "../pages/public/B2B";
-
+import Export from "../pages/public/Export";
+import Traceability from "../pages/public/Traceability";
 
 export default function AppRoutes() {
   return (
@@ -75,35 +75,10 @@ export default function AppRoutes() {
 <Route path="/shipping-policy" element={<ShippingPolicy />} />
 <Route path="/refund-policy" element={<RefundPolicy />} />
 <Route path="/b2b" element={<B2B />} />
-        
-        {/* 🚧 Future Modules */}
+<Route path="/export" element={<Export />} /> 
+<Route path="/traceability" element={<Traceability />} />
 
-<Route
-  path="/b2b"
-  element={
-    <MainLayout>
-      <ComingSoon type="b2b" />
-    </MainLayout>
-  }
-/>
 
-<Route
-  path="/export"
-  element={
-    <MainLayout>
-      <ComingSoon type="export" />
-    </MainLayout>
-  }
-/>
-
-<Route
-  path="/traceability"
-  element={
-    <MainLayout>
-      <ComingSoon type="traceability" />
-    </MainLayout>
-  }
-/>
 
         <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
         <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
