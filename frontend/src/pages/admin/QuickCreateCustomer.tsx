@@ -60,7 +60,7 @@ if (customerId) {
   };
 
  return (
-  <div className="mx-auto max-w-md">
+  <div className="mx-auto w-full max-w-md min-w-0 px-3 sm:px-0">
     
     {/* Back to Customer Management */}
     <button
@@ -71,10 +71,10 @@ if (customerId) {
       ← Back to Customer Management
     </button>
 
-    <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
 
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900">Quick Create Customer</h2>
+        <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Quick Create Customer</h2>
         <p className="text-sm text-slate-500">Enter basic details to get started quickly.</p>
       </div>
       

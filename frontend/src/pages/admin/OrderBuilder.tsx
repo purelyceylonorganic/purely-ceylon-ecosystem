@@ -106,12 +106,12 @@ export default function OrderBuilder() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-8 space-y-6">
-      <h1 className="text-3xl font-bold">
+    <div className="mx-auto w-full max-w-5xl min-w-0 space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:p-8">
+      <h1 className="break-words text-2xl font-bold sm:text-3xl">
         Order Builder
       </h1>
 
-      <div className="rounded-lg border bg-white p-6 shadow">
+      <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <p>
           <strong>Order ID :</strong> {order.id}
         </p>
@@ -123,7 +123,7 @@ export default function OrderBuilder() {
         </p>
       </div>
 
-      <div className="rounded-lg border bg-white p-6 shadow">
+      <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="mb-4 text-xl font-bold">
           Customer
         </h2>
@@ -151,7 +151,7 @@ export default function OrderBuilder() {
         </h2>
 
         {/* Product Search Component */}
-        <div className="mb-6">
+        <div className="w-full min-w-0 overflow-x-auto">
           <ProductSearch onSelect={addProduct} />
         </div>
 
@@ -159,7 +159,7 @@ export default function OrderBuilder() {
           order.items.length === 0 ? (
             <p>No Products Added</p>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[700px] border-collapse text-sm">
               <thead>
                 <tr>
                   <th className="text-left pb-3">Product</th>
@@ -212,20 +212,20 @@ export default function OrderBuilder() {
         }
       </div>
 
-      <div className="rounded-lg border bg-green-50 p-6 shadow flex justify-between items-center">
+      <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
           <h2 className="text-2xl font-bold">
             Total
           </h2>
-          <h1 className="text-4xl font-bold">
+          <h2 className="break-words text-3xl font-bold sm:text-4xl">
             {order.currency} {order.totalFinal}
-          </h1>
+          </h2>
         </div>
 
         {/* Confirm Order Button */}
         <button
           onClick={confirmOrder}
-          className="rounded bg-green-700 px-6 py-3 text-white font-semibold hover:bg-green-800 transition-colors"
+          className="w-full rounded-lg bg-green-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-green-800 sm:w-auto"
         >
           Confirm Order
         </button>

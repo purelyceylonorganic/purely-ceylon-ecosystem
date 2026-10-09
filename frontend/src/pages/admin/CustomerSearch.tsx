@@ -1,535 +1,535 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CustomerCard,
   CustomerSummaryCards,
 } from "../../components/admin/customer/CustomerCard";
-
-import { customerService } from "../../services/customer.service";
-import type { Customer } from "../../types/customer.types";
-import { orderService } from "../../services/order.service";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import CustomerNotes from "../../components/admin/customer/CustomerNotes";
+import { customerService } from "../../services/customer.service";
+import { orderService } from "../../services/order.service";
+import type { Customer } from "../../types/customer.types";
 
-interface CustomerProfile {
-  customer: {
-    id: string;
-    fullName: string;
-    phone: string;
-    email: string;
-    isActive: boolean;
-    addresses: any[];
-    orders: any[];
-    notes?: any[];
-  };
+type CustomerAddress = {
+  id: string;
+  fullName?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  province?: string | null;
+  postalCode?: string | null;
+  country?: string;
+  isDefault?: boolean;
+};
+
+type CustomerOrder = {
+  id: string;
+  status?: string;
+  paymentStatus?: string;
+  currency?: string;
+  totalFinal?: number | string;
+  createdAt?: string;
+};
+
+type CustomerProfileData = Customer & {
+  addresses: CustomerAddress[];
+  orders: CustomerOrder[];
+  notes?: Array<{ id: string; note: string; createdAt?: string }>;
+  customerNotes?: Array<{ id: string; note: string; createdAt?: string }>;
+};
+
+type CustomerProfileResponse = {
+  customer: CustomerProfileData;
   totalOrders: number;
   totalSpent: number;
+};
+
+function normalizeProfile(response: any): CustomerProfileResponse {
+  const root = response?.data?.data ?? response?.data ?? response;
+  const customerData =
+    root?.customer ?? root?.data?.customer ?? root?.data ?? root;
+
+  return {
+    customer: {
+      ...customerData,
+      addresses: Array.isArray(customerData?.addresses)
+        ? customerData.addresses
+        : [],
+      orders: Array.isArray(customerData?.orders) ? customerData.orders : [],
+      notes: Array.isArray(customerData?.notes) ? customerData.notes : [],
+      customerNotes: Array.isArray(customerData?.customerNotes)
+        ? customerData.customerNotes
+        : [],
+    },
+    totalOrders: Number(root?.totalOrders ?? customerData?.orders?.length ?? 0),
+    totalSpent: Number(root?.totalSpent ?? 0),
+  };
+}
+
+function getErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+}
+
+function formatMoney(value: number | string | undefined, currency = "LKR") {
+  const amount = Number(value ?? 0);
+  return `${currency} ${amount.toLocaleString("en-LK", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function CustomerSearch() {
   const [phone, setPhone] = useState("");
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [profile, setProfile] = useState<CustomerProfile | null>(null);
-
+  const [profile, setProfile] = useState<CustomerProfileResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // ==========================================
-  // LOAD CUSTOMER PROFILE
-  // ==========================================
-
-  const loadCustomer = async (customerId: string) => {
+  const loadCustomer = useCallback(async (customerId: string) => {
     try {
       setLoading(true);
+      setError("");
       setNotFound(false);
 
-      const profileData =
-        await customerService.getCustomerProfile(customerId);
+      const response = await customerService.getCustomerProfile(customerId);
+      const normalized = normalizeProfile(response);
 
-      console.log("CUSTOMER PROFILE =", profileData);
+      if (!normalized.customer?.id) {
+        throw new Error("Customer profile was not returned by the server.");
+      }
 
-      const normalizedProfile: CustomerProfile = {
-        customer: profileData?.customer ?? profileData,
-        totalOrders: profileData?.totalOrders ?? 0,
-        totalSpent: profileData?.totalSpent ?? 0,
-      };
-
-      setProfile(normalizedProfile);
-      setCustomer(normalizedProfile.customer as Customer);
-    } catch (error) {
-      console.error("Load customer failed:", error);
-
+      setProfile(normalized);
+      setCustomer(normalized.customer as Customer);
+    } catch (loadError: any) {
       setCustomer(null);
       setProfile(null);
       setNotFound(true);
+      setError(getErrorMessage(loadError, "Unable to load customer profile."));
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ==========================================
-  // LOAD CUSTOMER FROM URL
-  // /admin/customers?customer=xxx
-  // ==========================================
-
+  // Support direct links such as /admin/customers?customer=<id>.
   useEffect(() => {
     const customerId = searchParams.get("customer");
+    if (customerId) void loadCustomer(customerId);
+  }, [searchParams, loadCustomer]);
 
-    if (customerId) {
-      loadCustomer(customerId);
-    }
-  }, [searchParams]);
-
-  // ==========================================
-  // LOAD CUSTOMER AFTER QUICK CREATE
-  // ==========================================
-
+  // Support returning from Quick Create with a customerId in navigation state.
   useEffect(() => {
-    const customerId = location.state?.customerId;
+    const customerId = (location.state as { customerId?: string } | null)
+      ?.customerId;
 
     if (customerId) {
-      loadCustomer(customerId);
-
-      // Clear browser history state
+      void loadCustomer(customerId);
       window.history.replaceState(
         {},
         document.title,
-        window.location.pathname
+        window.location.pathname + window.location.search
       );
     }
-  }, [location.state]);
-
-  // ==========================================
-  // SEARCH CUSTOMER BY PHONE
-  // ==========================================
+  }, [location.state, loadCustomer]);
 
   const searchCustomer = async () => {
-    if (!phone.trim()) {
-      alert("Please enter customer phone number");
+    const searchValue = phone.trim();
+
+    if (!searchValue) {
+      setError("Please enter a customer phone number.");
+      setNotFound(false);
       return;
     }
 
     try {
       setLoading(true);
+      setError("");
       setNotFound(false);
+      setProfile(null);
+      setCustomer(null);
 
-      const data = await customerService.search(phone);
+      const result = await customerService.search(searchValue);
+      const foundCustomer = result?.data?.customer ?? result?.customer ?? result?.data ?? result;
 
-      console.log("SEARCH CUSTOMER =", data);
+      if (!foundCustomer?.id) {
+        throw new Error("Customer not found.");
+      }
 
-      setCustomer(data);
+      const response = await customerService.getCustomerProfile(foundCustomer.id);
+      const normalized = normalizeProfile(response);
 
-      const profileData =
-        await customerService.getCustomerProfile(data.id);
+      if (!normalized.customer?.id) {
+        throw new Error("Customer profile was not returned by the server.");
+      }
 
-      console.log("PROFILE API =", profileData);
-
-      const normalizedProfile: CustomerProfile = {
-        customer: profileData?.customer ?? profileData,
-        totalOrders: profileData?.totalOrders ?? 0,
-        totalSpent: profileData?.totalSpent ?? 0,
-      };
-
-      setProfile(normalizedProfile);
-    } catch (error) {
-      console.error("Customer search failed:", error);
-
+      setCustomer(normalized.customer as Customer);
+      setProfile(normalized);
+    } catch (searchError: any) {
       setCustomer(null);
       setProfile(null);
       setNotFound(true);
-
-      alert("Customer not found");
+      setError(getErrorMessage(searchError, "Customer not found."));
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================================
-  // CREATE DRAFT ORDER
-  // ==========================================
-
   const createOrder = async () => {
-    const addresses =
-      profile?.customer?.addresses ?? [];
+    const customerData = profile?.customer;
+
+    if (!customerData?.id) {
+      setError("Load a customer profile before creating a draft order.");
+      return;
+    }
+
+    const addresses = customerData.addresses ?? [];
 
     if (addresses.length === 0) {
-      alert("Customer address not found. Please add an address first.");
+      setError("Customer address not found. Please add an address first.");
+      return;
+    }
+
+    // Prefer the explicitly marked default address; otherwise use the first
+    // available address to preserve the existing draft-order workflow.
+    const selectedAddress =
+      addresses.find((address) => address.isDefault) ?? addresses[0];
+
+    if (!selectedAddress?.id) {
+      setError("No valid customer address ID was found.");
       return;
     }
 
     try {
       setLoading(true);
+      setError("");
 
-      const order =
-        await orderService.createDraftOrder(
-          profile!.customer.id,
-          addresses[0].id
-        );
+      const order = await orderService.createDraftOrder(
+        customerData.id,
+        selectedAddress.id
+      );
+
+      if (!order?.id) {
+        throw new Error("Draft order was created but no order ID was returned.");
+      }
 
       navigate(`/admin/order-builder/${order.id}`);
-    } catch (error) {
-      console.error("Create draft order failed:", error);
-      alert("Unable to create draft order");
+    } catch (orderError: any) {
+      setError(getErrorMessage(orderError, "Unable to create draft order."));
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================================
-  // LOADING
-  // ==========================================
-
-  if (loading && !profile) {
-    return (
-      <div className="mx-auto max-w-3xl p-8">
-        <div className="rounded-lg border bg-white p-8 text-center shadow">
-          <p className="text-lg font-semibold">
-            Loading customer...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // UI
-  // ==========================================
-
   return (
-    <div className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto w-full min-w-0 max-w-5xl px-3 py-5 sm:px-5 sm:py-7 lg:px-8">
+      <header className="mb-5 sm:mb-7">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+          Customer Search
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Search by phone number to view customer details and create a draft order.
+        </p>
+      </header>
 
-      <h1 className="mb-6 text-3xl font-bold">
-        Customer Search
-      </h1>
-
-      {/* SEARCH */}
-      <div className="flex gap-3">
-        <input
-          className="flex-1 rounded border p-3"
-          placeholder="Phone Number"
-          value={phone}
-          onChange={(e) =>
-            setPhone(e.target.value)
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              searchCustomer();
-            }
+      <section className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+        <form
+          className="flex min-w-0 flex-col gap-3 sm:flex-row"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void searchCustomer();
           }}
-        />
-
-        <button
-          type="button"
-          onClick={searchCustomer}
-          disabled={loading}
-          className="rounded bg-green-700 px-5 py-3 font-medium text-white hover:bg-green-800 disabled:opacity-50"
         >
-          {loading ? "Searching..." : "Search"}
-        </button>
-      </div>
+          <label className="sr-only" htmlFor="customer-phone-search">
+            Customer phone number
+          </label>
+          <input
+            id="customer-phone-search"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            className="min-h-12 min-w-0 flex-1 rounded-lg border border-gray-300 px-4 py-3 text-base outline-none transition placeholder:text-gray-400 focus:border-green-700 focus:ring-2 focus:ring-green-100"
+            placeholder="Enter phone number"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-28"
+          >
+            {loading && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            )}
+            {loading ? "Searching..." : "Search"}
+          </button>
+        </form>
+      </section>
 
-      {/* CUSTOMER NOT FOUND */}
-      {notFound && (
-        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-
-          <p className="mb-3 text-sm text-gray-700">
-            Customer not found. Create a new customer.
-          </p>
-
+      {error && (
+        <div
+          className="mt-4 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          role="alert"
+        >
+          <p className="min-w-0 break-words">{error}</p>
           <button
             type="button"
-            onClick={() =>
-              navigate("/admin/customers/quick-create")
-            }
-            className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+            onClick={() => setError("")}
+            className="shrink-0 rounded px-2 py-1 font-semibold hover:bg-red-100"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {loading && !profile && (
+        <div className="mt-5 rounded-xl border bg-white p-6 text-center text-sm text-gray-600 shadow-sm" role="status">
+          Loading customer profile...
+        </div>
+      )}
+
+      {notFound && (
+        <section className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
+          <h2 className="font-semibold text-gray-900">Customer not found</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Check the phone number or create a new customer.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/customers/quick-create")}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
           >
             Create New Customer
           </button>
-
-        </div>
+        </section>
       )}
 
-      {/* CUSTOMER CARD */}
       {customer && (
-        <div className="mt-6">
+        <section className="mt-5 min-w-0">
           <CustomerCard customer={customer} />
-        </div>
+        </section>
       )}
 
-      {/* PROFILE */}
       {profile && (
-        <div className="mt-6 space-y-6">
-
-          {/* DEBUG */}
-          <div className="rounded bg-gray-100 p-4">
-            <details>
-              <summary className="cursor-pointer font-bold text-gray-700">
-                Debug Profile JSON
-              </summary>
-
-              <pre className="mt-2 overflow-auto text-xs">
-                {JSON.stringify(profile, null, 2)}
-              </pre>
-            </details>
-          </div>
-
-          {/* SUMMARY */}
+        <div className="mt-5 min-w-0 space-y-5 sm:mt-6 sm:space-y-6">
           <CustomerSummaryCards
-            totalOrders={profile.totalOrders ?? 0}
-            totalSpent={profile.totalSpent ?? 0}
-            totalAddresses={
-              profile.customer?.addresses?.length ?? 0
-            }
+            totalOrders={profile.totalOrders}
+            totalSpent={profile.totalSpent}
+            totalAddresses={profile.customer.addresses.length}
             totalNotes={
-              profile.customer?.notes?.length ?? 0
+              profile.customer.notes?.length ??
+              profile.customer.customerNotes?.length ??
+              0
             }
           />
 
-          {/* CUSTOMER INFORMATION */}
-          <div className="rounded-lg border bg-white p-6 shadow">
-
-            <h2 className="mb-4 text-xl font-bold">
+          <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl">
               Customer Information
             </h2>
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Name</dt>
+                <dd className="mt-1 break-words text-sm font-medium text-gray-900">
+                  {profile.customer.fullName || "N/A"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Phone</dt>
+                <dd className="mt-1 break-words text-sm font-medium text-gray-900">
+                  {profile.customer.phone || "N/A"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</dt>
+                <dd className="mt-1 break-all text-sm font-medium text-gray-900">
+                  {profile.customer.email || "Not provided"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">Status</dt>
+                <dd className="mt-1">
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    profile.customer.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-700"
+                  }`}>
+                    {profile.customer.isActive ? "Active" : "Inactive"}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+          </section>
 
-            <div className="space-y-2">
-
-              <p>
-                <strong>Name:</strong>{" "}
-                {profile.customer?.fullName || "N/A"}
-              </p>
-
-              <p>
-                <strong>Phone:</strong>{" "}
-                {profile.customer?.phone || "N/A"}
-              </p>
-
-              <p>
-                <strong>Email:</strong>{" "}
-                {profile.customer?.email || "N/A"}
-              </p>
-
-              <p>
-                <strong>Status:</strong>{" "}
-                {profile.customer?.isActive
-                  ? "Active"
-                  : "Inactive"}
-              </p>
-
-            </div>
-          </div>
-
-          {/* ADDRESSES */}
-          <div className="rounded-lg border bg-white p-6 shadow">
-
-            <div className="mb-4 flex items-center justify-between">
-
-              <h2 className="text-xl font-bold">
-                Addresses
-              </h2>
-
+          <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">Addresses</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {profile.customer.addresses.length} saved address
+                  {profile.customer.addresses.length === 1 ? "" : "es"}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() =>
-                  navigate(
-                    `/admin/customers/${profile.customer.id}/add-address`
-                  )
+                  navigate(`/admin/customers/${profile.customer.id}/add-address`)
                 }
-                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
               >
                 + Add Address
               </button>
-
             </div>
 
-            {(!profile.customer?.addresses ||
-              profile.customer.addresses.length === 0) ? (
-
-              <div className="rounded-lg border border-dashed p-6 text-center">
-
-                <p className="mb-4 text-gray-500">
-                  No Address Found
-                </p>
-
+            {profile.customer.addresses.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-300 p-5 text-center sm:p-7">
+                <p className="text-sm text-gray-500">No address found.</p>
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(
-                      `/admin/customers/${profile.customer.id}/add-address`
-                    )
+                    navigate(`/admin/customers/${profile.customer.id}/add-address`)
                   }
-                  className="rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+                  className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-green-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-800"
                 >
                   Add Address First
                 </button>
-
               </div>
-
             ) : (
-
-              <div className="space-y-4">
-
-                {profile.customer.addresses.map(
-                  (address: any) => (
-
-                    <div
-                      key={address.id}
-                      className="rounded border p-4"
-                    >
-
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {profile.customer.addresses.map((address) => (
+                  <article
+                    key={address.id}
+                    className={`min-w-0 rounded-lg border p-4 ${
+                      address.isDefault
+                        ? "border-green-300 bg-green-50/50"
+                        : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="min-w-0 break-words font-semibold text-gray-900">
+                        {address.fullName || "Address"}
+                      </h3>
                       {address.isDefault && (
-                        <span className="rounded bg-green-600 px-2 py-1 text-xs text-white">
+                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">
                           Default
                         </span>
                       )}
-
-                      <p className="mt-2 font-semibold">
-                        {address.fullName}
-                      </p>
-
-                      <p>{address.phone}</p>
-                      <p>{address.street}</p>
-                      <p>{address.city}</p>
-                      <p>{address.province}</p>
-                      <p>{address.postalCode}</p>
-                      <p>{address.country}</p>
-
                     </div>
-                  )
-                )}
-
+                    <div className="mt-3 space-y-1 break-words text-sm text-gray-600">
+                      {address.phone && <p>{address.phone}</p>}
+                      {address.street && <p>{address.street}</p>}
+                      <p>
+                        {[address.city, address.province, address.postalCode]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                      {address.country && <p>{address.country}</p>}
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
+          </section>
 
-          </div>
+          <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl">Recent Orders</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                {profile.customer.orders.length} order
+                {profile.customer.orders.length === 1 ? "" : "s"}
+              </p>
+            </div>
 
-          {/* RECENT ORDERS */}
-          <div className="rounded-lg border bg-white p-6 shadow">
-
-            <h2 className="mb-4 text-xl font-bold">
-              Recent Orders
-            </h2>
-
-            {(!profile.customer?.orders ||
-              profile.customer.orders.length === 0) ? (
-
-              <p>No Orders Yet</p>
-
+            {profile.customer.orders.length === 0 ? (
+              <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">
+                No orders yet.
+              </p>
             ) : (
+              <>
+                <div className="space-y-3 md:hidden">
+                  {profile.customer.orders.map((order) => (
+                    <article key={order.id} className="rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="break-all text-sm font-semibold text-gray-900">
+                          Order #{order.id.slice(0, 8)}
+                        </p>
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                          {order.status || "Unknown"}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-500">Payment</p>
+                          <p className="mt-1 break-words text-gray-800">{order.paymentStatus || "—"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Total</p>
+                          <p className="mt-1 break-words font-medium text-gray-900">
+                            {formatMoney(order.totalFinal, order.currency || "LKR")}
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
 
-              <div className="overflow-x-auto">
-
-                <table className="w-full border-collapse">
-
-                  <thead>
-                    <tr className="border-b">
-                      <th className="p-2 text-left">
-                        Order ID
-                      </th>
-
-                      <th className="p-2 text-left">
-                        Status
-                      </th>
-
-                      <th className="p-2 text-left">
-                        Payment
-                      </th>
-
-                      <th className="p-2 text-left">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-
-                    {profile.customer.orders.map(
-                      (order: any) => (
-
-                        <tr
-                          key={order.id}
-                          className="border-b"
-                        >
-
-                          <td className="p-2">
-                            {order.id?.slice(0, 8)}...
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[600px] border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                        <th className="whitespace-nowrap p-3 font-semibold">Order ID</th>
+                        <th className="whitespace-nowrap p-3 font-semibold">Status</th>
+                        <th className="whitespace-nowrap p-3 font-semibold">Payment</th>
+                        <th className="whitespace-nowrap p-3 text-right font-semibold">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {profile.customer.orders.map((order) => (
+                        <tr key={order.id} className="border-b last:border-0">
+                          <td className="whitespace-nowrap p-3 font-medium text-gray-800">
+                            #{order.id.slice(0, 8)}
                           </td>
-
-                          <td className="p-2">
-                            {order.status}
+                          <td className="whitespace-nowrap p-3">{order.status || "—"}</td>
+                          <td className="whitespace-nowrap p-3">{order.paymentStatus || "—"}</td>
+                          <td className="whitespace-nowrap p-3 text-right">
+                            {formatMoney(order.totalFinal, order.currency || "LKR")}
                           </td>
-
-                          <td className="p-2">
-                            {order.paymentStatus}
-                          </td>
-
-                          <td className="p-2">
-                            {order.currency}{" "}
-                            {order.totalFinal}
-                          </td>
-
                         </tr>
-                      )
-                    )}
-
-                  </tbody>
-
-                </table>
-
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
+          </section>
 
-          </div>
+          <CustomerNotes customerId={profile.customer.id} />
 
-          {/* STATISTICS */}
-          <div className="rounded-lg border bg-white p-6 shadow">
-
-            <h2 className="mb-4 text-xl font-bold">
-              Statistics
-            </h2>
-
-            <p>
-              <strong>Total Orders:</strong>{" "}
-              {profile.totalOrders ?? 0}
-            </p>
-
-            <p>
-              <strong>Total Spent:</strong>{" "}
-              {profile.totalSpent ?? 0}
-            </p>
-
-          </div>
-
-          {/* NOTES */}
-          <CustomerNotes
-            customerId={profile.customer.id}
-          />
-
-          {/* CREATE ORDER */}
-          <button
-            type="button"
-            onClick={createOrder}
-            disabled={
-              loading ||
-              !profile.customer?.addresses?.length
-            }
-            className={`w-full rounded-lg py-4 text-lg font-semibold text-white ${
-              profile.customer?.addresses?.length
-                ? "bg-green-700 hover:bg-green-800"
-                : "cursor-not-allowed bg-gray-400"
-            }`}
-          >
-            {profile.customer?.addresses?.length
-              ? "Create Draft Order"
-              : "Add Address First"}
-          </button>
-
+          <section className="sticky bottom-2 z-10 rounded-xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-0">
+            <button
+              type="button"
+              onClick={() => void createOrder()}
+              disabled={loading || profile.customer.addresses.length === 0}
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-green-700 px-5 py-3 text-sm font-semibold text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {loading
+                ? "Creating Draft Order..."
+                : profile.customer.addresses.length
+                  ? `Create Draft Order${profile.customer.addresses.some((address) => address.isDefault) ? " (Default Address)" : ""}`
+                  : "Add Address First"}
+            </button>
+          </section>
         </div>
       )}
-
-    </div>
+    </main>
   );
 }

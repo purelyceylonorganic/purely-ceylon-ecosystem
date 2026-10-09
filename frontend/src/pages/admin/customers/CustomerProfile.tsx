@@ -677,7 +677,7 @@ export default function CustomerProfile() {
   // ==========================================
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-w-0 w-full space-y-5 p-3 sm:space-y-6 sm:p-5 lg:p-6">
 
       {/* ===================================== */}
       {/* HEADER */}
@@ -696,9 +696,9 @@ export default function CustomerProfile() {
             ← Back to Customers
           </button>
 
-          <h1 className="text-3xl font-bold text-gray-900">
-            {customer.fullName}
-          </h1>
+          <h1 className="break-words text-2xl font-bold text-gray-900 sm:text-3xl">
+  {customer.fullName}
+</h1>
 
           <p className="mt-1 text-sm text-gray-500">
             Customer ID: {customer.id}
@@ -738,11 +738,11 @@ export default function CustomerProfile() {
       {/* CUSTOMER INFORMATION + SUMMARY */}
       {/* ===================================== */}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-6 lg:col-span-2">
 
         {/* CUSTOMER INFORMATION */}
 
-        <div className="rounded-xl border bg-white p-6 shadow-sm lg:col-span-2">
+        <div className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
 
           <h2 className="mb-5 text-xl font-semibold text-gray-900">
             Customer Information
@@ -895,7 +895,7 @@ export default function CustomerProfile() {
 
         ) : (
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
 
             {customer.addresses.map(
               (address) => {
@@ -914,7 +914,7 @@ export default function CustomerProfile() {
 
                     <div className="flex items-start justify-between gap-4">
 
-                      <div className="min-w-0">
+                      <div className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-5">
 
                         <p className="font-semibold text-gray-900">
                           {address.fullName}
@@ -960,68 +960,41 @@ export default function CustomerProfile() {
                         {address.country}
                       </p>
 
-                    </div>
+                    
 
                     {/* ADDRESS ACTIONS */}
 
-                    <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-4">
+                    <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
+  <button
+    type="button"
+    onClick={() => handleEditAddress(address)}
+    disabled={actionLoading}
+    className="inline-flex items-center justify-center rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+  >
+    ✏️ Edit
+  </button>
 
-                      {/* EDIT */}
+  {!address.isDefault && (
+    <button
+      type="button"
+      onClick={() => handleSetDefaultAddress(address.id)}
+      disabled={actionLoading}
+      className="inline-flex items-center justify-center rounded-lg border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50"
+    >
+      ⭐ Set Default
+    </button>
+  )}
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditAddress(
-                            address
-                          )
-                        }
-                        disabled={actionLoading}
-                        className="inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        ✏️ Edit
-                      </button>
-
-                      {/* SET DEFAULT */}
-
-                      {!address.isDefault && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSetDefaultAddress(
-                              address.id
-                            )
-                          }
-                          disabled={
-                            actionLoading
-                          }
-                          className="inline-flex items-center rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {actionLoading
-                            ? "Updating..."
-                            : "⭐ Set Default"}
-                        </button>
-                      )}
-
-                      {/* DELETE */}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteAddress(
-                            address.id
-                          )
-                        }
-                        disabled={
-                          actionLoading
-                        }
-                        className="inline-flex items-center rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {actionLoading
-                          ? "Processing..."
-                          : "🗑️ Delete"}
-                      </button>
-
-                    </div>
+  <button
+    type="button"
+    onClick={() => handleDeleteAddress(address.id)}
+    disabled={actionLoading}
+    className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+  >
+    🗑️ Delete
+  </button>
+</div>
+</div>
 
                   </div>
                 );
@@ -1038,9 +1011,9 @@ export default function CustomerProfile() {
       {/* ===================================== */}
 
       {editingAddress && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-4">
 
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
+          <div className="my-auto max-h-[95dvh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-4 shadow-2xl sm:p-6">
 
             {/* MODAL HEADER */}
 
@@ -1071,7 +1044,7 @@ export default function CustomerProfile() {
 
             {/* FORM */}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
               {/* FULL NAME */}
 
@@ -1249,7 +1222,7 @@ export default function CustomerProfile() {
 
             {/* MODAL ACTIONS */}
 
-            <div className="mt-6 flex justify-end gap-3 border-t pt-5">
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-end">
 
               <button
                 type="button"
@@ -1257,7 +1230,7 @@ export default function CustomerProfile() {
                   setEditingAddress(null)
                 }
                 disabled={savingAddress}
-                className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 sm:w-auto"
               >
                 Cancel
               </button>
@@ -1266,7 +1239,7 @@ export default function CustomerProfile() {
                 type="button"
                 onClick={handleSaveAddress}
                 disabled={savingAddress}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 sm:w-auto"
               >
                 {savingAddress
                   ? "Saving..."
@@ -1309,7 +1282,7 @@ export default function CustomerProfile() {
                 `/admin/customers/${customer.id}/draft-order`
               )
             }
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-6"
           >
             + Draft Order
           </button>
@@ -1380,7 +1353,7 @@ export default function CustomerProfile() {
 
                   {/* ORDER SUMMARY */}
 
-                  <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div className="mt-5 grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4">
 
                     <InfoItem
                       label="Total"
@@ -1441,7 +1414,7 @@ export default function CustomerProfile() {
 
                       <div className="overflow-x-auto">
 
-                        <table className="w-full text-sm">
+                        <table className="w-full min-w-[560px] text-sm">
 
                           <thead>
                             <tr className="border-b text-left text-gray-500">
@@ -1724,7 +1697,7 @@ export default function CustomerProfile() {
               placeholder="Enter customer note..."
               rows={3}
               disabled={addingNote}
-              className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+              className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-5"
             />
 
             <button
@@ -1797,45 +1770,29 @@ export default function CustomerProfile() {
                   </div>
 
                   {/* NOTE ACTIONS */}
+<div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-4">
+  <button
+    type="button"
+    onClick={() => {
+      console.log("Edit note clicked:", note.id);
+      handleEditNote(note);
+    }}
+    className="!visible !inline-flex items-center justify-center rounded-lg border border-blue-500 bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800"
+  >
+    ✏️ Edit
+  </button>
 
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleEditNote(
-                          note
-                        )
-                      }
-                      disabled={
-                        deletingNoteId ===
-                        note.id
-                      }
-                      className="inline-flex items-center rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      ✏️ Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleDeleteNote(
-                          note.id
-                        )
-                      }
-                      disabled={
-                        deletingNoteId ===
-                        note.id
-                      }
-                      className="inline-flex items-center rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {deletingNoteId ===
-                      note.id
-                        ? "Deleting..."
-                        : "🗑️ Delete"}
-                    </button>
-
-                  </div>
+  <button
+  type="button"
+  onClick={() => handleDeleteNote(note.id)}
+  disabled={deletingNoteId === note.id}
+  className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {deletingNoteId === note.id
+    ? "Deleting..."
+    : "🗑️ Delete"}
+</button>
+</div>
 
                 </div>
               )
@@ -1851,7 +1808,7 @@ export default function CustomerProfile() {
       {/* ===================================== */}
 
       {editingNote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-4">
 
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
 

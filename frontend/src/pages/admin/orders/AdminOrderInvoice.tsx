@@ -26,19 +26,31 @@ export default function AdminOrderInvoice() {
   }, [id]);
 
   const downloadPDF = async () => {
-    if (!invoiceRef.current) return;
-    try {
-      const canvas = await html2canvas(invoiceRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice-${invoiceNumber}.pdf`);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-    }
-  };
+  if (!invoiceRef.current || !invoice) return;
+
+  const invoiceNumber =
+    `INV-${new Date(invoice.createdAt).getFullYear()}-${invoice.id
+      .replace(/-/g, "")
+      .substring(0, 8)
+      .toUpperCase()}`;
+
+  try {
+    const canvas = await html2canvas(invoiceRef.current, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`Invoice-${invoiceNumber}.pdf`);
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+  }
+};
 
   if (!invoice) {
     return (
@@ -82,7 +94,7 @@ export default function AdminOrderInvoice() {
       {/* ================= A4 INVOICE VIEW ================= */}
       <div
         ref={invoiceRef}
-        className="max-w-5xl mx-auto bg-white shadow rounded-lg p-10 invoice relative overflow-hidden"
+        className="mx-auto w-full max-w-5xl min-w-0 overflow-hidden rounded-lg bg-white p-3 shadow sm:p-6 lg:p-10 invoice relative"
       >
         {/* Paid / Status Stamp */}
         <div
@@ -92,7 +104,7 @@ export default function AdminOrderInvoice() {
         </div>
 
         {/* ================= HEADER ================= */}
-        <div className="flex justify-between items-center border-b pb-6">
+        <div className="flex flex-col gap-5 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <img
               src={Logo}
@@ -139,7 +151,7 @@ export default function AdminOrderInvoice() {
         </div>
 
         {/* ================= CUSTOMER ================= */}
-        <div className="grid grid-cols-2 gap-10 mt-10">
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-10 sm:grid-cols-2 sm:gap-10">
           <div>
             <h3 className="font-bold text-lg mb-3">Bill To</h3>
             <p>{invoice.user?.fullName}</p>
@@ -158,9 +170,9 @@ export default function AdminOrderInvoice() {
         </div>
 
         {/* ================= PRODUCTS ================= */}
-        <div className="mt-10">
+        <div className="w-full overflow-x-auto">
           <h3 className="text-xl font-bold mb-4">Order Items</h3>
-          <table className="w-full border border-gray-300">
+          <table className="w-full min-w-[650px] border-collapse border border-gray-300">
             <thead className="bg-gray-100">
               <tr>
                 <th className="border px-4 py-3 text-left">Product</th>
@@ -202,7 +214,7 @@ export default function AdminOrderInvoice() {
 
         {/* ================= ORDER SUMMARY ================= */}
         <div className="flex justify-end mt-10">
-          <div className="w-96 border rounded-lg p-5">
+          <div className="w-full max-w-md border rounded-lg p-4 sm:p-5">
             <div className="flex justify-between py-2">
               <span>Subtotal</span>
               <span>
@@ -241,7 +253,7 @@ export default function AdminOrderInvoice() {
         {/* ================= PAYMENT SUMMARY ================= */}
         <div className="mt-10 border rounded-lg p-6">
           <h3 className="text-xl font-bold mb-5">Payment Summary</h3>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <p className="mb-2">
                 <strong>Payment Status :</strong>

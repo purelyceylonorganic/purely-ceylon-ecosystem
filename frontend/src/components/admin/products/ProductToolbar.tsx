@@ -1,19 +1,27 @@
+
+import {
+  Search,
+  Plus,
+  RotateCcw,
+  Filter,
+} from "lucide-react";
+
 import type { Category } from "../../../types/category";
 
 interface ProductToolbarProps {
   search: string;
   onSearchChange: React.Dispatch<React.SetStateAction<string>>;
-
   categories: Category[];
   selectedCategory: string;
   onCategoryChange: React.Dispatch<React.SetStateAction<string>>;
-
   status?: string;
   onStatusChange?: (status: string) => void;
-
   onAddProduct: () => void;
   onReset: () => void;
 }
+
+const controlClass =
+  "min-h-11 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10";
 
 export default function ProductToolbar({
   search,
@@ -27,33 +35,55 @@ export default function ProductToolbar({
   onReset,
 }: ProductToolbarProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 mb-2">
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-        
-        {/* Left Side: Search, Categories, Status & Reset */}
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[240px]">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </span>
-            <input
-              type="text"
-              placeholder="Search products by name or SKU..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all"
-            />
-          </div>
+    <section className="w-full min-w-0">
+      {/* Toolbar heading */}
+      <div className="mb-4 flex min-w-0 items-center gap-2">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF8EE] text-[#0E4B32]">
+          <Filter size={18} />
+        </div>
 
-          {/* Category Dropdown */}
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-gray-800 sm:text-base">
+            Product Management
+          </h2>
+          <p className="text-xs text-gray-500">
+            Search and filter your catalogue
+          </p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative w-full min-w-0">
+        <Search
+          size={18}
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+
+        <input
+          type="search"
+          aria-label="Search products"
+          placeholder="Search products by name or SKU..."
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          className={`${controlClass} pl-10`}
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(150px,0.8fr)_auto]">
+        <div className="min-w-0">
+          <label
+            htmlFor="product-category-filter"
+            className="mb-1.5 block text-xs font-semibold text-gray-500"
+          >
+            Category
+          </label>
+
           <select
+            id="product-category-filter"
             value={selectedCategory}
-            onChange={(e) => onCategoryChange(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all cursor-pointer"
+            onChange={(event) => onCategoryChange(event.target.value)}
+            className={controlClass}
           >
             <option value="">All Categories</option>
             {categories.map((category) => (
@@ -62,13 +92,22 @@ export default function ProductToolbar({
               </option>
             ))}
           </select>
+        </div>
 
-          {/* Status Dropdown */}
-          {onStatusChange && (
+        {onStatusChange && (
+          <div className="min-w-0">
+            <label
+              htmlFor="product-status-filter"
+              className="mb-1.5 block text-xs font-semibold text-gray-500"
+            >
+              Product Status
+            </label>
+
             <select
+              id="product-status-filter"
               value={status}
-              onChange={(e) => onStatusChange(e.target.value)}
-              className="px-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all cursor-pointer"
+              onChange={(event) => onStatusChange(event.target.value)}
+              className={controlClass}
             >
               <option value="ALL">All Status</option>
               <option value="PUBLISHED">Published</option>
@@ -76,32 +115,32 @@ export default function ProductToolbar({
               <option value="HIDDEN">Hidden</option>
               <option value="ARCHIVED">Archived</option>
             </select>
-          )}
+          </div>
+        )}
 
-          {/* Reset Button */}
+        <div className="flex min-w-0 items-end">
           <button
+            type="button"
             onClick={onReset}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-all cursor-pointer active:scale-95"
-            title="Reset Filters"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 active:scale-[0.98] sm:w-full lg:w-auto"
           >
-            Reset
+            <RotateCcw size={16} />
+            Reset Filters
           </button>
         </div>
-
-        {/* Right Side: Add Product Button */}
-        <div className="flex items-center justify-end">
-          <button
-            onClick={onAddProduct}
-            className="flex items-center gap-2 px-4.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Add Product</span>
-          </button>
-        </div>
-
       </div>
-    </div>
+
+      {/* Add product action */}
+      <div className="mt-4 border-t border-gray-100 pt-4">
+        <button
+          type="button"
+          onClick={onAddProduct}
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0E4B32] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#093b27] active:scale-[0.99] sm:w-auto"
+        >
+          <Plus size={19} />
+          Add Product
+        </button>
+      </div>
+    </section>
   );
 }

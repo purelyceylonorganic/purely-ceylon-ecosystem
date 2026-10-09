@@ -206,7 +206,7 @@ export default function CreateDraftOrder() {
   // ==========================================
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto w-full max-w-4xl min-w-0 space-y-5 px-3 py-5 sm:space-y-6 sm:p-6 lg:p-8">
 
       {/* HEADER */}
 
@@ -233,7 +233,7 @@ export default function CreateDraftOrder() {
 
       {/* CUSTOMER */}
 
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
 
         <h2 className="mb-4 text-xl font-semibold">
           Customer
@@ -276,9 +276,9 @@ export default function CreateDraftOrder() {
 
       {/* ADDRESS */}
 
-      <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <div className="min-w-0 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
 
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
           <h2 className="text-xl font-semibold">
             Shipping Address
@@ -290,7 +290,7 @@ export default function CreateDraftOrder() {
                 `/admin/customers/${customer.id}/add-address`
               )
             }
-            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            className="w-full rounded-lg border px-4 py-3 text-sm font-medium hover:bg-gray-50 sm:w-auto"
           >
             + Add Address
           </button>
@@ -360,7 +360,7 @@ export default function CreateDraftOrder() {
 
                     <div className="flex-1">
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
 
                         <p className="font-semibold">
                           {address.fullName}
@@ -427,7 +427,7 @@ export default function CreateDraftOrder() {
 
       {customer.addresses.length > 0 && (
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
           <button
             onClick={() =>
@@ -435,7 +435,7 @@ export default function CreateDraftOrder() {
                 `/admin/customers/${customer.id}`
               )
             }
-            className="rounded-lg border px-6 py-3 font-medium hover:bg-gray-50"
+            className="w-full rounded-lg border px-6 py-3 font-medium hover:bg-gray-50 sm:w-auto"
           >
             Cancel
           </button>

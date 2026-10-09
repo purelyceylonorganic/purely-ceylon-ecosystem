@@ -1,9 +1,60 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { customerService } from "../../services/customer.service";
 import type { Customer } from "../../types/customer.types";
 import { orderService } from "../../services/order.service";
 
+type AddressFormData = {
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+};
+
+type CustomerAddress = {
+  id: string;
+  fullName?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  province?: string | null;
+  postalCode?: string | null;
+  country?: string;
+  isDefault?: boolean;
+};
+
+const initialFormData: AddressFormData = {
+  fullName: "",
+  phone: "",
+  street: "",
+  city: "",
+  province: "",
+  postalCode: "",
+  country: "Sri Lanka",
+  isDefault: true,
+};
+
+function unwrap<T = any>(response: any): T {
+  return (response?.data?.data ??
+    response?.data?.customer ??
+    response?.customer ??
+    response?.data ??
+    response) as T;
+}
+
+function getErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+}
 
 export default function AddCustomerAddress() {
   const { customerId } = useParams<{ customerId: string }>();
@@ -13,25 +64,15 @@ export default function AddCustomerAddress() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [formData, setFormData] =
+    useState<AddressFormData>(initialFormData);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    street: "",
-    city: "",
-    province: "",
-    postalCode: "",
-    country: "Sri Lanka",
-    isDefault: true,
-  });
-
-  // ==========================================
-  // LOAD CUSTOMER
-  // ==========================================
   useEffect(() => {
+    let cancelled = false;
+
     const loadCustomer = async () => {
       if (!customerId) {
-        setError("Customer ID is missing");
+        setError("Customer ID is missing.");
         setLoading(false);
         return;
       }
@@ -40,358 +81,434 @@ export default function AddCustomerAddress() {
         setLoading(true);
         setError("");
 
-        console.log("Loading customer:", customerId);
+        const response =
+          await customerService.getCustomerProfile(customerId);
+        const customerData = unwrap<Customer>(response);
 
-        const profile =
-  await customerService.getCustomerProfile(customerId);
-
-        console.log("Customer Profile Response:", profile);
-
-        // Backend may return either:
-        // { customer: {...} }
-        // or directly {...}
-        const customerData = profile?.customer ?? profile?.data?.customer ?? profile?.data ?? profile;
-
-        if (!customerData) {
-          throw new Error("Customer data not found");
+        if (!customerData?.id) {
+          throw new Error("Customer data was not returned by the server.");
         }
 
-        setCustomer(customerData);
+        if (cancelled) return;
 
-        // Fill customer information into address form
-        setFormData((previous) => ({
-          ...previous,
+        setCustomer(customerData);
+        setFormData((current) => ({
+          ...current,
           fullName: customerData.fullName || "",
           phone: customerData.phone || "",
         }));
-      } catch (error: any) {
-        console.error("Failed to load customer:", error);
-
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Unable to load customer";
-
-        setError(message);
+      } catch (loadError: any) {
+        if (cancelled) return;
         setCustomer(null);
+        setError(
+          getErrorMessage(loadError, "Unable to load customer information.")
+        );
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadCustomer();
+    void loadCustomer();
+
+    return () => {
+      cancelled = true;
+    };
   }, [customerId]);
 
-  // ==========================================
-  // FORM CHANGE
-  // ==========================================
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value, checked, type } = event.target;
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
+    setFormData((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = async (
-  e: React.FormEvent<HTMLFormElement>
-) => {
-  e.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  if (!customerId) {
-    alert("Customer ID is missing");
-    return;
-  }
-
-  try {
-    setSaving(true);
-    setError("");
-
-    // ==========================================
-    // 1. SAVE CUSTOMER ADDRESS
-    // ==========================================
-
-    const addressResponse = await customerService.addAddress(
-      customerId,
-      formData
-    );
-
-    console.log("Address Created:", addressResponse);
-
-    // ==========================================
-    // 2. GET UPDATED CUSTOMER PROFILE
-    // ==========================================
-
-    const profile =
-      await customerService.getCustomerProfile(customerId);
-
-    console.log("Updated Customer Profile:", profile);
-
-    const customerData =
-      profile?.customer ??
-      profile?.data?.customer ??
-      profile?.data ??
-      profile;
-
-    if (!customerData) {
-      throw new Error(
-        "Customer profile could not be loaded"
-      );
+    if (!customerId) {
+      setError("Customer ID is missing.");
+      return;
     }
 
-    // ==========================================
-    // 3. FIND THE NEW / DEFAULT ADDRESS
-    // ==========================================
+    if (saving) return;
 
-    const addresses = Array.isArray(customerData.addresses)
-      ? customerData.addresses
-      : [];
+    let addressSaved = false;
 
-    const defaultAddress =
-      addresses.find(
-        (address: any) =>
-          address.isDefault === true
-      ) ||
-      addresses[addresses.length - 1];
+    try {
+      setSaving(true);
+      setError("");
 
-    if (!defaultAddress?.id) {
-      throw new Error(
-        "Address was created but address ID could not be found"
-      );
-    }
-
-    console.log(
-      "Selected Address:",
-      defaultAddress
-    );
-
-    // ==========================================
-    // 4. CREATE DRAFT ORDER
-    // ==========================================
-
-    const draftOrder =
-      await orderService.createDraftOrder(
+      // 1. Save the address.
+      const addressResponse = await customerService.addAddress(
         customerId,
-        defaultAddress.id
+        formData
       );
+      const addressResult = unwrap<any>(addressResponse);
+      addressSaved = true;
 
-    console.log(
-      "Draft Order Created:",
-      draftOrder
-    );
+      // Prefer the ID returned by the address-create endpoint.
+      let createdAddress: CustomerAddress | undefined =
+        addressResult?.address ??
+        addressResult?.createdAddress ??
+        (addressResult?.id ? addressResult : undefined);
 
-    if (!draftOrder?.id) {
-      throw new Error(
-        "Draft order was created but order ID was not returned"
+      // 2. If the API did not return the new address, reload the profile
+      // and identify the matching address instead of blindly using the last one.
+      if (!createdAddress?.id) {
+        const profileResponse =
+          await customerService.getCustomerProfile(customerId);
+        const refreshedCustomer = unwrap<Customer>(profileResponse);
+
+        const addresses = Array.isArray((refreshedCustomer as any)?.addresses)
+          ? ((refreshedCustomer as any).addresses as CustomerAddress[])
+          : [];
+
+        createdAddress = addresses.find(
+          (address) =>
+            address.fullName === formData.fullName &&
+            address.phone === formData.phone &&
+            address.street === formData.street &&
+            address.city === formData.city
+        );
+
+        if (refreshedCustomer?.id) setCustomer(refreshedCustomer);
+
+        // Last-resort fallback for APIs that return no address ID and do not
+        // expose the newly-created address fields consistently.
+        if (!createdAddress?.id) {
+          createdAddress =
+            addresses.find((address) => address.isDefault) ??
+            addresses[addresses.length - 1];
+        }
+      }
+
+      if (!createdAddress?.id) {
+        throw new Error(
+          "Address may have been saved, but its ID could not be found. Please check the customer profile before trying again."
+        );
+      }
+
+      // 3. Create a draft order for the address that was just added.
+      // This follows the existing application flow.
+      await orderService.createDraftOrder(customerId, createdAddress.id);
+
+      // 4. Navigate back to the customer profile after both operations succeed.
+      window.alert("Address added and draft order created successfully.");
+      navigate(`/admin/customers/${customerId}`);
+    } catch (submitError: any) {
+      const detail = getErrorMessage(
+        submitError,
+        "An unexpected error occurred."
       );
+      const message = addressSaved
+        ? `The address was saved, but draft order creation did not complete. ${detail} Please return to the customer profile and check the address before trying again.`
+        : `Unable to save the address. ${detail}`;
+      setError(message);
+      window.alert(message);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    // ==========================================
-    // 5. SUCCESS
-    // ==========================================
-
-    alert(
-      "Address Added Successfully."
-    );
-
-    // ==========================================
-    // 6. GO TO ORDER BUILDER
-    // ==========================================
-
-    navigate(
-      `/admin/customers/${customerId}`
-    );
-
-  } catch (error: any) {
-
-    console.error(
-      "Address / Draft Order creation error:",
-      error
-    );
-
-    const message =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Unable to create address or draft order";
-
-    setError(message);
-
-    alert(message);
-
-  } finally {
-    setSaving(false);
-  }
-};
-
-  // ==========================================
-  // LOADING
-  // ==========================================
   if (loading) {
     return (
-      <div className="p-10">
-        <p>Loading customer...</p>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // ERROR
-  // ==========================================
-  if (error || !customer) {
-    return (
-      <div className="p-10">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-          <h2 className="text-xl font-bold text-red-700">
-            Unable to Load Customer
-          </h2>
-
-          <p className="mt-2 text-red-600">
-            {error || "Customer not found"}
-          </p>
-
-          <button
-            onClick={() => navigate("/admin/customers")}
-            className="mt-5 rounded bg-green-700 px-5 py-3 text-white"
-          >
-            Back to Customers
-          </button>
+      <div className="flex min-h-[50vh] items-center justify-center px-4">
+        <div
+          className="flex items-center gap-3 rounded-xl border bg-white px-5 py-4 text-sm text-gray-600 shadow-sm"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-green-700" />
+          Loading customer...
         </div>
       </div>
     );
   }
 
-  // ==========================================
-  // PAGE
-  // ==========================================
+  if (!customer || error === "Customer ID is missing.") {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-6 sm:py-8">
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 sm:p-6"
+          role="alert"
+        >
+          <h1 className="text-lg font-bold">Unable to Load Customer</h1>
+          <p className="mt-2 break-words text-sm">
+            {error || "Customer not found."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/customers")}
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-green-800 px-4 py-2 text-sm font-semibold text-white hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2"
+          >
+            Back to Customers
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-3xl p-8">
-
-      <h1 className="mb-6 text-3xl font-bold">
-        Add Customer Address
-      </h1>
-
-      {/* Customer Information */}
-      <div className="mb-6 rounded-lg border bg-gray-50 p-5">
-        <h2 className="mb-3 text-lg font-bold">
-          Customer
-        </h2>
-
-        <p>
-          <strong>Name:</strong>{" "}
-          {customer.fullName || "N/A"}
-        </p>
-
-        <p>
-          <strong>Phone:</strong>{" "}
-          {customer.phone || "N/A"}
-        </p>
-
-        <p>
-          <strong>Email:</strong>{" "}
-          {customer.email || "N/A"}
-        </p>
+    <main className="mx-auto w-full min-w-0 max-w-3xl px-3 py-5 sm:px-6 sm:py-8 lg:py-10">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <button
+            type="button"
+            onClick={() => navigate(`/admin/customers/${customerId}`)}
+            className="mb-3 inline-flex min-h-9 items-center text-sm font-medium text-gray-600 hover:text-gray-900"
+          >
+            ← Back to Customer Profile
+          </button>
+          <h1 className="break-words text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            Add Customer Address
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Add a delivery address for this customer.
+          </p>
+        </div>
       </div>
 
-      {/* Address Form */}
-      <div className="rounded-lg border bg-white p-6 shadow">
-
-        <h2 className="mb-5 text-xl font-bold">
-          Address Details
-        </h2>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
+      {error && (
+        <div
+          className="mb-5 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          role="alert"
         >
+          <p className="min-w-0 break-words">{error}</p>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            className="shrink-0 rounded px-2 py-1 font-semibold hover:bg-red-100"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
-          <input
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            placeholder="Full Name"
-            className="w-full rounded border p-3"
-            required
-          />
+      <section className="mb-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:mb-6 sm:p-6">
+        <h2 className="mb-4 text-base font-semibold text-gray-900">
+          Customer Information
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Name
+            </p>
+            <p className="mt-1 break-words text-sm font-medium text-gray-900">
+              {customer.fullName || "N/A"}
+            </p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Phone
+            </p>
+            <p className="mt-1 break-words text-sm font-medium text-gray-900">
+              {customer.phone || "N/A"}
+            </p>
+          </div>
+          <div className="min-w-0 sm:col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Email
+            </p>
+            <p className="mt-1 break-all text-sm font-medium text-gray-900">
+              {customer.email || "Not provided"}
+            </p>
+          </div>
+        </div>
+      </section>
 
-          <input
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Phone"
-            className="w-full rounded border p-3"
-            required
-          />
+      <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Address Details
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Enter the complete delivery address.
+          </p>
+        </div>
 
-          <input
-            name="street"
-            value={formData.street}
-            onChange={handleChange}
-            placeholder="Street Address"
-            className="w-full rounded border p-3"
-            required
-          />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="fullName"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Full Name <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                autoComplete="name"
+                placeholder="Full name"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                required
+                disabled={saving}
+              />
+            </div>
 
-          <input
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            placeholder="City"
-            className="w-full rounded border p-3"
-            required
-          />
+            <div>
+              <label
+                htmlFor="phone"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Phone Number <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder="Phone number"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                required
+                disabled={saving}
+              />
+            </div>
 
-          <input
-            name="province"
-            value={formData.province}
-            onChange={handleChange}
-            placeholder="Province"
-            className="w-full rounded border p-3"
-          />
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="street"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Street Address <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="street"
+                name="street"
+                value={formData.street}
+                onChange={handleChange}
+                autoComplete="street-address"
+                placeholder="House number, street, village"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                required
+                disabled={saving}
+              />
+            </div>
 
-          <input
-            name="postalCode"
-            value={formData.postalCode}
-            onChange={handleChange}
-            placeholder="Postal Code"
-            className="w-full rounded border p-3"
-          />
+            <div>
+              <label
+                htmlFor="city"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                City / Town <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                autoComplete="address-level2"
+                placeholder="City or town"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                required
+                disabled={saving}
+              />
+            </div>
 
-          <input
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            placeholder="Country"
-            className="w-full rounded border p-3"
-          />
+            <div>
+              <label
+                htmlFor="province"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Province
+              </label>
+              <input
+                id="province"
+                name="province"
+                value={formData.province}
+                onChange={handleChange}
+                autoComplete="address-level1"
+                placeholder="Province"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                disabled={saving}
+              />
+            </div>
 
-          <label className="flex items-center gap-2">
+            <div>
+              <label
+                htmlFor="postalCode"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Postal Code
+              </label>
+              <input
+                id="postalCode"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleChange}
+                autoComplete="postal-code"
+                inputMode="numeric"
+                placeholder="Postal code"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="country"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Country <span className="text-red-600">*</span>
+              </label>
+              <input
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                autoComplete="country-name"
+                placeholder="Country"
+                className="min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
+                required
+                disabled={saving}
+              />
+            </div>
+          </div>
+
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
             <input
               type="checkbox"
+              name="isDefault"
               checked={formData.isDefault}
-              onChange={(e) =>
-                setFormData((previous) => ({
-                  ...previous,
-                  isDefault: e.target.checked,
-                }))
-              }
+              onChange={handleChange}
+              disabled={saving}
+              className="h-4 w-4 rounded border-gray-300 accent-green-700 focus:ring-green-600"
             />
-
-            <span>Default Address</span>
+            <span className="text-sm font-medium text-gray-800">
+              Set as default address
+            </span>
           </label>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded bg-green-700 py-3 font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Address"}
-          </button>
-
+          <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/customers/${customerId}`)}
+              disabled={saving}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-green-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              {saving && (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              )}
+              {saving ? "Saving address..." : "Save Address"}
+            </button>
+          </div>
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

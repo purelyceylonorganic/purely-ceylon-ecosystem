@@ -82,12 +82,6 @@ const [refundLoading, setRefundLoading] =
 
   async function loadOrder(orderId?: string) {
 
-     useEffect(() => {
-    if (id) {
-      loadOrder(id);
-    }
-  }, [id]);
-  
     const targetId = orderId || id;
     if (!targetId) return;
     try {
@@ -104,6 +98,14 @@ const [refundLoading, setRefundLoading] =
       setLoading(false);
     }
   }
+  
+  useEffect(() => {
+  if (id) {
+    void loadOrder(id);
+  } else {
+    setLoading(false);
+  }
+}, [id]);
 
   async function changeStatus(orderId: string, status: string) {
   try {
@@ -362,14 +364,8 @@ const handleConfirm = async () => {
   const balanceAmount = order.balance !== undefined ? order.balance : Math.max(0, (order.totalFinal || order.grandTotal || 0) - paidAmount);
 
   return (
-    <div
-      style={{
-        maxWidth: "1100px",
-        margin: "40px auto",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        padding: "0 20px",
-      }}
-    >
+    <div className="mx-auto w-full max-w-7xl min-w-0 px-3 py-5 font-sans sm:px-5 sm:py-8 lg:px-8">
+
       {/* 🔙 பின்னோக்கிச் செல்லும் பட்டன் */}
       <Link
         to="/admin/orders"
@@ -464,29 +460,29 @@ const handleConfirm = async () => {
       </div>
 
       {/* 🗂️ பிரதான கிரிட் லேஅவுட் */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1.3fr", gap: "30px", alignItems: "start" }}>
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[1.7fr_1.3fr] lg:gap-7">
         
         {/* 📑 இடது பக்கம்: விவரங்கள், டைம்லைன் மற்றும் ஷிப்பிங் */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
+        <div className="flex flex-col gap-6">
           
           {/* ஆர்டர் சுருக்கம் கார்டு */}
-          <div style={{ border: "1px solid #eef2f5", padding: "25px", borderRadius: "12px", backgroundColor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }}>
-            <h3 style={{ margin: "0 0 15px 0", fontSize: "18px", color: "#0E4B32", borderBottom: "1px solid #f0f0f0", paddingBottom: "10px" }}>Order Information</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", fontSize: "15px" }}>
-              <p style={{ margin: "0" }}><strong>Date:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleString() : "7/8/2026, 4:36:52 PM"}</p>
-              <p style={{ margin: "0" }}><strong>Payment Status:</strong> <span style={{ color: order.paymentStatus === "PAID" ? "#28a745" : "#dc3545", fontWeight: "bold" }}>{order.paymentStatus || "UNPAID"}</span></p>
+          <div className="border border-gray-200 p-6 rounded-xl bg-white shadow-sm">
+            <h3 className="mb-4 text-lg font-bold text-green-800 border-b border-gray-200 pb-2">Order Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <p className="m-0"><strong>Date:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleString() : "7/8/2026, 4:36:52 PM"}</p>
+              <p className="m-0"><strong>Payment Status:</strong> <span className={`font-bold ${order.paymentStatus === "PAID" ? "text-green-600" : "text-red-600"}`}>{order.paymentStatus || "UNPAID"}</span></p>
             </div>
-            <div style={{ marginTop: "20px", paddingTop: "15px", borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "16px", fontWeight: "600", color: "#444" }}>Grand Total</span>
+            <div className="mt-5 pt-4 border-t border-gray-200 flex justify-between items-center">
+              <span className="text-base font-semibold text-gray-600">Grand Total</span>
               <span style={{ fontSize: "22px", color: "#0E4B32", fontWeight: "bold" }}>LKR {order.totalFinal || order.grandTotal || "2950"}</span>
             </div>
           </div>
 
           {/* 💳 Payment Summary Box */}
-          <div style={{ border: "1px solid #eef2f5", padding: "25px", borderRadius: "12px", backgroundColor: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }}>
-            <h3 style={{ margin: "0 0 15px 0", fontSize: "18px", color: "#0E4B32", borderBottom: "1px solid #f0f0f0", paddingBottom: "10px" }}>Payment Summary</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "15px", color: "#333" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div className="border border-gray-200 p-6 rounded-xl bg-white shadow-sm">
+            <h3 className="mb-4 text-lg font-bold text-green-800 border-b border-gray-200 pb-2">Payment Summary</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between">
                 <span>Payment Status</span>
                 <span style={{ color: order.paymentStatus === "PAID" ? "#28a745" : "#dc3545", fontWeight: "bold" }}>
                   {order.paymentStatus === "PAID" ? "🟢 PAID" : `🔴 ${order.paymentStatus || "UNPAID"}`}
@@ -549,8 +545,8 @@ const handleConfirm = async () => {
   {payments.length === 0 ? (
     <p style={{ color: "#666", fontSize: "14px", margin: 0 }}>No Payments</p>
   ) : (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+    <div className="w-full overflow-x-auto">
+  <table className="w-full min-w-[650px] border-collapse text-sm">
         <thead>
           <tr style={{ borderBottom: "2px solid #eee", textAlign: "left", color: "#555" }}>
             <th style={{ padding: "8px" }}>Method</th>
@@ -740,43 +736,35 @@ DELIVERED
               </div>
 
               {/* Tracking ID Input Field */}
-              <div style={{ marginBottom: "5px" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "600", fontSize: "14px", color: "#4a5568" }}>
-                  Tracking ID
-                </label>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <input
-                    type="text"
-                    placeholder="Enter Tracking ID"
-                    value={trackingInput}
-                    onChange={(e) => setTrackingInput(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e0",
-                      fontSize: "14px",
-                      outline: "none"
-                    }}
-                  />
-                  <button
-                    onClick={() => handleShippingUpdate(order.shippingStatus || "PENDING", trackingInput)}
-                    disabled={updatingShipping}
-                    style={{
-                      padding: "8px 15px",
-                      background: "#0E4B32",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      fontSize: "13px"
-                    }}
-                  >
-                    {updatingShipping ? "Updating..." : "Update"}
-                  </button>
-                </div>
-              </div>
+<div className="w-full min-w-0">
+  <label className="mb-2 block text-sm font-medium text-gray-700">
+    Tracking ID
+  </label>
+
+  <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+    <input
+      type="text"
+      placeholder="Enter Tracking ID"
+      value={trackingInput}
+      onChange={(e) => setTrackingInput(e.target.value)}
+      className="w-full min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-green-700 focus:ring-1 focus:ring-green-500"
+    />
+
+    <button
+      type="button"
+      onClick={() =>
+        handleShippingUpdate(
+          order.shippingStatus || "PENDING",
+          trackingInput
+        )
+      }
+      disabled={updatingShipping}
+      className="w-full shrink-0 rounded-md bg-[#0E4B32] px-4 py-2 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+    >
+      {updatingShipping ? "Updating..." : "Update"}
+    </button>
+  </div>
+</div>
             </div>
 
           </div>

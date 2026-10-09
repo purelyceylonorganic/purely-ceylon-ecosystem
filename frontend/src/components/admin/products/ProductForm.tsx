@@ -1,4 +1,12 @@
+
 import { useForm } from "react-hook-form";
+import {
+  Package,
+  Boxes,
+  Save,
+  LoaderCircle,
+} from "lucide-react";
+
 import type { Category } from "../../../types/category";
 
 export interface ProductFormData {
@@ -24,6 +32,12 @@ type ProductFormProps = {
   loading?: boolean;
   submitText?: string;
 };
+
+const inputClass =
+  "min-h-12 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-base text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10 disabled:cursor-not-allowed disabled:bg-gray-100";
+
+const labelClass =
+  "mb-2 block text-sm font-semibold text-gray-700";
 
 export default function ProductForm({
   categories,
@@ -55,57 +69,88 @@ export default function ProductForm({
     },
   });
 
+  const submitForm = async (data: ProductFormData) => {
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error("Product Submit Error:", error);
+    }
+  };
+
   return (
     <form
-      onSubmit={handleSubmit(async (data) => {
-        try {
-          await onSubmit(data);
-        } catch (error) {
-          console.error("Product Submit Error:", error);
-        }
-      })}
-      className="bg-white rounded-xl shadow-lg p-8 space-y-8"
+      onSubmit={handleSubmit(submitForm)}
+      className="mx-auto w-full min-w-0 max-w-5xl space-y-5 sm:space-y-6"
     >
       {/* Product Information */}
-      <div>
-        <h2 className="text-xl font-bold mb-5 text-gray-800">
-          Product Information
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Product Name */}
+      <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+        <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF8EE] text-[#0E4B32]">
+            <Package size={22} />
+          </div>
           <div>
-            <label className="block mb-2 font-medium">Product Name</label>
+            <h2 className="text-lg font-extrabold text-[#0E4B32] sm:text-xl">
+              Product Information
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Enter the main product details.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+          <div className="min-w-0">
+            <label htmlFor="product-name" className={labelClass}>
+              Product Name <span className="text-red-500">*</span>
+            </label>
             <input
+              id="product-name"
               type="text"
+              autoComplete="off"
               placeholder="Enter product name"
-              className="w-full border rounded-lg p-3"
-              {...register("name", { required: "Product name is required" })}
+              className={inputClass}
+              {...register("name", {
+                required: "Product name is required",
+              })}
             />
             {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.name.message}
+              </p>
             )}
           </div>
 
-          {/* Slug */}
-          <div>
-            <label className="block mb-2 font-medium">Slug</label>
+          <div className="min-w-0">
+            <label htmlFor="product-slug" className={labelClass}>
+              Product Slug <span className="text-red-500">*</span>
+            </label>
             <input
+              id="product-slug"
               type="text"
+              autoComplete="off"
               placeholder="ceylon-tea"
-              className="w-full border rounded-lg p-3"
-              {...register("slug", { required: "Slug is required" })}
+              className={inputClass}
+              {...register("slug", {
+                required: "Slug is required",
+              })}
             />
             {errors.slug && (
-              <p className="text-red-500 text-sm mt-1">{errors.slug.message}</p>
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.slug.message}
+              </p>
             )}
           </div>
 
-          {/* Category */}
-          <div>
-            <label className="block mb-2 font-medium">Category</label>
+          <div className="min-w-0">
+            <label htmlFor="product-category" className={labelClass}>
+              Category <span className="text-red-500">*</span>
+            </label>
             <select
-              className="w-full border rounded-lg p-3"
-              {...register("categoryId", { required: "Category required" })}
+              id="product-category"
+              className={inputClass}
+              {...register("categoryId", {
+                required: "Category is required",
+              })}
             >
               <option value="">Select Category</option>
               {categories.map((category) => (
@@ -115,140 +160,245 @@ export default function ProductForm({
               ))}
             </select>
             {errors.categoryId && (
-              <p className="text-red-500 text-sm mt-1">
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
                 {errors.categoryId.message}
               </p>
             )}
           </div>
 
-          {/* MOQ */}
-          <div>
-            <label className="block mb-2 font-medium">
+          <div className="min-w-0">
+            <label htmlFor="product-moq" className={labelClass}>
               Minimum Order Quantity (MOQ)
             </label>
             <input
+              id="product-moq"
               type="number"
+              min="1"
               placeholder="1"
-              className="w-full border rounded-lg p-3"
-              {...register("moq", { required: true, valueAsNumber: true })}
+              className={inputClass}
+              {...register("moq", {
+                required: "MOQ is required",
+                valueAsNumber: true,
+                min: {
+                  value: 1,
+                  message: "MOQ must be at least 1",
+                },
+              })}
             />
+            {errors.moq && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.moq.message}
+              </p>
+            )}
+          </div>
+
+          <div className="min-w-0 md:col-span-2">
+            <label htmlFor="product-description" className={labelClass}>
+              Product Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="product-description"
+              rows={5}
+              placeholder="Describe the product, its origin and key features..."
+              className={`${inputClass} min-h-32 resize-y`}
+              {...register("description", {
+                required: "Description is required",
+              })}
+            />
+            {errors.description && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+
+          <div className="min-w-0 md:col-span-2">
+            <label htmlFor="product-status" className={labelClass}>
+              Product Status
+            </label>
+            <select
+              id="product-status"
+              className={inputClass}
+              {...register("status", {
+                required: "Status is required",
+              })}
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="HIDDEN">Hidden</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+            {errors.status && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.status.message}
+              </p>
+            )}
+            <p className="mt-1.5 text-xs leading-5 text-gray-500">
+              Publish the product only when its details and availability are ready.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Default Variant */}
+      <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+        <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF8EE] text-[#0E4B32]">
+            <Boxes size={22} />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-[#0E4B32] sm:text-xl">
+              Default Variant
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Set SKU, weight, pricing and initial stock.
+            </p>
           </div>
         </div>
 
-        {/* Description */}
-        <div className="mt-5">
-          <label className="block mb-2 font-medium">Description</label>
-          <textarea
-            rows={5}
-            placeholder="Product description"
-            className="w-full border rounded-lg p-3"
-            {...register("description", { required: "Description required" })}
-          />
-          {errors.description && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.description.message}
-            </p>
-          )}
-        </div>
-        <div className="mt-5">
-  <label className="block font-medium mb-2">Product Status</label>
-  <select
-    className="w-full border rounded-lg p-3"
-    {...register("status", { required: "Status is required" })}
-  >
-    <option value="DRAFT">Draft</option>
-    <option value="PUBLISHED">Published</option>
-    <option value="HIDDEN">Hidden</option>
-    <option value="ARCHIVED">Archived</option>
-  </select>
-  {errors.status && (
-    <p className="text-red-500 text-sm mt-1">{errors.status.message}</p>
-  )}
-</div>
-      </div>
-
-      {/* Variant Information */}
-      <div>
-        <h2 className="text-xl font-bold mb-5 text-gray-800">Default Variant</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* SKU */}
-          <div>
-            <label className="block mb-2 font-medium">SKU</label>
+        <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+          <div className="min-w-0">
+            <label htmlFor="variant-sku" className={labelClass}>
+              SKU <span className="text-red-500">*</span>
+            </label>
             <input
+              id="variant-sku"
               type="text"
-              placeholder="Example: TEA-100G"
-              className="w-full border rounded-lg p-3"
-              {...register("variant.sku", { required: "SKU is required" })}
+              placeholder="TEA-100G"
+              className={inputClass}
+              {...register("variant.sku", {
+                required: "SKU is required",
+              })}
             />
             {errors.variant?.sku && (
-              <p className="text-red-500 text-sm mt-1">
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
                 {errors.variant.sku.message}
               </p>
             )}
           </div>
 
-          {/* Weight */}
-          <div>
-            <label className="block mb-2 font-medium">Weight</label>
+          <div className="min-w-0">
+            <label htmlFor="variant-weight" className={labelClass}>
+              Weight <span className="text-red-500">*</span>
+            </label>
             <input
+              id="variant-weight"
               type="text"
               placeholder="100g"
-              className="w-full border rounded-lg p-3"
-              {...register("variant.weight", { required: "Weight is required" })}
+              className={inputClass}
+              {...register("variant.weight", {
+                required: "Weight is required",
+              })}
             />
             {errors.variant?.weight && (
-              <p className="text-red-500 text-sm mt-1">
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
                 {errors.variant.weight.message}
               </p>
             )}
           </div>
 
-          {/* Price */}
-          <div>
-            <label className="block mb-2 font-medium">Selling Price (USD)</label>
+          <div className="min-w-0">
+            <label htmlFor="variant-price" className={labelClass}>
+              Selling Price (USD) <span className="text-red-500">*</span>
+            </label>
             <input
+              id="variant-price"
               type="number"
               step="0.01"
-              placeholder="10"
-              className="w-full border rounded-lg p-3"
-              {...register("variant.price", { required: true, valueAsNumber: true })}
+              min="0"
+              placeholder="10.00"
+              className={inputClass}
+              {...register("variant.price", {
+                required: "Selling price is required",
+                valueAsNumber: true,
+                min: {
+                  value: 0,
+                  message: "Price cannot be negative",
+                },
+              })}
             />
+            {errors.variant?.price && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.variant.price.message}
+              </p>
+            )}
           </div>
 
-          {/* Cost Price */}
-          <div>
-            <label className="block mb-2 font-medium">Cost Price</label>
+          <div className="min-w-0">
+            <label htmlFor="variant-cost" className={labelClass}>
+              Cost Price <span className="text-red-500">*</span>
+            </label>
             <input
+              id="variant-cost"
               type="number"
               step="0.01"
-              placeholder="5"
-              className="w-full border rounded-lg p-3"
-              {...register("variant.costPrice", { required: true, valueAsNumber: true })}
+              min="0"
+              placeholder="5.00"
+              className={inputClass}
+              {...register("variant.costPrice", {
+                required: "Cost price is required",
+                valueAsNumber: true,
+                min: {
+                  value: 0,
+                  message: "Cost price cannot be negative",
+                },
+              })}
             />
+            {errors.variant?.costPrice && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.variant.costPrice.message}
+              </p>
+            )}
           </div>
 
-          {/* Stock */}
-          <div>
-            <label className="block mb-2 font-medium">Initial Stock</label>
+          <div className="min-w-0 md:col-span-2">
+            <label htmlFor="variant-stock" className={labelClass}>
+              Initial Stock
+            </label>
             <input
+              id="variant-stock"
               type="number"
+              min="0"
               placeholder="100"
-              className="w-full border rounded-lg p-3"
-              {...register("variant.stock", { required: true, valueAsNumber: true })}
+              className={inputClass}
+              {...register("variant.stock", {
+                required: "Initial stock is required",
+                valueAsNumber: true,
+                min: {
+                  value: 0,
+                  message: "Stock cannot be negative",
+                },
+              })}
             />
+            {errors.variant?.stock && (
+              <p role="alert" className="mt-1.5 text-sm text-red-600">
+                {errors.variant.stock.message}
+              </p>
+            )}
           </div>
         </div>
-      </div>
+      </section>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-3 rounded-lg font-bold text-white transition ${
-          loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-700 hover:bg-green-800"
-        }`}
-      >
-        {loading ? "Saving Product..." : submitText}
-      </button>
+      {/* Submit */}
+      <div className="sticky bottom-0 z-10 -mx-4 border-t border-gray-200 bg-[#FFF8EE]/95 p-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0E4B32] px-5 py-3 font-bold text-white shadow-sm transition hover:bg-[#093b27] disabled:cursor-not-allowed disabled:bg-gray-400 sm:w-auto sm:min-w-52"
+        >
+          {loading ? (
+            <>
+              <LoaderCircle size={19} className="animate-spin" />
+              Saving Product...
+            </>
+          ) : (
+            <>
+              <Save size={19} />
+              {submitText}
+            </>
+          )}
+        </button>
+      </div>
     </form>
   );
 }

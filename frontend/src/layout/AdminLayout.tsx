@@ -15,7 +15,7 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const menu = [
   {
@@ -60,12 +60,39 @@ export default function AdminLayout() {
     useState(false);
 
   const location = useLocation();
+ 
+  useEffect(() => {
+  setSidebarOpen(false);
+}, [location.pathname]);
 
-  const currentMenu =
-    menu.find(
-      (item) =>
-        location.pathname === item.path
-    );
+useEffect(() => {
+  if (!sidebarOpen) return;
+
+  const previousOverflow = document.body.style.overflow;
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      setSidebarOpen(false);
+    }
+  };
+
+  document.body.style.overflow = "hidden";
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    document.body.style.overflow = previousOverflow;
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [sidebarOpen]);
+
+
+  const currentMenu = [...menu]
+  .sort((a, b) => b.path.length - a.path.length)
+  .find(
+    (item) =>
+      location.pathname === item.path ||
+      location.pathname.startsWith(`${item.path}/`)
+  );
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#FFF8EE]">
@@ -88,7 +115,7 @@ export default function AdminLayout() {
 
         <div className="text-center">
           <p className="text-sm font-extrabold tracking-wide">
-            Purely <span className="text-[#D4AF37]">Ceylon</span>
+            Purely <span className="text-[#D4AF37]">Ceylon</span> Organic (Pvt) Ltd
           </p>
 
           <p className="text-[9px] uppercase tracking-[0.18em] text-green-100">

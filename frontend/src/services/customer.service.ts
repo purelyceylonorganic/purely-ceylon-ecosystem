@@ -135,6 +135,30 @@ async quickCreate(data: {
 
     return response.data;
   },
+  
+  async updateCustomerNote(
+    customerId: string,
+    noteId: string,
+    note: string
+  ) {
+    const response = await api.put(
+      `${API}/${customerId}/notes/${noteId}`,
+      { note }
+    );
+
+    return response.data;
+  },
+
+  async deleteCustomerNote(
+    customerId: string,
+    noteId: string
+  ) {
+    const response = await api.delete(
+      `${API}/${customerId}/notes/${noteId}`
+    );
+
+    return response.data;
+  },
 
   // ==========================================
   // ADDRESS - ADD
@@ -195,36 +219,6 @@ async quickCreate(data: {
   ) {
     const response = await api.delete(
       `${API}/${customerId}/address/${addressId}`
-    );
-
-    return response.data;
-  },
-
-  // ==========================================
-  // CUSTOMER NOTES
-  // ==========================================
-
-  async updateCustomerNote(
-    customerId: string,
-    noteId: string,
-    note: string
-  ) {
-    const response = await api.put(
-      `${API}/${customerId}/notes/${noteId}`,
-      {
-        note,
-      }
-    );
-
-    return response.data.data;
-  },
-
-  async deleteCustomerNote(
-    customerId: string,
-    noteId: string
-  ) {
-    const response = await api.delete(
-      `${API}/${customerId}/notes/${noteId}`
     );
 
     return response.data;

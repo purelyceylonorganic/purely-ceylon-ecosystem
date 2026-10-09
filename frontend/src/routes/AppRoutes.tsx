@@ -49,7 +49,7 @@ import VerifyProfileEmail from "../auth/VerifyProfileEmail";
 import InventoryTransactions from "../pages/admin/InventoryTransactions";
 import ChangePassword from "../auth/ChangePassword";
 import CustomerList from "../pages/admin/customers/CustomerList";
-import CustomerProfile from "../pages/admin/CustomerProfile";
+import CustomerProfile from "../pages/admin/customers/CustomerProfile";
 import CreateDraftOrder from "../pages/admin/CreateDraftOrder";
 import FinanceDashboard from "../pages/admin/finance/FinanceDashboard";
 import ExpenseManagement from "../pages/admin/finance/ExpenseManagement";

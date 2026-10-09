@@ -37,10 +37,9 @@ export default function CustomerNotes({
     }
   };
 
-  useEffect(() => {
-    loadNotes();
-  }, []);
-
+ useEffect(() => {
+  void loadNotes();
+}, [customerId]);
   return (
     <div className="rounded-lg border bg-white p-6 shadow">
       <h2 className="mb-4 text-xl font-bold">
