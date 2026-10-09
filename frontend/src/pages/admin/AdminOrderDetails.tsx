@@ -71,11 +71,6 @@ const [refundLoading, setRefundLoading] =
   const [voidReason, setVoidReason] = useState("");
   const [voidLoading, setVoidLoading] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadOrder(id);
-    }
-  }, [id]);
 
   // Total வந்தவுடன் Amount Auto Fill ஆகும் useEffect
   useEffect(() => {
@@ -86,6 +81,13 @@ const [refundLoading, setRefundLoading] =
   }, [order]);
 
   async function loadOrder(orderId?: string) {
+
+     useEffect(() => {
+    if (id) {
+      loadOrder(id);
+    }
+  }, [id]);
+  
     const targetId = orderId || id;
     if (!targetId) return;
     try {

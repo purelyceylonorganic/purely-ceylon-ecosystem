@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { setSEO } from "../../utils/seo";
 
-useEffect(() => {
+
+
+export default function Contact() {
+
+  useEffect(() => {
   setSEO({
     title:
       "Contact Purely Ceylon Organic | Sri Lanka",
@@ -21,7 +25,6 @@ useEffect(() => {
   });
 }, []);
 
-export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",

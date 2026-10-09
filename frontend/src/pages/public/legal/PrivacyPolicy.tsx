@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { setSEO } from "../../../utils/seo";
 
+export default function PrivacyPolicy() {
 
-useEffect(() => {
+  useEffect(() => {
   setSEO({
     title: "Privacy Policy | Purely Ceylon Organic",
     description:
@@ -11,8 +12,6 @@ useEffect(() => {
   });
 }, []);
 
-
-export default function PrivacyPolicy() {
   return (
     <main className="min-h-screen bg-[#FFF8EE] px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">

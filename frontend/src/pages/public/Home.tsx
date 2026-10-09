@@ -8,7 +8,9 @@ import { newsletterService } from "../../services/newsletter.service";
 import { toast } from "react-hot-toast";
 import { setSEO } from "../../utils/seo";
 
-useEffect(() => {
+export default function Home() {
+  
+  useEffect(() => {
   setSEO({
     title: "Purely Ceylon Organic | Premium Sri Lankan Organic Products",
     description:
@@ -16,7 +18,6 @@ useEffect(() => {
   });
 }, []);
 
-export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [newsletterEmail, setNewsletterEmail] = useState("");
