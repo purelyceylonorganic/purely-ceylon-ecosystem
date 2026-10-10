@@ -89,18 +89,23 @@ export class ProductController {
       const limit = Number(req.query.limit) || 10;
       const skip = (page - 1) * limit;
 
-      const products = await prisma.product.findMany({
+const products = await prisma.product.findMany({
+  where: { isActive: true },
+  skip,
+  take: limit,
   include: {
     images: true,
     videos: true,
     category: true,
     variants: true,
   },
-  orderBy: {
-    createdAt: "desc",
-  },
+  orderBy: { createdAt: "desc" },
 });
-     const totalProducts = await prisma.product.count();
+
+const totalProducts = await prisma.product.count({
+  where: { isActive: true },
+});
+
       return res.json({
         success: true,
         data: products,
@@ -110,6 +115,42 @@ export class ProductController {
       return res.status(500).json({ success: false, error: error.message });
     }
   }
+
+
+  
+static async getById(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        videos: true,
+        category: true,
+        variants: true,
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch product",
+      error: error.message,
+    });
+  }
+}
 
   // 📝 3. தயாரிப்பை திருத்துதல் (Update)
   static async update(req: AuthenticatedRequest, res: Response) {
@@ -136,18 +177,62 @@ export class ProductController {
           data: productData
         });
 
-        if (variant && product.variants.length > 0) {
-          await tx.productVariant.update({
-            where: { id: product.variants[0].id },
-            data: {
-              sku: variant.sku,
-              weight: variant.weight,
-              price: Number(variant.price),
-              costPrice: Number(variant.costPrice),
-              stock: Number(variant.stock)
-            }
-          });
-        }
+        
+
+if (variant) {
+  const sku = String(variant.sku ?? "").trim();
+  const weight = String(variant.weight ?? "").trim();
+  const price = Number(variant.price);
+  const costPrice = Number(variant.costPrice);
+  const stock = Number(variant.stock);
+
+  if (
+    !sku ||
+    !weight ||
+    !Number.isFinite(price) ||
+    !Number.isFinite(costPrice) ||
+    !Number.isInteger(stock) ||
+    price < 0 ||
+    costPrice < 0 ||
+    stock < 0
+  ) {
+    throw new Error("Invalid SKU, weight, price, cost price, or stock.");
+  }
+
+  const currentVariant = product.variants[0];
+
+  const existingSku = await tx.productVariant.findUnique({
+    where: { sku },
+  });
+
+  if (existingSku && existingSku.id !== currentVariant?.id) {
+    throw new Error("This SKU already exists.");
+  }
+
+  const variantData = {
+    sku,
+    weight,
+    price,
+    costPrice,
+    stock,
+  };
+
+  if (currentVariant) {
+    await tx.productVariant.update({
+      where: { id: currentVariant.id },
+      data: variantData,
+    });
+  } else {
+    await tx.productVariant.create({
+      data: {
+        productId: id,
+        ...variantData,
+      },
+    });
+  }
+}
+
+
 
         await tx.auditLog.create({
           data: {
@@ -175,30 +260,39 @@ export class ProductController {
   }
 
   // 🗑️ 4. தயாரிப்பை நீக்குதல்
-  static async delete(req: AuthenticatedRequest, res: Response) {
-    try {
-      const { id } = req.params;
-      await prisma.product.update({ where: { id }, data: { isActive: false } });
-      return res.json({ success: true, message: '✅ தயாரிப்பு வெற்றிகரமாக நீக்கப்பட்டது!' });
-    } catch (error: any) {
-      return res.status(400).json({ success: false, error: error.message });
-    }
-  }
 
   // 🔍 5. Single Product
-  static async getById(req: AuthenticatedRequest, res: Response) {
-    try {
-      const { id } = req.params;
-      const product = await prisma.product.findUnique({
-        where: { id },
-        include: { images: true, videos: true, category: true, variants: true },
+static async delete(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product || !product.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or already deleted",
       });
-      if (!product) return res.status(404).json({ success: false, message: "Product not found" });
-      return res.json({ success: true, data: product });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message });
     }
+
+    await prisma.product.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    return res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
   }
+}
 
   // 🔍 6. தேடல் மற்றும் வடிகட்டி (Search)
   static async search(req: AuthenticatedRequest, res: Response) {

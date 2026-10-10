@@ -17,10 +17,12 @@ export const createProductSchema = z.object({
     ),
 
   description: z
-    .string()
-    .trim()
-    .min(10),
-
+  .string({
+    error: "Product description is required",
+  })
+  .trim()
+  .min(10, "Description must contain at least 10 characters")
+  .max(5000, "Description cannot exceed 5000 characters"),
   categoryId: z
     .string()
     .uuid("Invalid Category ID"),
