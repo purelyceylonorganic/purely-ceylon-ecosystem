@@ -101,28 +101,38 @@ export default function ProductTable({
     }
   }
 
-  function getProductValues(product: Product) {
-    const defaultVariant =
-      product.variants?.[0] || (product as any).variant;
+  
+function getProductValues(product: Product) {
+  const defaultVariant =
+    product.variants?.[0] || (product as any).variant;
 
-    const imageUrl =
-      (product as any).imageUrl ||
-      product.images?.find((image) => image.isPrimary)?.url ||
-      product.images?.[0]?.url ||
-      "/placeholder.png";
+  const imageUrl =
+    (product as any).imageUrl ||
+    product.images?.find((image) => image.isPrimary)?.url ||
+    product.images?.[0]?.url ||
+    "/placeholder.png";
 
-    const sku = product.sku || defaultVariant?.sku || "N/A";
-    const weight = product.weight || defaultVariant?.weight;
-    const price = product.price ?? defaultVariant?.price ?? 0;
-    const stock = product.stock ?? defaultVariant?.stock ?? 0;
+  // Prefer values saved in ProductVariant
+  const sku = defaultVariant?.sku || product.sku || "N/A";
+  const weight = defaultVariant?.weight ?? product.weight;
+  const price = defaultVariant?.price ?? product.price ?? 0;
+  const stock = defaultVariant?.stock ?? product.stock ?? 0;
 
-    const category =
-      typeof product.category === "object" && product.category !== null
-        ? (product.category as any).name
-        : product.categoryId || "N/A";
+  const category =
+    typeof product.category === "object" && product.category !== null
+      ? (product.category as any).name
+      : product.categoryId || "N/A";
 
-    return { imageUrl, sku, weight, price, stock, category };
-  }
+  return {
+    imageUrl,
+    sku,
+    weight,
+    price,
+    stock,
+    category,
+  };
+}
+
 
   function statusClasses(status: string) {
     switch (status) {
