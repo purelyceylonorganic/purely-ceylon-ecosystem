@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import NotificationBell from "../components/notifications/NotificationBell";
 import {
   Heart,
   ShoppingCart,
@@ -183,6 +184,10 @@ export default function Navbar() {
 
           {/* ACTIONS */}
           <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+
+            {/* Notifications */}
+{token && <NotificationBell />}
+
             {/* Wishlist */}
             <Link
               to="/wishlist"
