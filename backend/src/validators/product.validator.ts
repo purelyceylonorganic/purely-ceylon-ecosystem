@@ -1,6 +1,20 @@
 import { z } from "zod";
 
-export const createProductSchema = z.object({
+const productVariantSchema = z.object({
+  id: z.string().uuid().optional(),
+
+  sku: z.string().trim().min(2, "SKU must contain at least 2 characters"),
+
+  weight: z.string().trim().min(1, "Weight is required"),
+
+  price: z.number().positive("Price must be greater than 0"),
+
+  costPrice: z.number().min(0, "Cost price cannot be negative"),
+
+  stock: z.number().int().min(0, "Stock cannot be negative"),
+});
+
+const productFieldsSchema = {
   name: z
     .string()
     .trim()
@@ -17,56 +31,40 @@ export const createProductSchema = z.object({
     ),
 
   description: z
-  .string({
-    error: "Product description is required",
+    .string({
+      error: "Product description is required",
+    })
+    .trim()
+    .min(10, "Description must contain at least 10 characters")
+    .max(5000, "Description cannot exceed 5000 characters"),
+
+  categoryId: z.string().uuid("Invalid Category ID"),
+
+  moq: z.number().int().min(1),
+
+  images: z.array(z.string().url()).optional(),
+
+  videos: z.array(z.string().url()).optional(),
+};
+
+export const createProductSchema = z
+  .object({
+    ...productFieldsSchema,
+
+    // New format: multiple variants
+    variants: z.array(productVariantSchema).min(1).optional(),
+
+    // Legacy format: one variant
+    variant: productVariantSchema.optional(),
   })
-  .trim()
-  .min(10, "Description must contain at least 10 characters")
-  .max(5000, "Description cannot exceed 5000 characters"),
-  categoryId: z
-    .string()
-    .uuid("Invalid Category ID"),
+  .refine(
+    (data) =>
+      (data.variants !== undefined && data.variants.length > 0) ||
+      data.variant !== undefined,
+    {
+      message: "At least one product variant is required",
+      path: ["variants"],
+    }
+  );
 
-  moq: z
-    .number()
-    .int()
-    .min(1),
-
-  variant: z.object({
-
-    sku: z
-      .string()
-      .trim()
-      .min(2),
-
-    weight: z
-      .string()
-      .trim()
-      .min(1),
-
-    price: z
-      .number()
-      .positive(),
-
-    costPrice: z
-      .number()
-      .min(0),
-
-    stock: z
-      .number()
-      .int()
-      .min(0),
-
-  }),
-
-  images: z
-    .array(z.string().url())
-    .optional(),
-
-  videos: z
-    .array(z.string().url())
-    .optional(),
-});
-
-export type CreateProductInput =
-  z.infer<typeof createProductSchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;

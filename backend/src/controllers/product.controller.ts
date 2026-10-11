@@ -6,81 +6,166 @@ const prisma = new PrismaClient();
 
 export class ProductController {
 
-  // 🚀 1. புதிய தயாரிப்பை உருவாக்குதல் (Create)
-  static async create(req: AuthenticatedRequest, res: Response) {
-    try {
-      const { name, slug, description, categoryId, moq, status, variant, images, videos } = req.body;
+static async create(req: AuthenticatedRequest, res: Response) {
+  try {
+    const {
+      name,
+      slug,
+      description,
+      categoryId,
+      moq,
+      status,
+      variant,
+      variants,
+      images,
+      videos,
+    } = req.body;
 
-      if (!name || !slug || !categoryId || !variant) {
-        return res.status(400).json({ success: false, message: "Required fields are missing." });
+    const inputVariants = Array.isArray(variants)
+      ? variants
+      : variant
+        ? [variant]
+        : [];
+
+    if (!name?.trim() || !slug?.trim() || !categoryId || inputVariants.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product details and at least one variant are required.",
+      });
+    }
+
+    const normalizedVariants = inputVariants.map((item: any) => ({
+      sku: String(item.sku ?? "").trim(),
+      weight: String(item.weight ?? "").trim(),
+      price: Number(item.price),
+      costPrice: Number(item.costPrice ?? 0),
+      stock: Number(item.stock ?? 0),
+    }));
+
+    for (const item of normalizedVariants) {
+      if (
+        !item.sku ||
+        !item.weight ||
+        !Number.isFinite(item.price) ||
+        !Number.isFinite(item.costPrice) ||
+        !Number.isInteger(item.stock) ||
+        item.price < 0 ||
+        item.costPrice < 0 ||
+        item.stock < 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Check every variant's SKU, weight, price, cost price and stock.",
+        });
       }
+    }
 
-      const product = await prisma.$transaction(async (tx) => {
-        const category = await tx.category.findUnique({ where: { id: categoryId } });
-        if (!category) throw new Error("Category not found");
+    const skus = normalizedVariants.map((item: any) => item.sku);
 
-        const slugExists = await tx.product.findUnique({ where: { slug: slug.toLowerCase() } });
-        if (slugExists) throw new Error("Product slug already exists.");
+    if (new Set(skus).size !== skus.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Each variant must have a unique SKU.",
+      });
+    }
 
-        const skuExists = await tx.productVariant.findUnique({ where: { sku: variant.sku } });
-        if (skuExists) throw new Error("SKU already exists.");
-
-        const createdProduct = await tx.product.create({
-          data: {
-            name,
-            slug: slug.toLowerCase(),
-            description,
-            categoryId,
-            moq: Number(moq),
-            status: status || "DRAFT",
-            publishedAt: status === "PUBLISHED" ? new Date() : null,
-            variants: {
-              create: {
-                sku: variant.sku,
-                weight: variant.weight,
-                price: Number(variant.price),
-                costPrice: Number(variant.costPrice),
-                stock: Number(variant.stock),
-              },
-            },
-            ...(images?.length && {
-              images: {
-                create: images.map((url: string, index: number) => ({
-                  url,
-                  isPrimary: index === 0,
-                })),
-              },
-            }),
-            ...(videos?.length && {
-              videos: {
-                create: videos.map((url: string) => ({ url })),
-              },
-            }),
-          },
-          include: { variants: true, images: true, videos: true },
-        });
-
-        await tx.auditLog.create({
-          data: {
-            userId: req.user?.id,
-            userEmail: req.user?.email,
-            action: "CREATE_PRODUCT",
-            module: "PRODUCT",
-            entityId: createdProduct.id,
-            description: `Created Product ${createdProduct.name}`,
-            ipAddress: req.ip,
-            userAgent: req.headers["user-agent"] || "",
-          },
-        });
-
-        return createdProduct;
+    const product = await prisma.$transaction(async (tx) => {
+      const category = await tx.category.findUnique({
+        where: { id: categoryId },
       });
 
-      return res.status(201).json({ success: true, message: "Product created successfully", data: product });
-    } catch (error) {
-      return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Product creation failed" });
-    }
+      if (!category) {
+        throw new Error("Category not found");
+      }
+
+      const slugExists = await tx.product.findUnique({
+        where: { slug: slug.trim().toLowerCase() },
+      });
+
+      if (slugExists) {
+        throw new Error("Product slug already exists.");
+      }
+
+      const existingSkus = await tx.productVariant.findMany({
+        where: { sku: { in: skus } },
+        select: { sku: true },
+      });
+
+      if (existingSkus.length > 0) {
+        throw new Error(
+          `SKU already exists: ${existingSkus.map((item) => item.sku).join(", ")}`
+        );
+      }
+
+      const createdProduct = await tx.product.create({
+        data: {
+          name: name.trim(),
+          slug: slug.trim().toLowerCase(),
+          description: description ?? "",
+          categoryId,
+          moq: Number(moq ?? 1),
+          status: status || "DRAFT",
+          publishedAt: status === "PUBLISHED" ? new Date() : null,
+          variants: {
+            create: normalizedVariants,
+          },
+          ...(images?.length
+            ? {
+                images: {
+                  create: images.map((url: string, index: number) => ({
+                    url,
+                    isPrimary: index === 0,
+                  })),
+                },
+              }
+            : {}),
+          ...(videos?.length
+            ? {
+                videos: {
+                  create: videos.map((url: string) => ({ url })),
+                },
+              }
+            : {}),
+        },
+        include: {
+          variants: true,
+          images: true,
+          videos: true,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: req.user?.id,
+          userEmail: req.user?.email,
+          action: "CREATE_PRODUCT",
+          module: "PRODUCT",
+          entityId: createdProduct.id,
+          description: `Created Product ${createdProduct.name}`,
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"] || "",
+        },
+      });
+
+      return createdProduct;
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Create Product Error:", error);
+
+    return res.status(400).json({
+      success: false,
+      message: error instanceof Error
+        ? error.message
+        : "Product creation failed",
+    });
   }
+}
 
   // 🔍 2. அனைத்து தயாரிப்புகளையும் பெறுதல் (Read All)
   static async getAll(req: AuthenticatedRequest, res: Response) {
@@ -153,86 +238,144 @@ static async getById(req: AuthenticatedRequest, res: Response) {
 }
 
   // 📝 3. தயாரிப்பை திருத்துதல் (Update)
+ 
   static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const data = { ...req.body };
-      
+
       if (data.status === "PUBLISHED") {
         data.publishedAt = new Date();
       }
 
       const product = await prisma.product.findUnique({
         where: { id },
-        include: { variants: true }
+        include: { variants: true },
       });
 
-      if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
 
       const updated = await prisma.$transaction(async (tx) => {
-        const { variant, ...productData } = data;
-        
+        const { variant, variants, ...productData } = data;
+
+        // Variant fields must not be passed to Product.update()
         await tx.product.update({
           where: { id },
-          data: productData
+          data: productData,
         });
 
-        
+        // Support both the new array and the legacy single object
+        let variantsToProcess: any[] | undefined;
 
-if (variant) {
-  const sku = String(variant.sku ?? "").trim();
-  const weight = String(variant.weight ?? "").trim();
-  const price = Number(variant.price);
-  const costPrice = Number(variant.costPrice);
-  const stock = Number(variant.stock);
+        if (Array.isArray(variants)) {
+          if (variants.length === 0) {
+            throw new Error("At least one product variant is required.");
+          }
+          variantsToProcess = variants;
+        } else if (variant) {
+          // Backward compatibility with the existing frontend
+          variantsToProcess = [
+            {
+              ...variant,
+              id: product.variants[0]?.id,
+            },
+          ];
+        }
 
-  if (
-    !sku ||
-    !weight ||
-    !Number.isFinite(price) ||
-    !Number.isFinite(costPrice) ||
-    !Number.isInteger(stock) ||
-    price < 0 ||
-    costPrice < 0 ||
-    stock < 0
-  ) {
-    throw new Error("Invalid SKU, weight, price, cost price, or stock.");
-  }
+        if (variantsToProcess) {
+          const normalizedVariants = variantsToProcess.map((item) => {
+            const sku = String(item.sku ?? "").trim();
+            const weight = String(item.weight ?? "").trim();
+            const price = Number(item.price);
+            const costPrice = Number(item.costPrice ?? 0);
+            const stock = Number(item.stock ?? 0);
 
-  const currentVariant = product.variants[0];
+            if (
+              !sku ||
+              !weight ||
+              !Number.isFinite(price) ||
+              !Number.isFinite(costPrice) ||
+              !Number.isInteger(stock) ||
+              price < 0 ||
+              costPrice < 0 ||
+              stock < 0
+            ) {
+              throw new Error(
+                "Invalid SKU, weight, price, cost price, or stock."
+              );
+            }
 
-  const existingSku = await tx.productVariant.findUnique({
-    where: { sku },
-  });
+            return {
+              id: item.id ? String(item.id) : undefined,
+              sku,
+              weight,
+              price,
+              costPrice,
+              stock,
+            };
+          });
 
-  if (existingSku && existingSku.id !== currentVariant?.id) {
-    throw new Error("This SKU already exists.");
-  }
+          // Prevent duplicate SKUs within this request
+          const skus = normalizedVariants.map((item) => item.sku);
 
-  const variantData = {
-    sku,
-    weight,
-    price,
-    costPrice,
-    stock,
-  };
+          if (new Set(skus).size !== skus.length) {
+            throw new Error("Duplicate SKUs found in the variants.");
+          }
 
-  if (currentVariant) {
-    await tx.productVariant.update({
-      where: { id: currentVariant.id },
-      data: variantData,
-    });
-  } else {
-    await tx.productVariant.create({
-      data: {
-        productId: id,
-        ...variantData,
-      },
-    });
-  }
-}
+          for (const item of normalizedVariants) {
+            if (item.id) {
+              const existingVariant = product.variants.find(
+                (current) => current.id === item.id
+              );
 
+              if (!existingVariant) {
+                throw new Error(
+                  "Variant does not belong to this product."
+                );
+              }
+            }
 
+            const existingSku = await tx.productVariant.findUnique({
+              where: { sku: item.sku },
+            });
+
+            if (
+              existingSku &&
+              existingSku.id !== item.id
+            ) {
+              throw new Error(
+                `SKU "${item.sku}" already exists.`
+              );
+            }
+
+            const variantData = {
+              sku: item.sku,
+              weight: item.weight,
+              price: item.price,
+              costPrice: item.costPrice,
+              stock: item.stock,
+            };
+
+            if (item.id) {
+              await tx.productVariant.update({
+                where: { id: item.id },
+                data: variantData,
+              });
+            } else {
+              await tx.productVariant.create({
+                data: {
+                  productId: id,
+                  ...variantData,
+                },
+              });
+            }
+          }
+        }
 
         await tx.auditLog.create({
           data: {
@@ -243,21 +386,35 @@ if (variant) {
             entityId: id,
             description: `Updated Product ${data.name || product.name}`,
             ipAddress: req.ip,
-            userAgent: req.headers["user-agent"] || ""
-          }
+            userAgent: req.headers["user-agent"] || "",
+          },
         });
 
         return await tx.product.findUnique({
           where: { id },
-          include: { variants: true, images: true, videos: true, category: true }
+          include: {
+            variants: true,
+            images: true,
+            videos: true,
+            category: true,
+          },
         });
       });
 
-      return res.json({ success: true, message: "Product updated successfully", data: updated });
+      return res.json({
+        success: true,
+        message: "Product updated successfully",
+        data: updated,
+      });
     } catch (error: any) {
-      return res.status(400).json({ success: false, message: '❌ புதுப்பிக்க முடியவில்லை!', error: error.message });
+      return res.status(400).json({
+        success: false,
+        message: "❌ புதுப்பிக்க முடியவில்லை!",
+        error: error.message,
+      });
     }
   }
+
 
   // 🗑️ 4. தயாரிப்பை நீக்குதல்
 
