@@ -9,6 +9,7 @@ import {
   Wallet,
   Mail,
   ChevronRight,
+  FolderPlus,
 } from "lucide-react";
 import {
   NavLink,
@@ -23,11 +24,25 @@ const menu = [
     path: "/admin/dashboard",
     icon: LayoutDashboard,
   },
+
+   {
+    name: "Customers",
+    path: "/admin/customers",
+    icon: Users,
+  },
+  
   {
     name: "Products",
     path: "/admin/products",
     icon: Package,
   },
+
+  {
+  name: "Categories",
+  path: "/admin/categories",
+  icon: FolderPlus,
+},
+
   {
     name: "Orders",
     path: "/admin/orders",
@@ -37,11 +52,6 @@ const menu = [
     name: "Inventory",
     path: "/admin/inventory",
     icon: Warehouse,
-  },
-  {
-    name: "Customers",
-    path: "/admin/customers",
-    icon: Users,
   },
   {
     name: "Finance",

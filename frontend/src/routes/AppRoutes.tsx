@@ -61,6 +61,7 @@ import RefundPolicy from "../pages/public/legal/RefundPolicy";
 import B2B from "../pages/public/B2B";
 import Export from "../pages/public/Export";
 import Traceability from "../pages/public/Traceability";
+import CategoryManagement from "../pages/admin/categories/CategoryManagement";
 
 export default function AppRoutes() {
   return (
@@ -153,6 +154,9 @@ export default function AppRoutes() {
 >
   <Route path="dashboard" element={<AdminDashboard />} />
 
+  <Route path="categories" element={<CategoryManagement />} />
+
+  
   {/* Orders */}
   <Route path="orders" element={<AdminOrders />} />
   <Route path="orders/:id" element={<AdminOrderDetails />} />
