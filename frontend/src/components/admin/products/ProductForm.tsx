@@ -1,5 +1,5 @@
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import {
   Package,
   Boxes,
@@ -9,6 +9,15 @@ import {
 
 import type { Category } from "../../../types/category";
 
+export interface ProductVariantFormData {
+  id?: string;
+  sku: string;
+  weight: string;
+  price: number;
+  costPrice: number;
+  stock: number;
+}
+
 export interface ProductFormData {
   name: string;
   slug: string;
@@ -16,13 +25,7 @@ export interface ProductFormData {
   status: string;
   categoryId: string;
   moq: number;
-  variant: {
-    sku: string;
-    weight: string;
-    price: number;
-    costPrice: number;
-    stock: number;
-  };
+  variants: ProductVariantFormData[];
 }
 
 type ProductFormProps = {
@@ -46,28 +49,40 @@ export default function ProductForm({
   loading = false,
   submitText = "Save Product",
 }: ProductFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ProductFormData>({
-    defaultValues: {
-      name: "",
-      slug: "",
-      description: "",
-      status: "DRAFT",
-      categoryId: "",
-      moq: 1,
-      variant: {
+ const {
+  register,
+  control,
+  handleSubmit,
+  formState: { errors },
+} = useForm<ProductFormData>({
+  defaultValues: {
+    name: "",
+    slug: "",
+    description: "",
+    status: "DRAFT",
+    categoryId: "",
+    moq: 1,
+    variants: [
+      {
         sku: "",
         weight: "",
         price: 0,
         costPrice: 0,
         stock: 0,
       },
-      ...defaultValues,
-    },
-  });
+    ],
+    ...defaultValues,
+  },
+});
+
+const {
+  fields: variantFields,
+  append: appendVariant,
+  remove: removeVariant,
+} = useFieldArray({
+  control,
+  name: "variants",
+});
 
   const submitForm = async (data: ProductFormData) => {
     try {
@@ -240,144 +255,158 @@ export default function ProductForm({
         </div>
       </section>
 
-      {/* Default Variant */}
-      <section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
-        <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF8EE] text-[#0E4B32]">
-            <Boxes size={22} />
-          </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-[#0E4B32] sm:text-xl">
-              Default Variant
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Set SKU, weight, pricing and initial stock.
-            </p>
-          </div>
+      {/* Multiple Product Variants */}
+<section className="min-w-0 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+  <div className="mb-6 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF8EE] text-[#0E4B32]">
+        <Boxes size={22} />
+      </div>
+      <div>
+        <h2 className="text-lg font-extrabold text-[#0E4B32] sm:text-xl">
+          Product Variants
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Add different weights, SKUs, prices and stock levels.
+        </p>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onClick={() =>
+        appendVariant({
+          sku: "",
+          weight: "",
+          price: 0,
+          costPrice: 0,
+          stock: 0,
+        })
+      }
+      className="min-h-11 rounded-xl bg-[#0E4B32] px-4 py-2 text-sm font-bold text-white hover:bg-[#093b27]"
+    >
+      + Add Variant
+    </button>
+  </div>
+
+  <div className="space-y-5">
+    {variantFields.map((field, index) => (
+      <div
+        key={field.id}
+        className="min-w-0 rounded-xl border border-gray-200 p-4 sm:p-5"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="font-bold text-gray-800">
+            Variant {index + 1}
+          </h3>
+
+          {variantFields.length > 1 && (
+            <button
+              type="button"
+              onClick={() => removeVariant(index)}
+              className="min-h-10 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+            >
+              Remove
+            </button>
+          )}
         </div>
 
-        <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="min-w-0">
-            <label htmlFor="variant-sku" className={labelClass}>
-              SKU <span className="text-red-500">*</span>
-            </label>
+            <label className={labelClass}>SKU *</label>
             <input
-              id="variant-sku"
-              type="text"
-              placeholder="TEA-100G"
-              className={inputClass}
-              {...register("variant.sku", {
+              {...register(`variants.${index}.sku`, {
                 required: "SKU is required",
               })}
+              placeholder="TUR-100G"
+              className={inputClass}
             />
-            {errors.variant?.sku && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.variant.sku.message}
+            {errors.variants?.[index]?.sku && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.sku?.message}
               </p>
             )}
           </div>
 
           <div className="min-w-0">
-            <label htmlFor="variant-weight" className={labelClass}>
-              Weight <span className="text-red-500">*</span>
-            </label>
+            <label className={labelClass}>Weight *</label>
             <input
-              id="variant-weight"
-              type="text"
-              placeholder="100g"
-              className={inputClass}
-              {...register("variant.weight", {
+              {...register(`variants.${index}.weight`, {
                 required: "Weight is required",
               })}
+              placeholder="100g"
+              className={inputClass}
             />
-            {errors.variant?.weight && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.variant.weight.message}
+            {errors.variants?.[index]?.weight && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.weight?.message}
               </p>
             )}
           </div>
 
           <div className="min-w-0">
-            <label htmlFor="variant-price" className={labelClass}>
-              Selling Price (USD) <span className="text-red-500">*</span>
-            </label>
+            <label className={labelClass}>Selling Price (USD) *</label>
             <input
-              id="variant-price"
               type="number"
               step="0.01"
               min="0"
-              placeholder="10.00"
-              className={inputClass}
-              {...register("variant.price", {
+              {...register(`variants.${index}.price`, {
                 required: "Selling price is required",
                 valueAsNumber: true,
-                min: {
-                  value: 0,
-                  message: "Price cannot be negative",
-                },
+                min: { value: 0, message: "Price cannot be negative" },
               })}
+              className={inputClass}
             />
-            {errors.variant?.price && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.variant.price.message}
+            {errors.variants?.[index]?.price && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.price?.message}
               </p>
             )}
           </div>
 
           <div className="min-w-0">
-            <label htmlFor="variant-cost" className={labelClass}>
-              Cost Price <span className="text-red-500">*</span>
-            </label>
+            <label className={labelClass}>Cost Price (USD) *</label>
             <input
-              id="variant-cost"
               type="number"
               step="0.01"
               min="0"
-              placeholder="5.00"
-              className={inputClass}
-              {...register("variant.costPrice", {
+              {...register(`variants.${index}.costPrice`, {
                 required: "Cost price is required",
                 valueAsNumber: true,
-                min: {
-                  value: 0,
-                  message: "Cost price cannot be negative",
-                },
+                min: { value: 0, message: "Cost cannot be negative" },
               })}
+              className={inputClass}
             />
-            {errors.variant?.costPrice && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.variant.costPrice.message}
+            {errors.variants?.[index]?.costPrice && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.costPrice?.message}
               </p>
             )}
           </div>
 
-          <div className="min-w-0 md:col-span-2">
-            <label htmlFor="variant-stock" className={labelClass}>
-              Initial Stock
-            </label>
+          <div className="min-w-0 sm:col-span-2">
+            <label className={labelClass}>Initial Stock *</label>
             <input
-              id="variant-stock"
               type="number"
               min="0"
-              placeholder="100"
-              className={inputClass}
-              {...register("variant.stock", {
+              {...register(`variants.${index}.stock`, {
                 required: "Initial stock is required",
                 valueAsNumber: true,
-                min: {
-                  value: 0,
-                  message: "Stock cannot be negative",
-                },
+                min: { value: 0, message: "Stock cannot be negative" },
               })}
+              className={inputClass}
             />
-            {errors.variant?.stock && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.variant.stock.message}
+            {errors.variants?.[index]?.stock && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.stock?.message}
               </p>
             )}
           </div>
         </div>
-      </section>
+      </div>
+    ))}
+  </div>
+</section>
 
       {/* Submit */}
       <div className="sticky bottom-0 z-10 -mx-4 border-t border-gray-200 bg-[#FFF8EE]/95 p-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
