@@ -13,7 +13,6 @@ import productRouter from './routes/product.routes';
 import cartRouter from './routes/cart.routes';
 import warehouseRoutes from './routes/warehouse.routes';
 import inventoryRoutes from './routes/inventory.routes';
-import notificationRoutes from "./routes/notification.routes";
 import shippingRoutes from "./routes/shipping.routes";
 import paymentRoutes from "./routes/payment.routes";
 import customerRoutes from "./routes/customer.routes";
@@ -91,8 +90,6 @@ app.use('/api/v1/cart', cartRouter);
 app.use('/api/v1/warehouses', warehouseRoutes);
 
 app.use('/api/v1/inventory', inventoryRoutes);
-
-app.use('/api/v1/notifications', notificationRoutes);
 
 app.use('/api/v1/shipping', shippingRoutes);
 
