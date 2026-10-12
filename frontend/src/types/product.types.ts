@@ -20,6 +20,7 @@ export interface ProductVariant {
   sku: string;
   weight: string;
   price: number;
+  priceLKR: number;
   costPrice: number;
   stock: number;
 }

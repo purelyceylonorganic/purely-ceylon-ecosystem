@@ -2,11 +2,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 
 import { productService } from "../../../services/product.service";
 import { categoryService } from "../../../services/category.service";
 import type { Category } from "../../../types/category";
+
+type VariantForm = {
+  id?: string;
+  sku: string;
+  weight: string;
+  price: number;
+  priceLKR: number;
+  costPrice: number;
+  stock: number;
+};
 
 type ProductFormState = {
   name: string;
@@ -15,14 +25,17 @@ type ProductFormState = {
   status: string;
   categoryId: string;
   moq: number;
-  variant: {
-    sku: string;
-    weight: string;
-    price: number;
-    costPrice: number;
-    stock: number;
-  };
+  variants: VariantForm[];
 };
+
+const emptyVariant = (): VariantForm => ({
+  sku: "",
+  weight: "",
+  price: 0,
+  priceLKR: 0,
+  costPrice: 0,
+  stock: 0,
+});
 
 const initialForm: ProductFormState = {
   name: "",
@@ -31,13 +44,7 @@ const initialForm: ProductFormState = {
   status: "DRAFT",
   categoryId: "",
   moq: 1,
-  variant: {
-    sku: "",
-    weight: "",
-    price: 0,
-    costPrice: 0,
-    stock: 0,
-  },
+  variants: [emptyVariant()],
 };
 
 const inputClass =
@@ -69,7 +76,17 @@ export default function EditProduct() {
         categoryService.getAllCategories(),
       ]);
 
-      const variant = product.variants?.[0];
+      const existingVariants: VariantForm[] = (
+        product.variants ?? []
+      ).map((variant: any) => ({
+        id: variant.id,
+        sku: variant.sku ?? "",
+        weight: String(variant.weight ?? ""),
+        price: Number(variant.price ?? 0),
+        priceLKR: Number(variant.priceLKR ?? 0),
+        costPrice: Number(variant.costPrice ?? 0),
+        stock: Number(variant.stock ?? 0),
+      }));
 
       setCategories(categoryResponse);
 
@@ -83,13 +100,10 @@ export default function EditProduct() {
           (product as any).category?.id ??
           "",
         moq: Number(product.moq ?? 1),
-        variant: {
-          sku: variant?.sku ?? "",
-          weight: String(variant?.weight ?? ""),
-          price: Number(variant?.price ?? 0),
-          costPrice: Number(variant?.costPrice ?? 0),
-          stock: Number(variant?.stock ?? 0),
-        },
+        variants:
+          existingVariants.length > 0
+            ? existingVariants
+            : [emptyVariant()],
       });
     } catch (error) {
       console.error("Failed to load product:", error);
@@ -104,7 +118,7 @@ export default function EditProduct() {
   }, [loadProduct]);
 
   function handleChange(
-    field: keyof Omit<ProductFormState, "variant">,
+    field: keyof Omit<ProductFormState, "variants">,
     value: string | number
   ) {
     setForm((previous) => ({
@@ -114,15 +128,48 @@ export default function EditProduct() {
   }
 
   function handleVariantChange(
-    field: keyof ProductFormState["variant"],
+    index: number,
+    field: keyof VariantForm,
     value: string | number
   ) {
     setForm((previous) => ({
       ...previous,
-      variant: {
-        ...previous.variant,
-        [field]: value,
-      },
+      variants: previous.variants.map((variant, variantIndex) =>
+        variantIndex === index
+          ? { ...variant, [field]: value }
+          : variant
+      ),
+    }));
+  }
+
+  function addVariant() {
+    setForm((previous) => ({
+      ...previous,
+      variants: [...previous.variants, emptyVariant()],
+    }));
+  }
+
+  function removeVariant(index: number) {
+    const variant = form.variants[index];
+
+    // Existing database variants must not be silently removed.
+    if (variant?.id) {
+      toast.error(
+        "Saved variants cannot be removed here. Clear or edit their details instead."
+      );
+      return;
+    }
+
+    if (form.variants.length <= 1) {
+      toast.error("At least one variant is required");
+      return;
+    }
+
+    setForm((previous) => ({
+      ...previous,
+      variants: previous.variants.filter(
+        (_, variantIndex) => variantIndex !== index
+      ),
     }));
   }
 
@@ -136,36 +183,87 @@ export default function EditProduct() {
       return;
     }
 
-    if (form.moq < 1 || !Number.isInteger(form.moq)) {
+    if (!form.categoryId) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    if (!Number.isInteger(form.moq) || form.moq < 1) {
       toast.error("MOQ must be a whole number greater than zero");
       return;
     }
 
-    if (
-      form.variant.price < 0 ||
-      form.variant.costPrice < 0 ||
-      form.variant.stock < 0 ||
-      !Number.isInteger(form.variant.stock)
-    ) {
-      toast.error("Check the variant price, cost and stock values");
+    if (form.variants.length === 0) {
+      toast.error("At least one variant is required");
       return;
+    }
+
+    const seenSkus = new Set<string>();
+
+    for (const [index, variant] of form.variants.entries()) {
+      const sku = variant.sku.trim();
+
+      if (sku.length < 2 || !variant.weight.trim()) {
+        toast.error(
+          `Variant ${index + 1}: SKU and weight are required`
+        );
+        return;
+      }
+
+      if (seenSkus.has(sku)) {
+        toast.error(`Duplicate SKU: ${sku}`);
+        return;
+      }
+
+      seenSkus.add(sku);
+
+      if (
+        !Number.isFinite(variant.price) ||
+        variant.price <= 0 ||
+        !Number.isFinite(variant.priceLKR) ||
+        variant.priceLKR <= 0 ||
+        !Number.isFinite(variant.costPrice) ||
+        variant.costPrice < 0 ||
+        !Number.isInteger(variant.stock) ||
+        variant.stock < 0
+      ) {
+        toast.error(
+          `Variant ${index + 1}: Check USD, LKR, cost and stock values`
+        );
+        return;
+      }
     }
 
     try {
       setSaving(true);
 
       await productService.updateProduct(id, {
-        ...form,
-        categoryId: form.categoryId || undefined,
+        name: form.name.trim(),
+        slug: form.slug.trim().toLowerCase(),
+        description: form.description,
+        status: form.status,
+        categoryId: form.categoryId,
+        moq: form.moq,
+        variants: form.variants.map((variant) => ({
+          ...(variant.id ? { id: variant.id } : {}),
+          sku: variant.sku.trim(),
+          weight: variant.weight.trim(),
+          price: variant.price,
+          priceLKR: variant.priceLKR,
+          costPrice: variant.costPrice,
+          stock: variant.stock,
+        })),
       });
 
-      toast.success("Product updated successfully");
+      toast.success("Product and variants updated successfully");
       navigate("/admin/products");
     } catch (error: any) {
       console.error("Product update failed:", error);
 
       toast.error(
-        error?.response?.data?.message || "Product update failed"
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Product update failed"
       );
     } finally {
       setSaving(false);
@@ -191,7 +289,7 @@ export default function EditProduct() {
             Edit Product
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Update product information and inventory.
+            Update product information, prices and inventory variants.
           </p>
         </div>
 
@@ -224,7 +322,6 @@ export default function EditProduct() {
                 className={inputClass}
                 value={form.name}
                 onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Product name"
                 required
               />
             </div>
@@ -238,14 +335,13 @@ export default function EditProduct() {
                 className={inputClass}
                 value={form.slug}
                 onChange={(e) => handleChange("slug", e.target.value)}
-                placeholder="product-slug"
                 required
               />
             </div>
 
             <div className="min-w-0">
               <label className={labelClass} htmlFor="product-category">
-                Category
+                Category *
               </label>
               <select
                 id="product-category"
@@ -254,6 +350,7 @@ export default function EditProduct() {
                 onChange={(e) =>
                   handleChange("categoryId", e.target.value)
                 }
+                required
               >
                 <option value="">Select category</option>
                 {categories.map((category: any) => (
@@ -281,7 +378,7 @@ export default function EditProduct() {
               </select>
             </div>
 
-            <div className="min-w-0 md:max-w-sm">
+            <div className="min-w-0 sm:max-w-sm">
               <label className={labelClass} htmlFor="product-moq">
                 Minimum Order Quantity (MOQ)
               </label>
@@ -318,93 +415,181 @@ export default function EditProduct() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="border-b border-gray-100 pb-3 text-lg font-semibold text-gray-900">
-            Product Variant
-          </h2>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="min-w-0">
-              <label className={labelClass} htmlFor="variant-sku">
-                SKU
-              </label>
-              <input
-                id="variant-sku"
-                className={inputClass}
-                value={form.variant.sku}
-                onChange={(e) =>
-                  handleVariantChange("sku", e.target.value)
-                }
-                placeholder="Product SKU"
-              />
+          <div className="flex flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Product Variants
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Set separate prices for Sri Lanka and international customers.
+              </p>
             </div>
 
-            <div className="min-w-0">
-              <label className={labelClass} htmlFor="variant-weight">
-                Weight
-              </label>
-              <input
-                id="variant-weight"
-                className={inputClass}
-                value={form.variant.weight}
-                onChange={(e) =>
-                  handleVariantChange("weight", e.target.value)
-                }
-                placeholder="e.g. 100g"
-              />
-            </div>
-
-            <div className="min-w-0">
-              <label className={labelClass} htmlFor="variant-price">
-                Selling Price *
-              </label>
-              <input
-                id="variant-price"
-                className={inputClass}
-                type="number"
-                min={0}
-                step="any"
-                value={form.variant.price}
-                onChange={(e) =>
-                  handleVariantChange("price", Number(e.target.value))
-                }
-                required
-              />
-            </div>
-
-            <div className="min-w-0">
-              <label className={labelClass} htmlFor="variant-cost">
-                Cost Price
-              </label>
-              <input
-                id="variant-cost"
-                className={inputClass}
-                type="number"
-                min={0}
-                step="any"
-                value={form.variant.costPrice}
-                onChange={(e) =>
-                  handleVariantChange("costPrice", Number(e.target.value))
-                }
-              />
-            </div>
-
-            <div className="min-w-0 sm:max-w-sm">
-              <label className={labelClass} htmlFor="variant-stock">
-                Stock Quantity
-              </label>
-              <input
-                id="variant-stock"
-                className={inputClass}
-                type="number"
-                min={0}
-                step={1}
-                value={form.variant.stock}
-                onChange={(e) =>
-                  handleVariantChange("stock", Number(e.target.value))
-                }
-              />
-            </div>
+            <button
+              type="button"
+              onClick={addVariant}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+            >
+              <Plus size={17} />
+              Add Variant
+            </button>
           </div>
+
+          {form.variants.map((variant, index) => (
+            <div
+              key={variant.id ?? `new-variant-${index}`}
+              className="space-y-4 rounded-xl border border-gray-200 p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-semibold text-gray-800">
+                  Variant {index + 1}
+                  {variant.id ? (
+                    <span className="ml-2 text-xs font-normal text-gray-500">
+                      Existing
+                    </span>
+                  ) : (
+                    <span className="ml-2 text-xs font-normal text-green-700">
+                      New
+                    </span>
+                  )}
+                </h3>
+
+                {!variant.id && (
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    aria-label={`Remove new variant ${index + 1}`}
+                    className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-red-200 px-3 text-sm text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 size={15} />
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`sku-${index}`}>
+                    SKU *
+                  </label>
+                  <input
+                    id={`sku-${index}`}
+                    className={inputClass}
+                    value={variant.sku}
+                    onChange={(e) =>
+                      handleVariantChange(index, "sku", e.target.value)
+                    }
+                    placeholder="e.g. PCO-TUR-100G"
+                    required
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`weight-${index}`}>
+                    Weight / Size *
+                  </label>
+                  <input
+                    id={`weight-${index}`}
+                    className={inputClass}
+                    value={variant.weight}
+                    onChange={(e) =>
+                      handleVariantChange(index, "weight", e.target.value)
+                    }
+                    placeholder="e.g. 100g"
+                    required
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`usd-${index}`}>
+                    International Price (USD) *
+                  </label>
+                  <input
+                    id={`usd-${index}`}
+                    className={inputClass}
+                    type="number"
+                    min={0.01}
+                    step="any"
+                    value={variant.price}
+                    onChange={(e) =>
+                      handleVariantChange(
+                        index,
+                        "price",
+                        Number(e.target.value)
+                      )
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`lkr-${index}`}>
+                    Sri Lanka Price (LKR) *
+                  </label>
+                  <input
+                    id={`lkr-${index}`}
+                    className={inputClass}
+                    type="number"
+                    min={0.01}
+                    step="any"
+                    value={variant.priceLKR}
+                    onChange={(e) =>
+                      handleVariantChange(
+                        index,
+                        "priceLKR",
+                        Number(e.target.value)
+                      )
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`cost-${index}`}>
+                    Cost Price *
+                  </label>
+                  <input
+                    id={`cost-${index}`}
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={variant.costPrice}
+                    onChange={(e) =>
+                      handleVariantChange(
+                        index,
+                        "costPrice",
+                        Number(e.target.value)
+                      )
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className={labelClass} htmlFor={`stock-${index}`}>
+                    Stock Quantity *
+                  </label>
+                  <input
+                    id={`stock-${index}`}
+                    className={inputClass}
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={variant.stock}
+                    onChange={(e) =>
+                      handleVariantChange(
+                        index,
+                        "stock",
+                        Number(e.target.value)
+                      )
+                    }
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </section>
 
         <div className="sticky bottom-0 -mx-3 flex flex-col-reverse gap-3 border-t border-gray-200 bg-white/95 p-3 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:p-0 sm:pt-2">
