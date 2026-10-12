@@ -1,5 +1,7 @@
+
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { calculateCheckoutPricing } from "../services/checkoutPricing.service";
 
 const prisma = new PrismaClient();
 
@@ -7,123 +9,136 @@ export const checkout = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    // 🌍 currency (middleware + query + default)
-    const currency =
-      (req as any).currency ||
-      (req.query.currency as string) ||
-      "USD";
+    if (!user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
 
-    // =========================
-    // 1. GET CART (VARIANT BASED)
-    // =========================
+    const { addressId, paymentMethod = "COD" } = req.body;
+
+    if (!addressId) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery address is required",
+      });
+    }
+
+    const address = await prisma.address.findFirst({
+      where: {
+        id: addressId,
+        userId: user.id,
+      },
+    });
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid delivery address not found",
+      });
+    }
+
     const cart = await prisma.cart.findUnique({
       where: { userId: user.id },
       include: {
         items: {
-          include: {
-            productVariant: true
-          }
-        }
-      }
+          include: { productVariant: true },
+        },
+      },
     });
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "🛒 Cart is empty"
+        message: "Cart is empty",
       });
     }
 
-    // =========================
-    // 2. GET CURRENCY RATE
-    // =========================
-    const rateData = await prisma.currencyRate.findUnique({
-      where: { code: currency }
-    });
+    const variants = cart.items.map((item) => ({
+      id: item.productVariant.id,
+      price: item.productVariant.price,
+      priceLKR: item.productVariant.priceLKR,
+      quantity: item.quantity,
+    }));
 
-    if (!rateData) {
+    let pricing;
+
+    try {
+      pricing = await calculateCheckoutPricing(
+        address.country,
+        variants
+      );
+    } catch (error) {
       return res.status(400).json({
         success: false,
-        message: "Currency not found"
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to calculate checkout totals",
       });
     }
 
-    // =========================
-    // 3. CALCULATE TOTALS
-    // =========================
-    let totalUSD = 0;
+    const order = await prisma.$transaction(async (tx) => {
+      // Re-check and reduce stock inside the transaction.
+      for (const item of cart.items) {
+        const updated = await tx.productVariant.updateMany({
+          where: {
+            id: item.productVariantId,
+            stock: { gte: item.quantity },
+          },
+          data: {
+            stock: { decrement: item.quantity },
+          },
+        });
 
-    const orderItems = cart.items.map((item: any) => {
-      const price = item.productVariant.price;
-      const quantity = item.quantity;
-
-      const itemTotal = price * quantity;
-      totalUSD += itemTotal;
-
-      return {
-        productVariantId: item.productVariant.id,
-        quantity,
-        price
-      };
-    });
-
-    // =========================
-    // 4. TAX + SHIPPING (SRI LANKA STYLE)
-    // =========================
-    const taxAmount = totalUSD * 0.05; // 5% VAT
-    const shippingCost = 500;
-
-    const subtotal = totalUSD + taxAmount + shippingCost;
-
-    const totalFinal = subtotal * rateData.rate;
-
-    // =========================
-    // 5. CREATE ORDER (LOCKED CURRENCY)
-    // =========================
-    const order = await prisma.order.create({
-      data: {
-        userId: user.id,
-
-        totalUSD,
-        currency,
-        exchangeRate: rateData.rate,
-        totalFinal,
-
-        taxAmount,
-        shippingCost,
-
-        paymentMethod: "COD",
-
-        items: {
-          create: orderItems
+        if (updated.count !== 1) {
+          throw new Error(
+            `Insufficient stock for ${item.productVariant.sku}`
+          );
         }
-      },
-      include: {
-        items: true
       }
+
+      const createdOrder = await tx.order.create({
+        data: {
+          userId: user.id,
+          addressId,
+          currency: pricing.currency,
+          exchangeRate: pricing.exchangeRate,
+          totalUSD: pricing.subtotalUSD,
+          taxAmount: pricing.taxAmount,
+          shippingCost: pricing.shippingCost,
+          totalFinal: pricing.totalFinal,
+          paymentMethod,
+          paymentStatus: paymentMethod === "COD" ? "UNPAID" : "UNPAID",
+          status: "PENDING",
+          shippingStatus: "PENDING",
+          trackingId: undefined,
+          items: {
+            create: pricing.orderItems,
+          },
+        },
+        include: { items: true },
+      });
+
+      await tx.cartItem.deleteMany({
+        where: { cartId: cart.id },
+      });
+
+      return createdOrder;
     });
 
-    // =========================
-    // 6. CLEAR CART
-    // =========================
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id }
-    });
-
-    // =========================
-    // 7. RESPONSE
-    // =========================
     return res.status(201).json({
       success: true,
-      message: "✅ Checkout successful",
-      order
+      message: "Checkout successful",
+      order,
     });
-
   } catch (error) {
-    console.log(error);
+    console.error("Checkout error:", error);
+
     return res.status(500).json({
       success: false,
-      message: "❌ Checkout failed"
+      message: "Checkout failed",
     });
   }
 };

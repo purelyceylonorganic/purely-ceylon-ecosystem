@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { getRevenueInUSD } from "../services/revenue.service";
 import PDFDocument from "pdfkit";
 
 const prisma = new PrismaClient();
@@ -60,10 +61,7 @@ export const getRevenueDashboard = async (req: Request, res: Response) => {
   try {
     let revenueSum = 0;
     try {
-      const revenue = await prisma.order.aggregate({
-        _sum: { totalFinal: true },
-      });
-      revenueSum = revenue._sum.totalFinal || 0;
+      revenueSum = await getRevenueInUSD();
     } catch (e: any) {
       console.error("Prisma _sum Error:", e.message);
     }
@@ -168,7 +166,7 @@ export const getTopProductsAndCustomers = async (req: Request, res: Response) =>
 
 export const exportRevenuePDF = async (req: Request, res: Response) => {
   try {
-    const revenueSum = await prisma.order.aggregate({ _sum: { totalFinal: true } });
+    const totalRevenueAmount = await getRevenueInUSD();
     const totalOrders = await prisma.order.count();
     const totalCustomers = await prisma.user.count({ where: { role: "CUSTOMER" as any } });
     const deliveredOrders = await prisma.order.count({ where: { status: "DELIVERED" as any } });
@@ -191,7 +189,7 @@ export const exportRevenuePDF = async (req: Request, res: Response) => {
     doc.fillColor("#333").fontSize(14).text("Summary Metrics", { underline: true });
     doc.moveDown(0.5);
     doc.fontSize(12).fillColor("#000")
-       .text(`Total Revenue: $${revenueSum._sum.totalFinal || 0}`)
+       .text(`Total Revenue: $${totalRevenueAmount.toFixed(2)}`)
        .text(`Total Orders: ${totalOrders}`)
        .text(`Total Customers: ${totalCustomers}`)
        .text(`Delivered Orders: ${deliveredOrders}`);

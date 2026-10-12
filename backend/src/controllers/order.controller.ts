@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { generateTrackingId } from "../services/dhlSimulator"; // 👈 1. இங்கு இம்போர்ட் செய்யப்பட்டுள்ளது
+import { generateTrackingId } from "../services/dhlSimulator"; 
+import { calculateCheckoutPricing } from "../services/checkoutPricing.service";
 import { createAdminOrder, 
 addProductToOrder, 
 getOrderDetails,
@@ -31,79 +32,92 @@ export const placeOrder = async (req: Request, res: Response) => {
       });
     }
 
-    if (!items || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "❌ Cart is empty",
-      });
-    }
+   
+if (!addressId) {
+  return res.status(400).json({
+    success: false,
+    message: "Delivery address is required",
+  });
+}
 
-    const currency =
-      (req as any).currency ||
-      (req.query.currency as string) ||
-      "USD";
+const address = await prisma.address.findFirst({
+  where: {
+    id: addressId,
+    userId: user.id,
+  },
+});
 
-    const rateData = await prisma.currencyRate.findUnique({
-      where: {
-        code: currency,
-      },
+if (!address) {
+  return res.status(400).json({
+    success: false,
+    message: "Valid delivery address not found",
+  });
+}
+
+const pricingVariants = [];
+
+for (const item of items) {
+  const quantity = Number(item.quantity);
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid product quantity",
     });
+  }
 
-    if (!rateData) {
-      return res.status(400).json({
-        success: false,
-        message: "Currency not found",
-      });
-    }
+  const variant = await prisma.productVariant.findUnique({
+    where: { id: item.productVariantId },
+  });
 
-    let totalUSD = 0;
-    const orderItemsData: any[] = [];
+  if (!variant) {
+    return res.status(404).json({
+      success: false,
+      message: "Product variant not found",
+    });
+  }
 
-    // ===============================
-    // CHECK STOCK + CALCULATE TOTAL
-    // ===============================
-    for (const item of items) {
-      const variant = await prisma.productVariant.findUnique({
-        where: {
-          id: item.productVariantId,
-        },
-      });
+  if (variant.stock < quantity) {
+    return res.status(400).json({
+      success: false,
+      message: `Insufficient stock for ${variant.sku}`,
+    });
+  }
 
-      if (!variant) {
-        return res.status(404).json({
-          success: false,
-          message: "❌ Product variant not found",
-        });
-      }
+  pricingVariants.push({
+    id: variant.id,
+    price: variant.price,
+    priceLKR: variant.priceLKR,
+    quantity,
+  });
+}
 
-      if (variant.stock < item.quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `❌ Insufficient stock for ${variant.sku}`,
-        });
-      }
+let pricing;
 
-      const itemTotal = variant.price * item.quantity;
+try {
+  pricing = await calculateCheckoutPricing(
+    address.country,
+    pricingVariants
+  );
+} catch (error) {
+  return res.status(400).json({
+    success: false,
+    message:
+      error instanceof Error
+        ? error.message
+        : "Unable to calculate checkout totals",
+  });
+}
 
-      totalUSD += itemTotal;
-
-      orderItemsData.push({
-        productVariantId: item.productVariantId,
-        quantity: item.quantity,
-        price: variant.price,
-      });
-    }
-
-    // ===============================
-    // TAX
-    // ===============================
-    const taxAmount = totalUSD * 0.18;
-
-    const totalWithTax =
-      totalUSD + taxAmount + Number(shippingCost);
-
-    const finalTotal =
-      totalWithTax * rateData.rate;
+const {
+  currency,
+  exchangeRate,
+  subtotalUSD: totalUSD,
+  taxAmount,
+  shippingCost: calculatedShippingCost,
+  totalFinal: finalTotal,
+  orderItems: orderItemsData,
+} = pricing;
 
     // ===============================
     // TRANSACTION
@@ -131,16 +145,11 @@ export const placeOrder = async (req: Request, res: Response) => {
           addressId,
 
           totalUSD,
-
-          currency,
-
-          exchangeRate: rateData.rate,
-
-          taxAmount,
-
-          shippingCost: Number(shippingCost),
-
-          totalFinal: finalTotal,
+currency,
+exchangeRate,
+taxAmount,
+shippingCost: calculatedShippingCost,
+totalFinal: finalTotal,
 
           trackingId: generateTrackingId(), // 👈 2. டிராக்கிங் ஐடி இங்கே இணைக்கப்பட்டுள்ளது
 

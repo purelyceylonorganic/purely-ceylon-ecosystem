@@ -73,17 +73,23 @@ export const getFinanceAnalytics = async (
     // =================================================
 
     const orders = await prisma.order.findMany({
-      where: whereOrder,
-      select: {
-        totalFinal: true,
-      },
-    });
+  select: {
+    createdAt: true,
+    totalFinal: true,
+    exchangeRate: true,
+    currency: true,
+  },
+});
 
-    const revenue = orders.reduce(
-      (total, order) =>
-        total + Number(order.totalFinal || 0),
-      0
-    );
+    const revenue = orders.reduce((total, order) => {
+  const rate = Number(order.exchangeRate || 0);
+
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return total;
+  }
+
+  return total + Number(order.totalFinal || 0) / rate;
+}, 0);
 
     // =================================================
     // EXPENSES
@@ -230,6 +236,7 @@ export const getMonthlyFinanceAnalytics = async (
       },
       select: {
         totalFinal: true,
+        exchangeRate: true,
         createdAt: true,
       },
     });
@@ -276,9 +283,9 @@ export const getMonthlyFinanceAnalytics = async (
     for (const order of orders) {
       const month = order.createdAt.getMonth();
 
-      monthlyData[month].revenue += Number(
-        order.totalFinal || 0
-      );
+      monthlyData[month].revenue +=
+  Number(order.totalFinal || 0) /
+  Number(order.exchangeRate || 1);
     }
 
     // =================================================
