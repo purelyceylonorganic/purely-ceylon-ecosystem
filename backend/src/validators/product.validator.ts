@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+
 const productVariantSchema = z.object({
   id: z.string().uuid().optional(),
 
@@ -7,12 +8,17 @@ const productVariantSchema = z.object({
 
   weight: z.string().trim().min(1, "Weight is required"),
 
-  price: z.number().positive("Price must be greater than 0"),
+  // International price in USD
+  price: z.number().positive("USD price must be greater than 0"),
+
+  // Sri Lanka price in LKR
+  priceLKR: z.number().positive("LKR price must be greater than 0"),
 
   costPrice: z.number().min(0, "Cost price cannot be negative"),
 
   stock: z.number().int().min(0, "Stock cannot be negative"),
 });
+
 
 const productFieldsSchema = {
   name: z

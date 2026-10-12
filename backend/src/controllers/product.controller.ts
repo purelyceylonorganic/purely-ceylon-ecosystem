@@ -35,23 +35,28 @@ static async create(req: AuthenticatedRequest, res: Response) {
     }
 
     const normalizedVariants = inputVariants.map((item: any) => ({
-      sku: String(item.sku ?? "").trim(),
-      weight: String(item.weight ?? "").trim(),
-      price: Number(item.price),
-      costPrice: Number(item.costPrice ?? 0),
-      stock: Number(item.stock ?? 0),
-    }));
+  sku: String(item.sku ?? "").trim(),
+  weight: String(item.weight ?? "").trim(),
+  price: Number(item.price),
+  priceLKR: Number(item.priceLKR),
+  costPrice: Number(item.costPrice ?? 0),
+  stock: Number(item.stock ?? 0),
+}));
 
     for (const item of normalizedVariants) {
       if (
         !item.sku ||
         !item.weight ||
-        !Number.isFinite(item.price) ||
-        !Number.isFinite(item.costPrice) ||
-        !Number.isInteger(item.stock) ||
-        item.price < 0 ||
-        item.costPrice < 0 ||
-        item.stock < 0
+        
+!Number.isFinite(item.price) ||
+!Number.isFinite(item.priceLKR) ||
+!Number.isFinite(item.costPrice) ||
+!Number.isInteger(item.stock) ||
+item.price < 0 ||
+item.priceLKR <= 0 ||
+item.costPrice < 0 ||
+item.stock < 0
+
       ) {
         return res.status(400).json({
           success: false,
@@ -292,6 +297,7 @@ static async getById(req: AuthenticatedRequest, res: Response) {
             const sku = String(item.sku ?? "").trim();
             const weight = String(item.weight ?? "").trim();
             const price = Number(item.price);
+            const priceLKR = Number(item.priceLKR);
             const costPrice = Number(item.costPrice ?? 0);
             const stock = Number(item.stock ?? 0);
 
@@ -299,6 +305,8 @@ static async getById(req: AuthenticatedRequest, res: Response) {
               !sku ||
               !weight ||
               !Number.isFinite(price) ||
+              !Number.isFinite(priceLKR) ||
+              priceLKR <= 0 ||
               !Number.isFinite(costPrice) ||
               !Number.isInteger(stock) ||
               price < 0 ||
@@ -310,14 +318,17 @@ static async getById(req: AuthenticatedRequest, res: Response) {
               );
             }
 
-            return {
-              id: item.id ? String(item.id) : undefined,
-              sku,
-              weight,
-              price,
-              costPrice,
-              stock,
-            };
+            
+return {
+  id: item.id ? String(item.id) : undefined,
+  sku,
+  weight,
+  price,
+  priceLKR,
+  costPrice,
+  stock,
+};
+
           });
 
           // Prevent duplicate SKUs within this request
@@ -357,6 +368,7 @@ static async getById(req: AuthenticatedRequest, res: Response) {
               sku: item.sku,
               weight: item.weight,
               price: item.price,
+              priceLKR: item.priceLKR,
               costPrice: item.costPrice,
               stock: item.stock,
             };

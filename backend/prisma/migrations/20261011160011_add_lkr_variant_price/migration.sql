@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ProductVariant" ADD COLUMN     "priceLKR" DOUBLE PRECISION NOT NULL DEFAULT 0;
