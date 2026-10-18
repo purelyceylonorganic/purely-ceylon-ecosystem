@@ -4,6 +4,7 @@ import { orderService } from "../../services/order.service";
 import OrderTimeline from "../../components/orders/OrderTimeline";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatMoney } from "../../lib/money";
 import { Link } from "react-router-dom";
 
 export default function OrderDetails() {
@@ -87,9 +88,9 @@ export default function OrderDetails() {
         order.items?.map((item: any) => [
           item.productVariant?.sku || "N/A",
           item.productVariant?.weight || "N/A",
-          `USD ${Number(item.price).toFixed(2)}`,
+          formatMoney(item.price, order.currency),
           item.quantity,
-          `USD ${(item.price * item.quantity).toFixed(2)}`,
+          formatMoney(item.price * item.quantity, order.currency),
         ]) || [],
       theme: "striped",
       headStyles: {
@@ -121,7 +122,7 @@ export default function OrderDetails() {
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(14, 75, 50);
-    doc.text(`Grand Total: USD ${order.totalFinal ? Number(order.totalFinal).toFixed(2) : "0.00"}`, 115, finalY);
+    doc.text(`Grand Total: ${formatMoney(order.totalFinal, order.currency)}`, 115, finalY);
 
     // --- 5. Footer Message ---
     doc.setFont("Helvetica", "italic");
@@ -284,7 +285,7 @@ export default function OrderDetails() {
             </p>
 
             <p className="mt-1 text-xl font-extrabold text-[#0E4B32]">
-              USD {Number(order.totalFinal || 0).toFixed(2)}
+              {formatMoney(order.totalFinal, order.currency)}
             </p>
           </div>
 
@@ -440,7 +441,7 @@ export default function OrderDetails() {
                     </p>
 
                     <p className="mt-1 text-sm font-bold text-gray-800">
-                      USD {Number(item.price || 0).toFixed(2)}
+                      {formatMoney(item.price, order.currency)}
                     </p>
                   </div>
 
@@ -460,11 +461,7 @@ export default function OrderDetails() {
                     </p>
 
                     <p className="mt-1 text-sm font-extrabold text-[#0E4B32]">
-                      USD{" "}
-                      {(
-                        Number(item.price || 0) *
-                        Number(item.quantity || 0)
-                      ).toFixed(2)}
+                      {formatMoney(Number(item.price || 0) * Number(item.quantity || 0), order.currency)}
                     </p>
                   </div>
 

@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.png";
+import { formatMoney } from "../../lib/money";
 
 type OrderItem = {
   quantity: number;
@@ -26,6 +27,7 @@ type Order = {
   status: string;
   paymentStatus?: string;
   totalFinal?: number;
+  currency?: string;
 
   address?: {
     fullName: string;
@@ -132,9 +134,9 @@ img.src = logo;
       body: order.items?.map((item) => [
         item.productVariant?.sku || "N/A",
         item.productVariant?.weight || "N/A",
-        `USD ${Number(item.price).toFixed(2)}`,
+        formatMoney(item.price, order.currency),
         item.quantity,
-        `USD ${(item.price * item.quantity).toFixed(2)}`,
+        formatMoney(item.price * item.quantity, order.currency),
       ]) || [],
       theme: "striped",
       headStyles: { fillColor: [14, 75, 50], textColor: [255, 255, 255], fontStyle: "bold" },
@@ -150,7 +152,7 @@ img.src = logo;
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(14, 75, 50);
-    doc.text(`Grand Total: USD ${order.totalFinal ? Number(order.totalFinal).toFixed(2) : "0.00"}`, 115, finalY);
+    doc.text(`Grand Total: ${formatMoney(order.totalFinal, order.currency)}`, 115, finalY);
 
     // 5. Footer
     doc.setFont("Helvetica", "italic");
@@ -491,10 +493,7 @@ const dashboardCards = [
 
                       <p className="font-bold text-[#0E4B32]">
                         <span>💰 Total:</span>{" "}
-                        USD{" "}
-                        {order.totalFinal
-                          ? Number(order.totalFinal).toFixed(2)
-                          : "0.00"}
+                        {formatMoney(order.totalFinal, order.currency)}
                       </p>
                     </div>
 

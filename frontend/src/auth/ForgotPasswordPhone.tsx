@@ -124,7 +124,7 @@ export default function ForgotPasswordPhone() {
               </div>
 
               <p className="mt-2 text-xs leading-5 text-gray-500">
-                Enter the phone number registered with your Purely Ceylon account.
+                Enter the phone number registered with your Purely Ceylon ORGANIC (PVT) LTD account.
               </p>
             </div>
 

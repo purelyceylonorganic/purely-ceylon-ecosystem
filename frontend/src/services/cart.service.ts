@@ -16,8 +16,10 @@ export const cartService = {
   // =========================
   // 👀 GET CART
   // =========================
-  async getCart() {
-    const response = await api.get("/cart");
+  async getCart(currency?: string) {
+    const response = await api.get("/cart", {
+      params: currency ? { currency } : undefined,
+    });
     return response.data;
   },
 

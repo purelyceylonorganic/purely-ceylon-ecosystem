@@ -11,6 +11,8 @@ import { reviewService } from "../../services/review.service";
 import { useAuth } from "../../context/AuthContext"; 
 import { setSEO } from "../../utils/seo";
 import type { Product } from "../../types/product.types";
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney, variantPrice } from "../../lib/money";
 
 import ProductGallery from "../../components/product/ProductGallery";
 import QuantitySelector from "../../components/product/QuantitySelector";
@@ -25,6 +27,7 @@ export default function ProductDetails() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const { currency } = useCurrency();
   const [addingWishlist, setAddingWishlist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -355,15 +358,9 @@ useEffect(() => {
           <hr style={{ margin: "20px 0" }} />
 
           <h2 className="mt-5 text-3xl font-extrabold text-[#0E4B32] sm:text-4xl">
-  LKR{" "}
-  {Number(
-    selectedVariant?.price ??
-      product?.basePrice ??
-      0
-  ).toLocaleString("en-LK", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}
+  {variantPrice(selectedVariant, currency) !== null
+    ? formatMoney(variantPrice(selectedVariant, currency), currency)
+    : "Price unavailable"}
 </h2>
 
           <div className="mt-5 grid grid-cols-1 gap-2 rounded-xl border border-gray-100 bg-gray-50 p-4 sm:grid-cols-3">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { orderService } from "../../services/order.service";
 import { useNavigate } from "react-router-dom";
+import { formatMoney } from "../../lib/money";
 
 export default function Orders() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -161,6 +162,19 @@ export default function Orders() {
 
               {/* CARD BODY */}
               <div className="p-4">
+                <div className="mb-3 space-y-1">
+                  {order.items?.map((item: any) => (
+                    <p key={item.id} className="text-sm font-semibold text-gray-800">
+                      {item.productName || item.productVariant?.product?.name || "Product"}
+                      {item.variantLabel || item.productVariant?.weight
+                        ? ` (${item.variantLabel || item.productVariant?.weight})`
+                        : ""}
+                      {" × "}
+                      {item.quantity}
+                    </p>
+                  ))}
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   {/* ITEMS */}
                   <div className="rounded-xl bg-gray-50 p-3">
@@ -181,10 +195,7 @@ export default function Orders() {
                     </p>
 
                     <p className="mt-1 break-words text-sm font-extrabold text-[#0E4B32]">
-                      USD{" "}
-                      {order.totalFinal?.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                     {formatMoney(order.totalFinal, order.currency)}
                     </p>
                   </div>
 
@@ -286,19 +297,30 @@ export default function Orders() {
                       </p>
                     </td>
 
-                    {/* ITEMS */}
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {itemsCount}{" "}
-                      {itemsCount > 1 ? "Items" : "Item"}
-                    </td>
+                    
+{/* ITEMS */}
+<td className="px-4 py-4 text-sm text-gray-600">
+  <p>
+    {itemsCount} {itemsCount === 1 ? "Item" : "Items"}
+  </p>
 
-                    {/* TOTAL */}
-                    <td className="px-4 py-4 text-sm font-bold text-gray-900">
-                      USD{" "}
-                      {order.totalFinal?.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
+  <div className="mt-2 space-y-1">
+    {order.items?.map((item: any) => (
+      <p key={item.id} className="text-xs text-gray-600">
+        {item.productName || item.productVariant?.product?.name || "Product"}
+        {" × "}
+        {item.quantity}
+      </p>
+    ))}
+  </div>
+</td>
+
+{/* TOTAL */}
+<td className="px-4 py-4 text-sm font-bold text-gray-900">
+  {formatMoney(order.totalFinal, order.currency)}
+</td>
+
+
 
                     {/* PAYMENT */}
                     <td className="px-4 py-4">

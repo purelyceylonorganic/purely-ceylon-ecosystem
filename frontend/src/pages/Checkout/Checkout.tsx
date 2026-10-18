@@ -5,48 +5,98 @@ import { orderService } from "../../services/order.service";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../api/axios";
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney } from "../../lib/money";
 
+// Server கணக்கிட்டுத் தரும் மொத்தங்கள்
+type Pricing = {
+  currency: string;
+  subtotal: number;
+  discountAmount: number;
+  couponCode: string | null;
+  shippingCost: number;
+  estimatedDays: number;
+  taxPercent: number;
+  taxAmount: number;
+  totalFinal: number;
+};
+
+function toCheckoutItems(cart: any) {
+  return (cart?.items ?? []).map((item: any) => ({
+    productVariantId: item.variantId || item.productVariantId,
+    quantity: item.quantity,
+  }));
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currency } = useCurrency();
 
   const [cart, setCart] = useState<any>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
-  
-  // ✅ Step 5 — Dropdown UI-க்கு ஏற்ப "COD" டீஃபால்ட் ஸ்டேட்டாக மாற்றப்பட்டுள்ளது
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [loading, setLoading] = useState(true);
+  const [placing, setPlacing] = useState(false);
 
-  // கூப்பன் தரவுகளுக்கான ஸ்டேட்கள்
   const [couponCode, setCouponCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
 
-  // 📦 Step 1 — New States for Shipping
-  const [shippingCost, setShippingCost] = useState(0);
-  const [estimatedDays, setEstimatedDays] = useState(0);
+  // 🧾 Server-ல் கணக்கிடப்பட்ட மொத்தம்
+  const [pricing, setPricing] = useState<Pricing | null>(null);
+  const [pricingError, setPricingError] = useState("");
+  const [pricingLoading, setPricingLoading] = useState(false);
 
   useEffect(() => {
-    loadCartAndCoupon();
     loadAddresses();
   }, []);
 
-  // 🔄 Step 3 — Auto Calculate When Address Changes
+  // Currency மாறினால் cart-ஐ மீண்டும் எடுக்கும்
   useEffect(() => {
-    const address = addresses.find((a: any) => a.id === selectedAddress);
+    loadCartAndCoupon();
+  }, [currency]);
 
-    if (address) {
-      const subtotal = cart?.totalConverted || cart?.totalUSD || 0;
-      const discountAmount = (subtotal * discountPercent) / 100;
-      const amountAfterDiscount = subtotal - discountAmount;
-      
-      calculateShipping(address.country, amountAfterDiscount);
-    } else {
-      setShippingCost(0);
-      setEstimatedDays(0);
+  // 🔄 Cart / Address / Coupon / Currency மாறும்போதெல்லாம் server-இடம் மொத்தம் கேட்கும்
+  useEffect(() => {
+    if (!cart?.items?.length || !selectedAddress) {
+      setPricing(null);
+      setPricingError("");
+      return;
     }
-  }, [selectedAddress, addresses, cart, discountPercent]);
+
+    let cancelled = false;
+
+    async function calculate() {
+      try {
+        setPricingLoading(true);
+        setPricingError("");
+
+        const result = await orderService.previewCheckout({
+          items: toCheckoutItems(cart),
+          addressId: selectedAddress,
+          currency,
+          couponCode: couponCode || null,
+        });
+
+        if (!cancelled) setPricing(result.pricing);
+      } catch (err: any) {
+        if (!cancelled) {
+          setPricing(null);
+          setPricingError(
+            err?.response?.data?.message ?? "Could not calculate totals"
+          );
+        }
+      } finally {
+        if (!cancelled) setPricingLoading(false);
+      }
+    }
+
+    calculate();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cart, selectedAddress, couponCode, currency]);
 
   // 📍 Default முகவரியைக் கண்டறிந்து அதைத் தானாகத் தேர்ந்தெடுத்தல்
   async function loadAddresses() {
@@ -71,14 +121,12 @@ export default function Checkout() {
   async function loadCartAndCoupon() {
     try {
       setLoading(true);
-      const cartRes = await cartService.getCart();
+      const cartRes = await cartService.getCart(currency);
       setCart(cartRes);
-      
-      const couponInfo = location.state || JSON.parse(localStorage.getItem("appliedCoupon") || "{}");
-      if (couponInfo && couponInfo.discountPercent > 0) {
-        setCouponCode(couponInfo.couponCode || "");
-        setDiscountPercent(couponInfo.discountPercent || 0);
-      }
+
+      const couponInfo =
+        location.state || JSON.parse(localStorage.getItem("appliedCoupon") || "{}");
+      setCouponCode(couponInfo?.couponCode || "");
     } catch (err) {
       console.error("கார்ட் லோடு செய்வதில் பிழை:", err);
       toast.error("Failed to load checkout data");
@@ -87,62 +135,36 @@ export default function Checkout() {
     }
   }
 
-  // 🚚 Step 2 — Shipping Calculator Function
-  const calculateShipping = async (
-  country: string,
-  subtotal: number
-) => {
-  try {
-    const response = await api.post("/shipping/calculate", {
-      country,
-      orderValue: subtotal,
-    });
-
-    const result = response.data;
-
-    if (result.success) {
-      setShippingCost(result.shippingCost);
-      setEstimatedDays(result.estimatedDays);
-    } else {
-      setShippingCost(0);
-      setEstimatedDays(0);
-    }
-  } catch (error) {
-    console.error("Shipping கணக்கீட்டில் பிழை:", error);
-    setShippingCost(0);
-    setEstimatedDays(0);
+  function handleRemoveCoupon() {
+    setCouponCode("");
+    localStorage.removeItem("appliedCoupon");
   }
-};
 
   // Checkout Validation & Backend API Trigger
   async function handleCheckout() {
+    if (placing) return;
+
     try {
-      // 🛑 Validation
       if (!selectedAddress) {
         toast.error("Please select a delivery address!");
         return;
       }
 
-      const items = cart.items.map((item: any) => ({
-        productVariantId: item.variantId || item.productVariantId,
-        quantity: item.quantity,
-      }));
+      if (!pricing) {
+        toast.error(pricingError || "Totals are not ready yet");
+        return;
+      }
 
-      const subtotal = cart.totalConverted || cart.totalUSD || 0;
-      const discountAmount = (subtotal * discountPercent) / 100;
-      const finalTotal = subtotal - discountAmount + shippingCost;
+      setPlacing(true);
 
-      // 🚀 Step 6a: முதலில் வழக்கம்போல் ஆர்டரை உருவாக்குதல் (Order Service)
-      const orderPayload: any = {
+      // ⚠️ விலை, shipping, tax எதையும் அனுப்புவதில்லை — server தானே கணக்கிடும்
+      const orderResponse = await orderService.placeOrder({
+        items: toCheckoutItems(cart),
         addressId: selectedAddress,
         paymentMethod,
-        shippingCost,
-        totalAmount: finalTotal,
+        currency,
         couponCode: couponCode || null,
-        items,
-      };
-
-      const orderResponse = await orderService.placeOrder(orderPayload);
+      });
 
       // ✅ Get Order ID from Backend Response
 const orderId =
@@ -196,6 +218,8 @@ if (paymentData.success && paymentData.paymentUrl) {
       console.error("Checkout பிழை:", err);
       toast.dismiss("payment-loading");
       toast.error(err?.response?.data?.message ?? err.message ?? "Checkout Failed");
+    } finally {
+      setPlacing(false);
     }
   }
 
@@ -216,10 +240,6 @@ if (paymentData.success && paymentData.paymentUrl) {
       </div>
     );
   }
-
-  const subtotal = cart.totalConverted || cart.totalUSD || 0;
-  const discountAmount = (subtotal * discountPercent) / 100;
-  const finalTotal = subtotal - discountAmount + shippingCost;
 
     return (
     <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -370,29 +390,54 @@ if (paymentData.success && paymentData.paymentUrl) {
                     )}
 
                     <p className="mt-1 text-xs text-gray-500">
-                      Qty: {item.quantity} × USD{" "}
-                      {item.price ||
-                        item.itemTotalUSD / item.quantity}
+                      Qty: {item.quantity} × {formatMoney(item.unitPrice, currency)}
                     </p>
                   </div>
 
                   <div className="shrink-0 text-right text-sm font-bold text-[#111111]">
-                    USD {item.itemTotalUSD}
+                    {formatMoney(item.itemTotal, currency)}
                   </div>
                 </div>
               ))}
             </div>
 
+            {cart.allAvailable === false && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-600">
+                Some items have no {currency} price. Go back to the cart and remove them,
+                or switch the currency.
+              </div>
+            )}
+
             {/* COUPON */}
-            {discountPercent > 0 && (
+            {pricing?.couponCode && (
               <div className="my-5 flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <span className="break-all text-sm font-bold text-emerald-800">
-                  🎟️ Coupon: {couponCode}
+                  🎟️ Coupon: {pricing.couponCode}
                 </span>
 
-                <span className="text-sm font-bold text-emerald-700">
-                  {discountPercent}% OFF Applied
-                </span>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-left text-xs font-bold text-red-600 underline sm:text-right"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            {/* PRICING ERROR */}
+            {pricingError && (
+              <div className="my-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-600">
+                {pricingError}
+                {couponCode && /coupon/i.test(pricingError) && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="ml-2 font-bold underline"
+                  >
+                    Remove coupon
+                  </button>
+                )}
               </div>
             )}
 
@@ -400,47 +445,46 @@ if (paymentData.success && paymentData.paymentUrl) {
             <div className="mt-5 border-t border-gray-200 pt-5">
 
               <div className="flex items-center justify-between gap-4 py-1">
-                <span className="text-sm text-gray-600">
-                  Subtotal
-                </span>
-
+                <span className="text-sm text-gray-600">Subtotal</span>
                 <span className="text-sm font-semibold text-gray-900">
-                  {cart.currency || "USD"} {subtotal.toFixed(2)}
+                  {formatMoney(pricing?.subtotal ?? cart.subtotal, currency)}
                 </span>
               </div>
 
-              {discountPercent > 0 && (
+              {pricing && pricing.discountAmount > 0 && (
                 <div className="flex items-center justify-between gap-4 py-1">
                   <span className="text-sm font-semibold text-emerald-600">
                     Coupon Discount
                   </span>
-
                   <span className="text-sm font-bold text-emerald-600">
-                    -{cart.currency || "USD"}{" "}
-                    {discountAmount.toFixed(2)}
+                    -{formatMoney(pricing.discountAmount, currency)}
                   </span>
                 </div>
               )}
 
               <div className="flex items-center justify-between gap-4 py-1">
-                <span className="text-sm text-gray-600">
-                  Shipping
-                </span>
-
+                <span className="text-sm text-gray-600">Shipping</span>
                 <span className="text-sm font-semibold text-gray-900">
-                  {cart.currency || "USD"}{" "}
-                  {shippingCost.toFixed(2)}
+                  {pricing ? formatMoney(pricing.shippingCost, currency) : "—"}
                 </span>
               </div>
 
-              {selectedAddress && (
+              <div className="flex items-center justify-between gap-4 py-1">
+                <span className="text-sm text-gray-600">
+                  Tax{pricing ? ` (${pricing.taxPercent}%)` : ""}
+                </span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {pricing ? formatMoney(pricing.taxAmount, currency) : "—"}
+                </span>
+              </div>
+
+              {pricing && (
                 <div className="mt-2 flex items-center justify-between gap-4 rounded-lg bg-yellow-50 px-3 py-2">
                   <span className="text-xs font-medium text-yellow-700">
                     🚚 Estimated Delivery
                   </span>
-
                   <span className="text-xs font-bold text-yellow-700">
-                    {estimatedDays} Days
+                    {pricing.estimatedDays} Days
                   </span>
                 </div>
               )}
@@ -453,8 +497,11 @@ if (paymentData.success && paymentData.paymentUrl) {
                   </span>
 
                   <span className="text-2xl font-extrabold text-[#0E4B32]">
-                    {cart.currency || "USD"}{" "}
-                    {finalTotal.toFixed(2)}
+                    {pricing
+                      ? formatMoney(pricing.totalFinal, currency)
+                      : pricingLoading
+                        ? "Calculating..."
+                        : "—"}
                   </span>
                 </div>
               </div>
@@ -463,11 +510,16 @@ if (paymentData.success && paymentData.paymentUrl) {
               <button
                 type="button"
                 onClick={handleCheckout}
+                disabled={
+                  !pricing || pricingLoading || placing || cart.allAvailable === false
+                }
                 className="mt-6 min-h-[56px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-base font-extrabold text-white shadow-md transition hover:bg-[#111111] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {paymentMethod === "COD"
-                  ? "Place Order"
-                  : `Pay with ${paymentMethod}`}
+                {placing
+                  ? "Placing order..."
+                  : paymentMethod === "COD"
+                    ? "Place Order"
+                    : `Pay with ${paymentMethod}`}
               </button>
 
               <p className="mt-3 text-center text-xs leading-5 text-gray-500">

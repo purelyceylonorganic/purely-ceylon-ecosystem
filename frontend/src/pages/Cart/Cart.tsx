@@ -3,6 +3,8 @@ import { cartService } from "../../services/cart.service";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext"; 
 import api from "../../api/axios"; // 🎟️ Coupon API அழைப்பிற்காக
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney } from "../../lib/money";
 
 type CartItem = {
   id: string;
@@ -11,20 +13,22 @@ type CartItem = {
   image: string | null;
   sku: string;
   weight: string;
-  priceUSD: number;
   quantity: number;
-  itemTotalUSD: number;
+  unitPrice: number;
+  itemTotal: number;
+  available: boolean;
 };
 
 export default function Cart() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [currency, setCurrency] = useState("USD");
+  const { currency } = useCurrency();
+  const [allAvailable, setAllAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
   
   // 🎟️ Coupons States
   const [couponCode, setCouponCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0); 
+  const [couponApplied, setCouponApplied] = useState(false);
   const [couponMessage, setCouponMessage] = useState({ text: "", isError: false });
   const [isApplying, setIsApplying] = useState(false);
 
@@ -33,15 +37,15 @@ export default function Cart() {
 
   useEffect(() => {
     loadCart();
-  }, []);
+  }, [currency]);
 
   async function loadCart() {
     try {
       setLoading(true);
-      const response = await cartService.getCart();
+      const response = await cartService.getCart(currency);
       setItems(response.items ?? []);
-      setTotal(response.totalConverted ?? 0);
-      setCurrency(response.currency ?? "USD");
+      setTotal(response.subtotal ?? 0);
+      setAllAvailable(response.allAvailable ?? true);
       await refreshCart(); 
     } catch (err) {
       console.error(err);
@@ -80,14 +84,14 @@ export default function Cart() {
       const response = await api.post("/coupons/validate", { code: couponCode });
 
       if (response.data.success) {
-        setDiscountPercent(response.data.discountPercent);
+        setCouponApplied(true);
         setCouponMessage({ 
-          text: `🎉 Coupon Applied! ${response.data.discountPercent}% discount reduction.`, 
+          text: "🎉 Coupon applied! Your discount is calculated at checkout.", 
           isError: false 
         });
       }
     } catch (error: any) {
-      setDiscountPercent(0);
+      setCouponApplied(false);
       setCouponMessage({ 
         text: `❌ ${error.response?.data?.message || "Invalid Coupon Code"}`, 
         isError: true 
@@ -100,7 +104,7 @@ export default function Cart() {
   // 🎟️ 2. REMOVE COUPON FUNCTION
   function handleRemoveCoupon() {
     setCouponCode("");
-    setDiscountPercent(0);
+    setCouponApplied(false);
     setCouponMessage({ text: "", isError: false });
     localStorage.removeItem("appliedCoupon");
   }
@@ -108,20 +112,13 @@ export default function Cart() {
   // 🎟️ 4. PROCEED TO CHECKOUT WITH STATE & LOCALSTORAGE
   function handleProceedToCheckout() {
     const couponData = {
-      couponCode: discountPercent > 0 ? couponCode : "",
-      discountPercent,
-      discountAmount,
-      finalTotal,
-      subtotal: total
+      couponCode: couponApplied ? couponCode : "",
     };
 
     // செக்அவுட் பக்கத்திற்காக இரண்டிலும் சேமிக்கிறோம்
     localStorage.setItem("appliedCoupon", JSON.stringify(couponData));
     navigate("/checkout", { state: couponData });
   }
-
-  const discountAmount = (total * discountPercent) / 100;
-  const finalTotal = total - discountAmount;
 
   if (loading) {
     return <h2 style={{ padding: 40, textAlign: "center" }}>Loading Cart...</h2>;
@@ -161,8 +158,13 @@ export default function Cart() {
   <strong>Weight:</strong> {item.weight}
 </p>
                 <p className="mt-2 font-bold text-[#0E4B32]">
-  Price: {currency} {item.priceUSD}
+  Price: {formatMoney(item.unitPrice, currency)}
 </p>
+                {!item.available && (
+                  <p className="mt-1 text-xs font-semibold text-red-600">
+                    {currency} price is not available for this product.
+                  </p>
+                )}
 
                 <div className="flex gap-2.5 items-center mt-3">
                   <button
@@ -187,7 +189,7 @@ export default function Cart() {
 
               <div className="text-right">
                 <h3 className="m-0 text-lg font-extrabold text-[#111111]">
-  {currency} {item.itemTotalUSD}
+  {formatMoney(item.itemTotal, currency)}
 </h3>
                 <button
   type="button"
@@ -206,7 +208,7 @@ export default function Cart() {
     🎟️ Have a Promo Code / Coupon?
   </label>
 
-  {discountPercent === 0 ? (
+  {!couponApplied ? (
     /* Coupon Apply Section */
     <div className="flex w-full flex-col gap-3 sm:flex-row">
       <input
@@ -246,7 +248,7 @@ export default function Cart() {
         </div>
 
         <p className="mt-2 text-xs font-medium text-emerald-700">
-          {discountPercent}% OFF saved on this order!
+          Discount will be applied at checkout.
         </p>
       </div>
 
@@ -271,25 +273,25 @@ export default function Cart() {
           {/* SUMMARY & CHECKOUT */}
 <div className="mt-3 border-t-2 border-gray-100 pt-5 text-left sm:text-right">
 
-  <p className="my-1 text-sm text-gray-600">
-    Subtotal: {currency} {total.toFixed(2)}
+  <h2 className="mb-1 mt-3 text-2xl font-extrabold text-[#111111]">
+    Subtotal: {formatMoney(total, currency)}
+  </h2>
+
+  <p className="mb-5 text-xs text-gray-500">
+    Shipping, tax and coupon discount are calculated at checkout.
   </p>
 
-  {discountPercent > 0 && (
-    <p className="my-1 text-sm font-semibold text-emerald-600">
-      Discount ({discountPercent}%): - {currency}{" "}
-      {discountAmount.toFixed(2)}
+  {!allAvailable && (
+    <p className="mb-3 text-sm font-semibold text-red-600">
+      Some items have no {currency} price. Remove them or switch currency.
     </p>
   )}
-
-  <h2 className="mb-5 mt-3 text-2xl font-extrabold text-[#111111]">
-    Grand Total: {currency} {finalTotal.toFixed(2)}
-  </h2>
 
   <button
     type="button"
     onClick={handleProceedToCheckout}
-    className="min-h-[54px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-base font-bold text-white shadow-md transition hover:bg-[#111111]"
+    disabled={!allAvailable}
+    className="min-h-[54px] w-full rounded-xl bg-[#0E4B32] px-6 py-3 text-base font-bold text-white shadow-md transition hover:bg-[#111111] disabled:cursor-not-allowed disabled:opacity-60"
   >
     Proceed To Checkout →
   </button>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/order.service";
 import DeliveryTimeline from "../../components/orders/DeliveryTimeline";
+import { formatMoney } from "../../lib/money";
 
 export default function OrderTracking() {
   const { id } = useParams();
@@ -300,8 +301,7 @@ export default function OrderTracking() {
                 </p>
 
                 <p className="mt-1 text-lg font-extrabold text-[#0E4B32]">
-                  {order.currency || "USD"}{" "}
-                  {Number(order.totalFinal || 0).toFixed(2)}
+                  {formatMoney(order.totalFinal, order.currency)}
                 </p>
               </div>
 

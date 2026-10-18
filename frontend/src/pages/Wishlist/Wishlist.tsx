@@ -13,8 +13,11 @@ import { wishlistService } from "../../services/wishlist.service";
 import { cartService } from "../../services/cart.service";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney, variantPrice } from "../../lib/money";
 
 export default function Wishlist() {
+  const { currency } = useCurrency();
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -241,9 +244,8 @@ export default function Wishlist() {
                     </div>
 
                     <p className="mt-4 text-xl font-extrabold text-[#0E4B32]">
-                      USD{" "}
-                      {variant?.price !== undefined
-                        ? Number(variant.price).toFixed(2)
+                      {variantPrice(variant, currency) !== null
+                        ? formatMoney(variantPrice(variant, currency), currency)
                         : "N/A"}
                     </p>
 

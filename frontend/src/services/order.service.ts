@@ -51,8 +51,19 @@ export interface Order {
   items: OrderItem[];
 }
 
-export interface PlaceOrderRequest {
+export interface CheckoutItem {
+  productVariantId: string;
+  quantity: number;
+}
+
+export interface CheckoutPreviewRequest {
+  items: CheckoutItem[];
   addressId: string;
+  currency: string;
+  couponCode?: string | null;
+}
+
+export interface PlaceOrderRequest extends CheckoutPreviewRequest {
   paymentMethod: string;
   notes?: string;
 }
@@ -62,6 +73,12 @@ export const orderService = {
   // ✅ Place Order
   async placeOrder(data: PlaceOrderRequest) {
     const response = await api.post("/orders/checkout", data);
+    return response.data;
+  },
+
+  // ✅ Checkout Preview (server கணக்கிடும் மொத்தம்)
+  async previewCheckout(data: CheckoutPreviewRequest) {
+    const response = await api.post("/orders/preview", data);
     return response.data;
   },
 

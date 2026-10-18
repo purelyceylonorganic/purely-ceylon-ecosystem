@@ -12,6 +12,8 @@ import "./ProductCard.css";
 
 import { cartService } from "../../services/cart.service";
 import { wishlistService } from "../../services/wishlist.service";
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney, variantPrice } from "../../lib/money";
 
 type Props = {
   product: Product;
@@ -25,7 +27,8 @@ export default function ProductCard({ product }: Props) {
     product.images?.[0]?.url ||
     "/no-image.png";
 
-  const price = variant?.price;
+  const { currency } = useCurrency();
+  const price = variantPrice(variant, currency);
   const weight = (variant as any)?.weight;
   const stock = variant?.stock ?? 0;
 
@@ -123,15 +126,7 @@ export default function ProductCard({ product }: Props) {
         {/* ================= PRICE ================= */}
         <div className="product-price-row">
           <p className="product-price">
-            {price !== undefined
-              ? `LKR ${Number(price).toLocaleString(
-                  "en-LK",
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }
-                )}`
-              : "Price unavailable"}
+            {price !== null ? formatMoney(price, currency) : "Price unavailable"}
           </p>
         </div>
 

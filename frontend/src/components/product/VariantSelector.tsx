@@ -1,8 +1,12 @@
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney, variantPrice } from "../../lib/money";
+
 interface Variant {
   id: string;
   sku: string;
   stock: number;
   price: number;
+  priceLKR?: number;
 }
 
 interface Props {
@@ -16,6 +20,8 @@ export default function VariantSelector({
   selected,
   onSelect,
 }: Props) {
+  const { currency } = useCurrency();
+
   if (!variants || variants.length === 0) {
     return null;
   }
@@ -52,14 +58,9 @@ export default function VariantSelector({
                     : "text-gray-500"
                 }`}
               >
-                LKR{" "}
-                {Number(variant.price).toLocaleString(
-                  "en-LK",
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }
-                )}{" "}
+                {variantPrice(variant, currency) !== null
+                  ? formatMoney(variantPrice(variant, currency), currency)
+                  : "Price unavailable"}{" "}
                 •{" "}
                 {variant.stock > 0
                   ? `${variant.stock} available`

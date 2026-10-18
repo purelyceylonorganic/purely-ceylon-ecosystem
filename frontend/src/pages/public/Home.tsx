@@ -7,6 +7,8 @@ import type { Product } from "../../types/product.types";
 import { newsletterService } from "../../services/newsletter.service";
 import { toast } from "react-hot-toast";
 import { setSEO } from "../../utils/seo";
+import { useCurrency } from "../../context/CurrencyContext";
+import { formatMoney, variantPrice } from "../../lib/money";
 
 export default function Home() {
   
@@ -23,6 +25,7 @@ useEffect(() => {
 }, []);
 
 
+  const { currency } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -231,7 +234,9 @@ useEffect(() => {
                   <div className="mt-4">
                     {/* Price Design */}
                     <p className="text-2xl font-bold text-[#0E4B32]">
-                      ${p.variants?.[0]?.price ?? 0}
+                      {variantPrice(p.variants?.[0], currency) !== null
+                        ? formatMoney(variantPrice(p.variants?.[0], currency), currency)
+                        : "Price unavailable"}
                     </p>
 
                     {/* Task 3.4 — Stock Badge */}

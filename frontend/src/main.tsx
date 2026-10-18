@@ -5,6 +5,7 @@ import "./index.css";
 import "./theme.css";
 
 import { AuthProvider } from "./context/AuthContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext"; 
 import { AddressProvider } from "./context/AddressContext"; 
@@ -12,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <CurrencyProvider>
     <AuthProvider>
       <CartProvider>
         <WishlistProvider> 
@@ -22,5 +24,6 @@ createRoot(document.getElementById('root')!).render(
         </WishlistProvider>
       </CartProvider>
     </AuthProvider>
+    </CurrencyProvider>
   </StrictMode>,
 );
