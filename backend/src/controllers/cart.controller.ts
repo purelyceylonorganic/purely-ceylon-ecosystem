@@ -91,105 +91,77 @@ export const addToCart = async (req: Request, res: Response) => {
 
 
 // ===============================
-// 👀 GET CART (GLOBAL CURRENCY)
+// 👀 GET CART (ஒரே currency, தெளிவான field பெயர்கள்)
 // ===============================
 export const getCart = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
-    // 🌍 currency from middleware OR query OR default
-    const currency =
-      (req as any).currency ||
-      (req.query.currency as string) ||
-      "USD";
+    // Frontend ?currency=LKR அல்லது USD என்று அனுப்பும். இல்லையென்றால் LKR.
+    const requested = String(req.query.currency || "LKR").toUpperCase();
+    const currency = requested === "USD" ? "USD" : "LKR";
+    const isLKR = currency === "LKR";
 
-    // 📦 get cart with VARIANT relation (IMPORTANT FIX)
     const cart = await prisma.cart.findUnique({
-  where: {
-    userId: (req as any).user.id // அல்லது லாகின் செய்த பயனரின் ஐடியை வாங்கும் உங்கள் வேரியபிள் பெயர் (e.g., userId)
-  },
-  include: {
-    items: {
+      where: { userId: user.id },
       include: {
-        productVariant: { include: { product: { include: { images: true } } } }
-      }
-    }
-  }
-});
-
-    if (!cart) {
-      return res.json({
-        success: true,
-        currency,
-        items: [],
-        totalUSD: 0,
-        totalConverted: 0
-      });
-    }
-
-    // 💱 get currency rate
-    const rateData = await prisma.currencyRate.findUnique({
-      where: { code: currency }
+        items: {
+          include: {
+            productVariant: { include: { product: { include: { images: true } } } },
+          },
+        },
+      },
     });
 
-    if (!rateData) {
-      return res.status(400).json({
-        success: false,
-        message: "Currency not found"
-      });
-    }
-
+    let subtotal = 0;
     let totalUSD = 0;
 
-    // 🧠 FIXED TYPE ISSUE HERE ALSO
-    const items = cart.items.map((item: any) => {
-  const price = item.productVariant.price;
-  const quantity = item.quantity;
+    const items = (cart?.items ?? []).map((item: any) => {
+      const variant = item.productVariant;
+      const quantity = item.quantity;
 
-  const itemTotal = price * quantity;
+      const unitPrice = Number(isLKR ? variant.priceLKR : variant.price);
+      // விலை இல்லாத product cart-ஐ உடைக்காது; "available: false" என்று குறிக்கப்படும்
+      const available = Number.isFinite(unitPrice) && unitPrice > 0;
+      const itemTotal = available ? unitPrice * quantity : 0;
 
-  totalUSD += itemTotal;
+      subtotal += itemTotal;
+      totalUSD += Number(variant.price) * quantity;
 
-  return {
-  id: item.id,
+      return {
+        id: item.id,
+        variantId: variant.id,
+        productName: variant.product.name,
+        image: variant.product.images.length > 0 ? variant.product.images[0].url : null,
+        sku: variant.sku,
+        weight: variant.weight,
+        quantity,
 
-  variantId: item.productVariant.id,
+        // ✅ புதிய தெளிவான fields
+        unitPrice,
+        itemTotal,
+        available,
 
-  productName: item.productVariant.product.name,
-
-  image:
-    item.productVariant.product.images.length > 0
-      ? item.productVariant.product.images[0].url
-      : null,
-
-  sku: item.productVariant.sku,
-
-  weight: item.productVariant.weight,
-
-  priceUSD: price,
-
-  quantity,
-
-  itemTotalUSD: itemTotal,
-};
-});
-
-    const totalConverted = totalUSD * rateData.rate;
+        // ⏳ பழைய பெயர்கள் — பழைய frontend உடையாமல் இருக்க (Cart/Checkout பக்கங்களை மாற்றிய பிறகு நீக்கலாம்)
+        priceUSD: unitPrice,
+        itemTotalUSD: itemTotal,
+      };
+    });
 
     return res.json({
       success: true,
       currency,
       items,
-      totalUSD,
-      totalConverted
-    });
+      subtotal,
+      allAvailable: items.every((i: any) => i.available),
 
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      message: "Cart error"
+      // ⏳ பழைய பெயர்கள்
+      totalUSD,
+      totalConverted: subtotal,
     });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Cart error" });
   }
 };
 

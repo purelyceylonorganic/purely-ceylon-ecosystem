@@ -297,7 +297,7 @@ export const registerWithPhone = async (
     try {
       await sendSms(
         normalizedPhone,
-        `Your PURELY CEYLON verification OTP is ${otp}. It expires in 10 minutes.`
+        `Your PURELY CEYLON ORGANIC (PVT) LTD verification OTP is ${otp}. It expires in 10 minutes.`
       );
     } catch (smsError) {
       // Remove user if SMS fails
@@ -1846,7 +1846,7 @@ export const resendPhoneOtp = async (
 
     await sendSms(
       normalizedPhone,
-      `Your PURELY CEYLON verification OTP is ${otp}. It expires in 10 minutes.`
+      `Your PURELY CEYLON ORGANIC (PVT) LTD verification OTP is ${otp}. It expires in 10 minutes.`
     );
 
     // =========================
@@ -2028,7 +2028,7 @@ export const forgotPasswordWithPhone = async (
 
     await sendSms(
       normalizedPhone,
-      `Your PURELY CEYLON password reset OTP is ${otp}. It is valid for 10 minutes.`
+      `Your PURELY CEYLON ORGANIC (PVT) LTD password reset OTP is ${otp}. It is valid for 10 minutes.`
     );
 
     logger.info({

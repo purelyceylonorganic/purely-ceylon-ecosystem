@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   placeOrder,
+  previewCheckout,
   getMyOrders,
   getSingleOrder,
   updateOrderStatusController,
@@ -81,24 +82,17 @@ router.put(
   confirmOrderController
 );
 
-router.get("/admin/all", protect, authorizePermissions(PERMISSIONS.ORDER_VIEW), getAllOrders);
-router.get("/admin/dashboard", protect, authorizePermissions(PERMISSIONS.DASHBOARD_VIEW), getDashboardStats);
-router.post("/admin/create", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), createAdminOrderController);
-router.post("/admin/add-product", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), addProductToOrderController);
-router.put("/admin/update-quantity", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), updateOrderItemQuantityController);
-router.delete("/admin/remove-product", protect, removeProductFromOrderController);
-router.put("/admin/confirm", protect, confirmOrderController);
-
 // ======================================================
 // SPECIFIC ORDER ROUTES
 // ======================================================
+router.post("/preview", protect, previewCheckout);
 router.post("/checkout", protect, placeOrder);
 router.get("/my-orders", protect, getMyOrders);
 
 router.get("/:orderId/details",protect,getOrderDetailsController);
 router.get("/:orderId/invoice", protect, generateInvoice);
-router.put("/:id/shipping", protect, updateShippingController);
-router.put("/:id/status", protect, updateOrderStatusController);
+router.put("/:id/shipping", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), updateShippingController);
+router.put("/:id/status", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), updateOrderStatusController);
 
 // ======================================================
 // ADDRESS MANAGEMENT

@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { generateTrackingId } from "../services/dhlSimulator"; 
-import { calculateCheckoutPricing } from "../services/checkoutPricing.service";
+import {
+  calculateCheckoutPricing,
+  pickCurrencyForCountry,
+  SUPPORTED_CURRENCIES,
+  type Currency,
+} from "../services/checkoutPricing.service";
 import { createAdminOrder, 
 addProductToOrder, 
 getOrderDetails,
@@ -12,18 +17,136 @@ confirmOrder, } from "../services/order.service";
 const prisma = new PrismaClient();
 
 // ===============================
+// 🧰 உதவி: HTTP பிழை வகை
+// ===============================
+class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// ===============================
+// 🧾 PRICING (Preview-ம் Place Order-ம் இதையே பயன்படுத்தும்)
+// ===============================
+async function buildPricing(userId: string, body: any) {
+  const { items, addressId, couponCode } = body;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ApiError(400, "Cart is empty");
+  }
+  if (!addressId) {
+    throw new ApiError(400, "Delivery address is required");
+  }
+
+  const address = await prisma.address.findFirst({
+    where: { id: addressId, userId },
+  });
+  if (!address) {
+    throw new ApiError(400, "Valid delivery address not found");
+  }
+
+  // Currency: frontend அனுப்பினால் அதை எடுக்கும்; இல்லையென்றால் முகவரியின் நாட்டைப் பார்க்கும்
+  const requested = String(body.currency || "").toUpperCase();
+  const currency: Currency = SUPPORTED_CURRENCIES.includes(requested as Currency)
+    ? (requested as Currency)
+    : pickCurrencyForCountry(address.country);
+
+  // Variants-ஐ ஒரே query-ல் எடுக்கிறோம்
+  const ids = items.map((i: any) => i.productVariantId);
+  const variants = await prisma.productVariant.findMany({
+    where: { id: { in: ids } },
+    include: { product: { select: { name: true, isActive: true, deletedAt: true } } },
+  });
+
+  const pricingVariants = items.map((item: any) => {
+    const quantity = Number(item.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      throw new ApiError(400, "Invalid product quantity");
+    }
+
+    const variant = variants.find((v) => v.id === item.productVariantId);
+    if (!variant) {
+      throw new ApiError(404, "Product variant not found");
+    }
+    if (!variant.product.isActive || variant.product.deletedAt) {
+      throw new ApiError(400, `${variant.product.name} is no longer available`);
+    }
+    if (variant.stock < quantity) {
+      throw new ApiError(400, `Insufficient stock for ${variant.product.name} (${variant.weight})`);
+    }
+
+    return {
+      id: variant.id,
+      sku: variant.sku,
+      weight: variant.weight,
+      productName: variant.product.name,
+      price: variant.price,
+      priceLKR: variant.priceLKR,
+      costPrice: variant.costPrice,
+      quantity,
+    };
+  });
+
+  try {
+    const pricing = await calculateCheckoutPricing({
+      country: address.country,
+      province: address.province,
+      currency,
+      userId,
+      couponCode,
+      variants: pricingVariants,
+    });
+    return { pricing, address };
+  } catch (error) {
+    throw new ApiError(
+      400,
+      error instanceof Error ? error.message : "Unable to calculate checkout totals"
+    );
+  }
+}
+
+function sendError(res: Response, error: any, fallback: string) {
+  if (error instanceof ApiError) {
+    return res.status(error.status).json({ success: false, message: error.message });
+  }
+  console.error(error);
+  return res.status(500).json({ success: false, message: fallback, error: error?.message });
+}
+
+// ===============================
+// 👀 CHECKOUT PREVIEW (Order உருவாக்காமல் மொத்தத்தை மட்டும் காட்டும்)
+// ===============================
+export const previewCheckout = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.id) {
+      return res.status(401).json({ success: false, message: "Unauthorized user" });
+    }
+
+    const { pricing } = await buildPricing(user.id, req.body);
+
+    // orderItems உள் தரவு; வாடிக்கையாளருக்கு costPrice போகக்கூடாது
+    const { orderItems, couponId, ...safe } = pricing;
+    return res.json({
+      success: true,
+      pricing: {
+        ...safe,
+        items: orderItems.map(({ costPriceLKR, ...item }) => item),
+      },
+    });
+  } catch (error) {
+    return sendError(res, error, "Failed to calculate checkout");
+  }
+};
+
+// ===============================
 // 🚀 PLACE ORDER
 // ===============================
 export const placeOrder = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-
-    const {
-      items,
-      addressId,
-      paymentMethod,
-      shippingCost = 0,
-    } = req.body;
 
     if (!user?.id) {
       return res.status(401).json({
@@ -32,160 +155,76 @@ export const placeOrder = async (req: Request, res: Response) => {
       });
     }
 
-   
-if (!addressId) {
-  return res.status(400).json({
-    success: false,
-    message: "Delivery address is required",
-  });
-}
+    const { paymentMethod = "COD" } = req.body;
 
-const address = await prisma.address.findFirst({
-  where: {
-    id: addressId,
-    userId: user.id,
-  },
-});
+    // ⚠️ விலை, shipping, tax எதையும் frontend-இலிருந்து நம்புவதில்லை — server-ல் கணக்கிடுகிறோம்
+    const { pricing, address } = await buildPricing(user.id, req.body);
 
-if (!address) {
-  return res.status(400).json({
-    success: false,
-    message: "Valid delivery address not found",
-  });
-}
-
-const pricingVariants = [];
-
-for (const item of items) {
-  const quantity = Number(item.quantity);
-
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid product quantity",
-    });
-  }
-
-  const variant = await prisma.productVariant.findUnique({
-    where: { id: item.productVariantId },
-  });
-
-  if (!variant) {
-    return res.status(404).json({
-      success: false,
-      message: "Product variant not found",
-    });
-  }
-
-  if (variant.stock < quantity) {
-    return res.status(400).json({
-      success: false,
-      message: `Insufficient stock for ${variant.sku}`,
-    });
-  }
-
-  pricingVariants.push({
-    id: variant.id,
-    price: variant.price,
-    priceLKR: variant.priceLKR,
-    quantity,
-  });
-}
-
-let pricing;
-
-try {
-  pricing = await calculateCheckoutPricing(
-    address.country,
-    pricingVariants
-  );
-} catch (error) {
-  return res.status(400).json({
-    success: false,
-    message:
-      error instanceof Error
-        ? error.message
-        : "Unable to calculate checkout totals",
-  });
-}
-
-const {
-  currency,
-  exchangeRate,
-  subtotalUSD: totalUSD,
-  taxAmount,
-  shippingCost: calculatedShippingCost,
-  totalFinal: finalTotal,
-  orderItems: orderItemsData,
-} = pricing;
-
-    // ===============================
-    // TRANSACTION
-    // ===============================
-    const newOrder = await prisma.$transaction(async (tx: any) => {
-      // Reduce Stock
-      for (const item of items) {
-        await tx.productVariant.update({
-          where: {
-            id: item.productVariantId,
-          },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
+    const newOrder = await prisma.$transaction(async (tx) => {
+      // 1) Stock குறைத்தல் (போதுமான stock இல்லையென்றால் நிறுத்தும்)
+      for (const item of pricing.orderItems) {
+        const result = await tx.productVariant.updateMany({
+          where: { id: item.productVariantId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
         });
+        if (result.count === 0) {
+          throw new ApiError(400, `Insufficient stock for ${item.productName} (${item.variantLabel})`);
+        }
       }
 
-      // Create Order
+      // 2) Order
       const order = await tx.order.create({
         data: {
           userId: user.id,
+          addressId: address.id,
 
-          addressId,
+          currency: pricing.currency,
+          exchangeRate: pricing.exchangeRate,
+          subtotal: pricing.subtotal,
+          discountAmount: pricing.discountAmount,
+          couponCode: pricing.couponCode,
+          taxAmount: pricing.taxAmount,
+          shippingCost: pricing.shippingCost,
+          totalFinal: pricing.totalFinal,
+          totalUSD: pricing.totalUSD,
+          balance: pricing.totalFinal,
 
-          totalUSD,
-currency,
-exchangeRate,
-taxAmount,
-shippingCost: calculatedShippingCost,
-totalFinal: finalTotal,
-
-          trackingId: generateTrackingId(), // 👈 2. டிராக்கிங் ஐடி இங்கே இணைக்கப்பட்டுள்ளது
-
-          shippingStatus: "PENDING",        // 👈 3. ஷிப்பிங் ஸ்டேட்டஸ் இங்கே இணைக்கப்பட்டுள்ளது
-
+          trackingId: generateTrackingId(),
+          shippingStatus: "PENDING",
+          status: "PENDING",
           paymentMethod,
 
-          status: "PENDING",
+          // ✅ பணம் உண்மையாக வந்த பிறகுதான் PAID (payment service அதைச் செய்யும்)
+          paymentStatus: "UNPAID",
 
-          paymentStatus:
-            paymentMethod === "COD"
-              ? "UNPAID"
-              : "PAID",
-
-          items: {
-            create: orderItemsData,
+          shippingAddressSnapshot: {
+            fullName: address.fullName,
+            phone: address.phone,
+            street: address.street,
+            city: address.city,
+            province: address.province,
+            postalCode: address.postalCode,
+            country: address.country,
           },
-        },
 
-        include: {
-          items: {
-            include: {
-              productVariant: true,
-            },
-          },
+          items: { create: pricing.orderItems },
         },
+        include: { items: true },
       });
 
-      // ✅ Clear Cart
-      await tx.cartItem.deleteMany({
-        where: {
-          cart: {
-            userId: user.id,
-          },
-        },
-      });
+      // 3) Coupon பயன்பாடு பதிவு
+      if (pricing.couponId) {
+        await tx.coupon.update({
+          where: { id: pricing.couponId },
+          data: { usedCount: { increment: 1 } },
+        });
+        await tx.couponUsage.create({
+          data: { userId: user.id, couponId: pricing.couponId, orderId: order.id },
+        });
+      }
+
+      // 4) Cart காலி
+      await tx.cartItem.deleteMany({ where: { cart: { userId: user.id } } });
 
       return order;
     });
@@ -195,15 +234,8 @@ totalFinal: finalTotal,
       message: "✅ Order placed successfully",
       order: newOrder,
     });
-
   } catch (error: any) {
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: "❌ Failed to place order",
-      error: error.message,
-    });
+    return sendError(res, error, "❌ Failed to place order");
   }
 };
 
@@ -217,23 +249,34 @@ export const getMyOrders = async (
   try {
     const user = (req as any).user;
 
-    const orders = await prisma.order.findMany({
-      where: {
-        userId: user.id,
-      },
-
+   
+const orders = await prisma.order.findMany({
+  where: {
+    userId: user.id,
+  },
+  include: {
+    address: true,
+    items: {
       include: {
-        items: {
+        productVariant: {
           include: {
-            productVariant: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
         },
       },
+    },
+  },
+  orderBy: {
+    createdAt: "desc",
+  },
+});
 
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
 
     return res.json({
       success: true,
@@ -340,9 +383,15 @@ export const getAllOrders = async (
   try {
     const orders = await prisma.order.findMany({
       include: {
-        user: true,
+        user: { select: { id: true, fullName: true, email: true, phone: true } },
         address: true,
-        items: true,
+        items: {
+          include: {
+            productVariant: {
+              select: { sku: true, weight: true, product: { select: { name: true } } },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
