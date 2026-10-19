@@ -1,9 +1,8 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
-import { orderService } from "../../services/order.service";
+import { formatMoney } from "../../lib/money";
 import {
   BarChart,
   Bar,
@@ -110,28 +109,13 @@ export default function AdminDashboard() {
     setLoadError(false);
 
     try {
-      try {
-        const response = await orderService.getDashboardStats();
+      const response = await api.get("/admin/revenue-dashboard");
 
-        setStats(
-          response.stats ||
-            response.data?.data ||
-            response.data
-        );
-      } catch (error) {
-        console.error(
-          "Fallback route used to fetch dashboard stats:",
-          error
-        );
-
-        const response = await api.get("/admin/revenue-dashboard");
-
-        if (response.data.success) {
-          setStats(response.data.data);
-        } else {
-          throw new Error("Dashboard statistics unavailable");
-        }
+      if (!response.data.success) {
+        throw new Error("Dashboard statistics unavailable");
       }
+
+      setStats(response.data.data);
 
       await Promise.all([
         loadMonthlySales(),
@@ -275,7 +259,7 @@ export default function AdminDashboard() {
       <section className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4 sm:gap-4 lg:gap-5">
         <MetricCard
           title="Total Revenue"
-          value={`USD ${stats.revenue ?? stats.totalRevenue ?? 0}`}
+          value={formatMoney(stats.revenue ?? stats.totalRevenue ?? 0, "LKR")}
           icon={TrendingUp}
         />
         <MetricCard
@@ -294,6 +278,11 @@ export default function AdminDashboard() {
           icon={Package}
         />
       </section>
+
+      <p className="-mt-2 text-xs text-gray-500 sm:-mt-4">
+        Revenue = payments received + other income. Still to collect:{" "}
+        <strong>{formatMoney(stats.pendingRevenue ?? 0, "LKR")}</strong>
+      </p>
 
       {/* Responsive main grid */}
       <section className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
@@ -367,7 +356,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="-mx-1 overflow-x-auto">
-              <table className="w-full min-w-[600px] border-collapse text-left">
+              <table className="w-full min-w-[760px] border-collapse text-left">
                 <thead>
                   <tr className="border-b-2 border-gray-100">
                     <th className="px-3 py-3 text-xs font-semibold text-gray-500">
@@ -375,6 +364,9 @@ export default function AdminDashboard() {
                     </th>
                     <th className="px-3 py-3 text-xs font-semibold text-gray-500">
                       Customer
+                    </th>
+                    <th className="px-3 py-3 text-xs font-semibold text-gray-500">
+                      Products
                     </th>
                     <th className="px-3 py-3 text-xs font-semibold text-gray-500">
                       Total
@@ -397,8 +389,17 @@ export default function AdminDashboard() {
                         <td className="max-w-[220px] truncate px-3 py-4 text-sm text-gray-600">
                           {order.user?.fullName || "Guest Customer"}
                         </td>
+                        <td className="min-w-[180px] px-3 py-4 text-xs text-gray-600">
+                          {order.items?.length > 0
+                            ? order.items.map((item: any) => (
+                                <p key={item.id}>
+                                  {item.name} × {item.quantity}
+                                </p>
+                              ))
+                            : "—"}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-700">
-                          USD {order.totalFinal ?? 0}
+                          {formatMoney(order.totalFinal, order.currency)}
                         </td>
                         <td className="px-3 py-4">
                           <span
@@ -416,7 +417,7 @@ export default function AdminDashboard() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-3 py-8 text-center text-sm text-gray-500"
                       >
                         No recent orders found.
@@ -452,9 +453,7 @@ export default function AdminDashboard() {
                       </span>
                       <div className="min-w-0">
                         <p className="break-all text-sm font-semibold text-gray-700">
-                          Variant:{" "}
-                          {item.productVariantId?.slice(0, 8) ||
-                            "Unknown"}
+                          {item.name || "Unknown"}
                         </p>
                         <p className="mt-1 text-xs text-gray-500">
                           {item._sum?.quantity || 0} sales
@@ -479,12 +478,7 @@ export default function AdminDashboard() {
             {topAnalytics?.topCustomers?.length > 0 ? (
               <div className="space-y-3">
                 {topAnalytics.topCustomers.map((customer: any) => {
-                  const totalSpent =
-                    customer.orders?.reduce(
-                      (sum: number, order: any) =>
-                        sum + (Number(order.totalFinal) || 0),
-                      0
-                    ) || 0;
+                  const totalSpent = Number(customer.revenue) || 0;
 
                   return (
                     <div
@@ -500,7 +494,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <p className="shrink-0 break-words text-right text-sm font-bold text-[#0E4B32]">
-                        USD {totalSpent.toFixed(2)}
+                        {formatMoney(totalSpent, "LKR")}
                       </p>
                     </div>
                   );

@@ -518,6 +518,18 @@ export default function FinanceDashboard() {
 
   Manage Expenses
 
+</button>
+
+<button
+
+  onClick={() => navigate("/admin/finance/income")}
+
+  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60 sm:w-auto sm:py-2.5"
+
+>
+
+  Add Revenue
+
 </button>&#x20;
 
 

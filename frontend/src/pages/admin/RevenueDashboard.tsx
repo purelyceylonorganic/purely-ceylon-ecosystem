@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import RevenueChart from "../../components/admin/RevenueChart";
+import { formatMoney } from "../../lib/money";
 
 type AnyRecord = Record<string, any>;
 
@@ -200,7 +201,7 @@ export default function RevenueDashboard() {
   const kpiCards = [
     {
       label: "💰 Revenue",
-      value: `USD ${Number(revenueStats?.revenue ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`,
+      value: formatMoney(revenueStats?.revenue ?? 0, "LKR"),
       growth: kpiGrowth?.revenueGrowth,
     },
     {
@@ -508,7 +509,7 @@ export default function RevenueDashboard() {
                       </td>
                       <td style={cellStyle}>{customer.orders ?? 0}</td>
                       <td style={{ ...cellStyle, color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>
-                        USD {Number(customer.revenue ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                        {formatMoney(customer.revenue ?? 0, "LKR")}
                       </td>
                     </tr>
                   ))}
@@ -546,7 +547,7 @@ export default function RevenueDashboard() {
                         {order.user?.fullName || "Guest Customer"}
                       </td>
                       <td style={{ ...cellStyle, fontWeight: 600, whiteSpace: "nowrap" }}>
-                        USD {Number(order.totalFinal ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                        {formatMoney(order.totalFinal ?? 0, order.currency)}
                       </td>
                       <td style={cellStyle}>
                         <span

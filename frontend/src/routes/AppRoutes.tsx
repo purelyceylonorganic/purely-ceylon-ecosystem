@@ -53,6 +53,7 @@ import CustomerProfile from "../pages/admin/customers/CustomerProfile";
 import CreateDraftOrder from "../pages/admin/CreateDraftOrder";
 import FinanceDashboard from "../pages/admin/finance/FinanceDashboard";
 import ExpenseManagement from "../pages/admin/finance/ExpenseManagement";
+import IncomeManagement from "../pages/admin/finance/IncomeManagement";
 import NewsletterSubscribers from "../pages/admin/newsletter/NewsletterSubscribers";
 import PrivacyPolicy from "../pages/public/legal/PrivacyPolicy";
 import TermsAndConditions from "../pages/public/legal/TermsAndConditions";
@@ -198,6 +199,11 @@ export default function AppRoutes() {
 <Route
   path="finance/expenses"
   element={<ExpenseManagement />}
+/>
+
+<Route
+  path="finance/income"
+  element={<IncomeManagement />}
 />
 
   {/* ============================= */}
