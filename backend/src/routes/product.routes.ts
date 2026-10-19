@@ -4,6 +4,7 @@ import { protect } from '../middlewares/auth.middleware';
 import { authorizePermissions } from '../middlewares/permission.middleware'; // 👈 புதிய இறக்குமதி
 import { PERMISSIONS } from '../constants/permissions'; // 👈 புதிய இறக்குமதி
 import { validate } from "../middlewares/validate.middleware";
+import { optionalAuth } from '../middlewares/optionalAuth.middleware';
 
 import {
   createProductSchema,
@@ -19,9 +20,9 @@ router.get(
   ProductController.getPublic
 );
 
-router.get('/', ProductController.getAll);
+router.get('/', optionalAuth, ProductController.getAll);
 
-router.get("/:id", ProductController.getById);
+router.get("/:id", optionalAuth, ProductController.getById);
 
 // ✅ GET ALL PRODUCTS (TASK 9)
 /**
@@ -42,18 +43,21 @@ router.get("/:id", ProductController.getById);
 router.patch(
   "/:id/featured",
   protect,
+  authorizePermissions(PERMISSIONS.PRODUCT_UPDATE),
   ProductController.toggleFeatured
 );
 
 router.put(
   "/restore/:id",
   protect,
+  authorizePermissions(PERMISSIONS.PRODUCT_UPDATE),
   ProductController.restore
 );
 
 router.put(
   "/bulk-status",
   protect,
+  authorizePermissions(PERMISSIONS.PRODUCT_UPDATE),
   ProductController.bulkUpdateStatus
 );
 

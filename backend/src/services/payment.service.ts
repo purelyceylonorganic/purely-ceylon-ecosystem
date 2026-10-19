@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import crypto from 'crypto';
 import { prisma } from '../config/prisma';
 import { PaymentStatus, PaymentMethod, RefundStatus } from '@prisma/client';
+import { notifyPaymentReceived } from './notification/orderNotifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'mock_stripe_key_2026', {
   apiVersion: '2023-10-16' as any,
@@ -55,6 +56,10 @@ export class PaymentService {
 
     if (!order) {
       throw new Error('❌ Order not found');
+    }
+
+    if (order.status === 'CANCELLED') {
+      throw new Error('Cannot record a payment for a cancelled order');
     }
 
     if (order.paymentStatus === PaymentStatus.PAID) {
@@ -125,7 +130,7 @@ if (newPaidAmount >= totalFinal) {
         data: {
           paymentStatus: newPaymentStatus,
           status: newPaymentStatus === PaymentStatus.PAID ? 'CONFIRMED' : order.status,
-          paidAmount: currentPaidAmount,
+          paidAmount: newPaidAmount, // ✅ முன்பு பழைய தொகை சேமிக்கப்பட்டது (பிழை)
           balance: balance,
           paidAt: newPaymentStatus === PaymentStatus.PAID ? now : order.paidAt
         }
@@ -145,6 +150,16 @@ if (newPaidAmount >= totalFinal) {
       });
 
       return { payment, updatedOrder };
+    });
+
+    // 🔔 Admin + வாடிக்கையாளருக்கு அறிவிப்பு
+    void notifyPaymentReceived({
+      orderId: order.id,
+      userId: order.userId,
+      amount: amountPaid,
+      currency: order.currency || 'LKR',
+      fullyPaid: newPaymentStatus === PaymentStatus.PAID,
+      balance,
     });
 
     return result;
@@ -180,12 +195,18 @@ if (newPaidAmount >= totalFinal) {
   }
 
   static async handleStripeWebhook(payload: Buffer, signature: string) {
+    // 🔐 ரகசியம் இல்லையென்றால் கோரிக்கையை நிராகரி (போலி 'mock' ரகசியம் இனி இல்லை)
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      throw new Error('Stripe webhook secret is not configured');
+    }
+
     let event: any;
     try {
       event = stripe.webhooks.constructEvent(
         payload,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET || 'mock_webhook_secret'
+        webhookSecret
       );
     } catch (err: any) {
       throw new Error(`⚠️ Webhook Signature Verification Failed: ${err.message}`);
@@ -240,6 +261,15 @@ if (newPaidAmount >= totalFinal) {
             }
           })
         ]);
+
+        void notifyPaymentReceived({
+          orderId,
+          userId: order.userId,
+          amount: totalPaid,
+          currency: order.currency || 'USD',
+          fullyPaid: newPaymentStatus === PaymentStatus.PAID,
+          balance,
+        });
       }
     }
   }
@@ -262,7 +292,10 @@ if (newPaidAmount >= totalFinal) {
 
   static async handlePayHereNotify(body: any) {
     const { merchant_id, order_id, payhere_amount, payhere_currency, status_code, md5sig, payment_id } = body;
-    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET || 'mock_secret';
+    const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET;
+    if (!merchantSecret) {
+      throw new Error('PayHere merchant secret is not configured');
+    }
 
     const hashedSecret = crypto.createHash('md5').update(merchantSecret).digest('hex').toUpperCase();
     const localHash = crypto
@@ -319,6 +352,15 @@ if (newPaidAmount >= totalFinal) {
           }
         })
       ]);
+
+      void notifyPaymentReceived({
+        orderId: order_id,
+        userId: order.userId,
+        amount: paidAmountNum,
+        currency: payhere_currency || 'LKR',
+        fullyPaid: newPaymentStatus === PaymentStatus.PAID,
+        balance,
+      });
     }
   }
 

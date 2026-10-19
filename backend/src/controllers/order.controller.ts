@@ -2,6 +2,13 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { generateTrackingId } from "../services/dhlSimulator"; 
 import {
+  notifyAdminsNewOrder,
+  notifyCustomer,
+  notifyLowStock,
+  notifyOrderCancelled,
+  orderShortId,
+} from "../services/notification/orderNotifications";
+import {
   calculateCheckoutPricing,
   pickCurrencyForCountry,
   SUPPORTED_CURRENCIES,
@@ -229,6 +236,17 @@ export const placeOrder = async (req: Request, res: Response) => {
       return order;
     });
 
+    // 🔔 Admin / Finance-க்கு அறிவிப்பு (தோல்வியடைந்தாலும் order பாதிக்கப்படாது)
+    void notifyAdminsNewOrder(newOrder, address.fullName);
+
+    // 📉 Stock குறைந்தால் / தீர்ந்தால் எச்சரிக்கை
+    void notifyLowStock(
+      pricing.orderItems.map((item) => ({
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+      }))
+    );
+
     return res.status(201).json({
       success: true,
       message: "✅ Order placed successfully",
@@ -352,27 +370,99 @@ export const updateOrderStatusController = async (
   res: Response
 ) => {
   try {
-
     const { id } = req.params;
     const { status } = req.body;
-    const order = await prisma.order.update({
-      where: { id },
-      data: { status },
+
+    const allowed = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order status",
+      });
+    }
+
+    // 🔒 Status மாற்றமும் stock மாற்றமும் ஒரே transaction-ல் (இரண்டும் நடக்கும் அல்லது இரண்டும் நடக்காது)
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!existing) {
+        throw new ApiError(404, "Order not found");
+      }
+
+      // அதே status-ஐ மீண்டும் அனுப்பினால் எதுவும் மாறாது (stock இரண்டு முறை திரும்பாது)
+      if (existing.status === status) {
+        return { order: existing, changed: false, paid: false };
+      }
+
+      if (status === "CANCELLED") {
+        if (existing.status === "DELIVERED") {
+          throw new ApiError(400, "Delivered orders cannot be cancelled");
+        }
+
+        // ♻️ ரத்து → ஒவ்வொரு item-ன் stock-ஐயும் திரும்பச் சேர்த்தல்
+        for (const item of existing.items) {
+          await tx.productVariant.update({
+            where: { id: item.productVariantId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+      } else if (existing.status === "CANCELLED") {
+        // 🔁 ரத்து செய்த order-ஐ மீண்டும் திறந்தால் stock மீண்டும் ஒதுக்க வேண்டும்
+        for (const item of existing.items) {
+          const reserved = await tx.productVariant.updateMany({
+            where: { id: item.productVariantId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          });
+
+          if (reserved.count === 0) {
+            throw new ApiError(
+              400,
+              `Not enough stock to re-open this order (${item.productName || item.sku})`
+            );
+          }
+        }
+      }
+
+      const order = await tx.order.update({
+        where: { id },
+        data: { status },
+      });
+
+      const paid =
+        existing.paymentStatus === "PAID" || existing.paymentStatus === "PARTIAL";
+
+      return { order, changed: true, paid };
     });
+
+    const { order, changed, paid } = result;
+
+    if (changed) {
+      // 🔔 வாடிக்கையாளருக்கு அறிவிப்பு
+      void notifyCustomer(
+        order.userId,
+        "Order update",
+        `Your order #${orderShortId(order.id)} is now ${status.toLowerCase()}.`
+      );
+
+      // 🔔 Finance-க்கு (பணம் வாங்கியிருந்தால் refund நினைவூட்டல்)
+      if (status === "CANCELLED") {
+        void notifyOrderCancelled(order.id, paid);
+      }
+    }
 
     return res.json({
       success: true,
-      message: "Order status updated",
+      message:
+        changed && status === "CANCELLED"
+          ? "Order cancelled and stock returned"
+          : "Order status updated",
       order,
     });
-
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update order status",
-    });
+    return sendError(res, error, "Failed to update order status");
   }
 };
 
@@ -416,25 +506,44 @@ export const updateShippingController = async (
 ) => {
   try {
     const { id } = req.params;
+    const { shippingStatus, trackingId } = req.body;
 
-    const {
-      shippingStatus,
-      trackingId,
-    } = req.body;
+    const allowed = ["PENDING", "PACKED", "SHIPPED", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"];
+    if (shippingStatus !== undefined && !allowed.includes(shippingStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shipping status",
+      });
+    }
 
     const order = await prisma.order.update({
       where: { id },
       data: {
-        shippingStatus,
-        trackingId,
+        ...(shippingStatus !== undefined && { shippingStatus }),
+        ...(trackingId !== undefined && { trackingId }),
       },
     });
+
+    // 🔔 வாடிக்கையாளருக்கு அறிவிப்பு
+    if (shippingStatus !== undefined) {
+      void notifyCustomer(
+        order.userId,
+        "Shipping update",
+        `Order #${orderShortId(order.id)}: ${String(shippingStatus)
+          .replace(/_/g, " ")
+          .toLowerCase()}${order.trackingId ? ` (Tracking: ${order.trackingId})` : ""}`
+      );
+    }
 
     return res.json({
       success: true,
       order,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2025") {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
     console.error(error);
 
     return res.status(500).json({

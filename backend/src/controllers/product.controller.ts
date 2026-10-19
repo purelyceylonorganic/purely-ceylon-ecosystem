@@ -1,8 +1,33 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { ROLES } from '../constants/roles';
+import { PERMISSIONS } from '../constants/permissions';
+import { hasPermission } from '../utils/permission.helper';
 
 const prisma = new PrismaClient();
+
+// 🔐 Admin / Product நிர்வாகியா? (Draft, Deleted, costPrice பார்க்கலாம்)
+function canManageProducts(req: AuthenticatedRequest): boolean {
+  const role = req.user?.role;
+  if (!role) return false;
+  return role === ROLES.SUPER_ADMIN || hasPermission(role, PERMISSIONS.PRODUCT_UPDATE);
+}
+
+// 🙈 பொதுமக்களுக்கு costPrice (உங்கள் செலவு) ஒருபோதும் போகக்கூடாது
+function hideCostPriceOne<T extends { variants?: any[] }>(product: T): T {
+  if (!product.variants) return product;
+  return {
+    ...product,
+    variants: product.variants.map(({ costPrice, ...rest }: any) => rest),
+  };
+}
+
+function hideCostPrice<T extends { variants?: any[] }>(products: T[]): T[] {
+  return products.map((product) => hideCostPriceOne(product));
+}
+
+const PRODUCT_STATUSES = ["DRAFT", "PUBLISHED", "HIDDEN", "ARCHIVED"];
 
 export class ProductController {
 
@@ -175,31 +200,59 @@ item.stock < 0
   // 🔍 2. அனைத்து தயாரிப்புகளையும் பெறுதல் (Read All)
   static async getAll(req: AuthenticatedRequest, res: Response) {
     try {
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 10;
+      const page = Math.max(Number(req.query.page) || 1, 1);
+      const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
       const skip = (page - 1) * limit;
+      const staff = canManageProducts(req);
 
-const products = await prisma.product.findMany({
-  where: { isActive: true },
-  skip,
-  take: limit,
-  include: {
-    images: true,
-    videos: true,
-    category: true,
-    variants: true,
-  },
-  orderBy: { createdAt: "desc" },
-});
+      const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
+      const categoryId = typeof req.query.categoryId === "string" ? req.query.categoryId : "";
+      const status = typeof req.query.status === "string" ? req.query.status : "";
 
-const totalProducts = await prisma.product.count({
-  where: { isActive: true },
-});
+      const where: any = {
+        isActive: true,
+        ...(name && { name: { contains: name, mode: "insensitive" } }),
+        ...(categoryId && { categoryId }),
+      };
+
+      if (staff) {
+        // Admin: எல்லாவற்றையும் பார்க்கலாம்; status வடிகட்டலாம்
+        if (status === "DELETED") {
+          where.deletedAt = { not: null };
+        } else if (PRODUCT_STATUSES.includes(status)) {
+          where.status = status;
+        }
+      } else {
+        // பொதுமக்கள்: Published மற்றும் நீக்காதவை மட்டும்
+        where.status = "PUBLISHED";
+        where.deletedAt = null;
+      }
+
+      const [products, totalProducts] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            images: true,
+            videos: true,
+            category: true,
+            variants: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.product.count({ where }),
+      ]);
 
       return res.json({
         success: true,
-        data: products,
-        pagination: { total: totalProducts, page, limit, totalPages: Math.ceil(totalProducts / limit) }
+        data: staff ? products : hideCostPrice(products),
+        pagination: {
+          total: totalProducts,
+          page,
+          limit,
+          totalPages: Math.ceil(totalProducts / limit),
+        },
       });
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });
@@ -211,6 +264,7 @@ const totalProducts = await prisma.product.count({
 static async getById(req: AuthenticatedRequest, res: Response) {
   try {
     const { id } = req.params;
+    const staff = canManageProducts(req);
 
     const product = await prisma.product.findUnique({
       where: { id },
@@ -222,7 +276,15 @@ static async getById(req: AuthenticatedRequest, res: Response) {
       },
     });
 
-    if (!product) {
+    // பொதுமக்களுக்கு: Draft / நீக்கிய / செயலற்ற product-ஐக் காட்டக்கூடாது
+    const hiddenFromPublic =
+      !product ||
+      !product.isActive ||
+      product.deletedAt !== null ||
+      product.status === "DRAFT" ||
+      product.status === "ARCHIVED";
+
+    if (!product || (!staff && hiddenFromPublic)) {
       return res.status(404).json({
         success: false,
         message: "Product not found",
@@ -231,7 +293,7 @@ static async getById(req: AuthenticatedRequest, res: Response) {
 
     return res.json({
       success: true,
-      data: product,
+      data: staff ? product : hideCostPriceOne(product),
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -248,9 +310,11 @@ static async getById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const data = { ...req.body };
+      delete data.deletedAt; // delete / restore மூலம் மட்டுமே மாறும்
 
       if (data.status === "PUBLISHED") {
         data.publishedAt = new Date();
+        data.deletedAt = null; // Publish செய்தால் "Deleted" குறி நீங்கும்
       }
 
       const product = await prisma.product.findUnique({
@@ -439,21 +503,27 @@ static async delete(req: AuthenticatedRequest, res: Response) {
       where: { id },
     });
 
-    if (!product || !product.isActive) {
+    if (!product || !product.isActive || product.deletedAt) {
       return res.status(404).json({
         success: false,
         message: "Product not found or already deleted",
       });
     }
 
+    // 🗑️ உண்மையில் அழிக்காமல் Draft-க்கு நகர்த்துகிறோம் (restore செய்யலாம்)
     await prisma.product.update({
       where: { id },
-      data: { isActive: false },
+      data: {
+        status: "DRAFT",
+        publishedAt: null,
+        featured: false,
+        deletedAt: new Date(),
+      },
     });
 
     return res.json({
       success: true,
-      message: "Product deleted successfully",
+      message: "Product moved to Draft. You can restore it any time.",
     });
   } catch (error: any) {
     return res.status(400).json({
@@ -470,13 +540,14 @@ static async delete(req: AuthenticatedRequest, res: Response) {
       const products = await prisma.product.findMany({
         where: {
           isActive: true,
+          deletedAt: null,
           status: "PUBLISHED", // Update: Status Filter
           name: name ? { contains: name as string, mode: "insensitive" } : undefined,
           categoryId: categoryId ? (categoryId as string) : undefined,
         },
         include: { images: true, videos: true, category: true, variants: true },
       });
-      return res.json({ success: true, data: products });
+      return res.json({ success: true, data: hideCostPrice(products) });
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });
     }
@@ -487,71 +558,42 @@ static async delete(req: AuthenticatedRequest, res: Response) {
   req: AuthenticatedRequest,
   res: Response
 ) {
-
   try {
+    const { ids, status } = req.body;
 
-    const {
-      ids,
-      status
-    } = req.body;
-
-    if (!ids?.length) {
-
+    if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
-
-        success:false,
-
-        message:"No products selected"
-
+        success: false,
+        message: "No products selected",
       });
+    }
 
+    if (!PRODUCT_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product status",
+      });
     }
 
     await prisma.product.updateMany({
-
-      where:{
-
-        id:{
-          in:ids
-        }
-
-      },
-
-      data:{
-
+      where: { id: { in: ids } },
+      data: {
         status,
-
-        publishedAt:
-        status==="PUBLISHED"
-        ?new Date()
-        :null
-
-      }
-
+        publishedAt: status === "PUBLISHED" ? new Date() : null,
+        ...(status === "PUBLISHED" && { deletedAt: null }),
+      },
     });
 
     return res.json({
-
-      success:true,
-
-      message:"Products updated successfully"
-
+      success: true,
+      message: "Products updated successfully",
     });
-
-  }
-
-  catch(error:any){
-
+  } catch (error: any) {
     return res.status(500).json({
-
-      success:false,
-
-      message:error.message
-
+      success: false,
+      message: error.message,
     });
-
   }
-
 }
 
 static async restore(
@@ -559,123 +601,83 @@ static async restore(
   res: Response
 ) {
   try {
-
     const { id } = req.params;
 
+    const product = await prisma.product.findUnique({ where: { id } });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Draft-ஆகவே மீட்கப்படும்; தயாரானதும் Publish செய்யலாம்
     await prisma.product.update({
       where: { id },
       data: {
-        isActive: true
-      }
+        isActive: true,
+        deletedAt: null,
+        status: "DRAFT",
+      },
     });
 
     return res.json({
       success: true,
-      message: "Product restored successfully"
+      message: "Product restored to Draft. Publish it when you are ready.",
     });
-
   } catch (error: any) {
-
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
 }
 // 🌍 Public Products (Customer)
 static async getPublic(req: AuthenticatedRequest, res: Response) {
-
   try {
-
-    const page = Number(req.query.page) || 1;
-
-    const limit = Number(req.query.limit) || 10;
-
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
     const skip = (page - 1) * limit;
 
-    const products = await prisma.product.findMany({
+    const where = {
+      isActive: true,
+      status: "PUBLISHED" as const,
+      deletedAt: null,
+    };
 
-      where: {
-
-        isActive: true,
-
-        status: "PUBLISHED"
-
-      },
-
-      skip,
-
-      take: limit,
-
-      include: {
-
-        images: true,
-
-        videos: true,
-
-        category: true,
-
-        variants: true
-
-      },
-
-      orderBy: {
-
-        createdAt: "desc"
-
-      }
-
-    });
-
-    const totalProducts =
-      await prisma.product.count({
-
-        where: {
-
-          isActive: true,
-
-          status: "PUBLISHED"
-
-        }
-
-      });
+    const [products, totalProducts] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          images: true,
+          videos: true,
+          category: true,
+          variants: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.product.count({ where }),
+    ]);
 
     return res.json({
-
       success: true,
-
-      data: products,
-
+      data: hideCostPrice(products),
       pagination: {
-
         total: totalProducts,
-
         page,
-
         limit,
-
-        totalPages:
-          Math.ceil(totalProducts / limit)
-
-      }
-
+        totalPages: Math.ceil(totalProducts / limit),
+      },
     });
-
-  }
-
-  catch (error: any) {
-
+  } catch (error: any) {
     return res.status(500).json({
-
       success: false,
-
-      message: error.message
-
+      message: error.message,
     });
-
   }
-
 }
 
 
