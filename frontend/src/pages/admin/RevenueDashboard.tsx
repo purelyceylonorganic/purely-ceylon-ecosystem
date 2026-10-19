@@ -533,6 +533,7 @@ export default function RevenueDashboard() {
                   <tr style={tableHeaderStyle}>
                     <th style={cellStyle}>Order ID</th>
                     <th style={cellStyle}>Customer</th>
+                    <th style={cellStyle}>Products</th>
                     <th style={cellStyle}>Total</th>
                     <th style={cellStyle}>Status</th>
                   </tr>
@@ -545,6 +546,13 @@ export default function RevenueDashboard() {
                       </td>
                       <td style={{ ...cellStyle, overflowWrap: "anywhere" }}>
                         {order.user?.fullName || "Guest Customer"}
+                      </td>
+                      <td style={{ ...cellStyle, overflowWrap: "anywhere", fontSize: 12 }}>
+                        {Array.isArray(order.items) && order.items.length > 0
+                          ? order.items
+                              .map((item: AnyRecord) => `${item.name} × ${item.quantity}`)
+                              .join(", ")
+                          : "—"}
                       </td>
                       <td style={{ ...cellStyle, fontWeight: 600, whiteSpace: "nowrap" }}>
                         {formatMoney(order.totalFinal ?? 0, order.currency)}
@@ -569,7 +577,7 @@ export default function RevenueDashboard() {
                   ))}
                   {recentOrders.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ ...cellStyle, padding: 22, textAlign: "center", color: mutedText }}>
+                      <td colSpan={5} style={{ ...cellStyle, padding: 22, textAlign: "center", color: mutedText }}>
                         No recent orders
                       </td>
                     </tr>

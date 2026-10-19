@@ -1,4 +1,3 @@
-
 import { useForm, useFieldArray } from "react-hook-form";
 import {
   Package,
@@ -14,6 +13,7 @@ export interface ProductVariantFormData {
   sku: string;
   weight: string;
   price: number;
+  priceLKR: number;
   costPrice: number;
   stock: number;
 }
@@ -67,6 +67,7 @@ export default function ProductForm({
         sku: "",
         weight: "",
         price: 0,
+        priceLKR: 0,
         costPrice: 0,
         stock: 0,
       },
@@ -279,6 +280,7 @@ const {
           sku: "",
           weight: "",
           price: 0,
+          priceLKR: 0,
           costPrice: 0,
           stock: 0,
         })
@@ -345,15 +347,35 @@ const {
           </div>
 
           <div className="min-w-0">
-            <label className={labelClass}>Selling Price (USD) *</label>
+            <label className={labelClass}>Sri Lanka Price (LKR) *</label>
             <input
               type="number"
               step="0.01"
-              min="0"
-              {...register(`variants.${index}.price`, {
-                required: "Selling price is required",
+              min="0.01"
+              {...register(`variants.${index}.priceLKR`, {
+                required: "Sri Lanka price (LKR) is required",
                 valueAsNumber: true,
-                min: { value: 0, message: "Price cannot be negative" },
+                min: { value: 0.01, message: "LKR price must be greater than 0" },
+              })}
+              className={inputClass}
+            />
+            {errors.variants?.[index]?.priceLKR && (
+              <p role="alert" className="mt-1 text-sm text-red-600">
+                {errors.variants[index]?.priceLKR?.message}
+              </p>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <label className={labelClass}>International Price (USD) *</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              {...register(`variants.${index}.price`, {
+                required: "International price (USD) is required",
+                valueAsNumber: true,
+                min: { value: 0.01, message: "USD price must be greater than 0" },
               })}
               className={inputClass}
             />
@@ -365,7 +387,7 @@ const {
           </div>
 
           <div className="min-w-0">
-            <label className={labelClass}>Cost Price (USD) *</label>
+            <label className={labelClass}>Cost Price (LKR) *</label>
             <input
               type="number"
               step="0.01"
@@ -382,9 +404,12 @@ const {
                 {errors.variants[index]?.costPrice?.message}
               </p>
             )}
+            <p className="mt-1 text-xs text-gray-500">
+              Your own cost in LKR. Customers never see this.
+            </p>
           </div>
 
-          <div className="min-w-0 sm:col-span-2">
+          <div className="min-w-0">
             <label className={labelClass}>Initial Stock *</label>
             <input
               type="number"

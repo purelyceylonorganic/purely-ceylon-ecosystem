@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -14,6 +13,7 @@ import {
   CheckCircle,
   LoaderCircle,
   Package,
+  RotateCcw,
 } from "lucide-react";
 
 import type { Product } from "../../../types/product.types";
@@ -81,7 +81,11 @@ export default function ProductTable({
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`Are you sure you want to delete ${name}?`)) {
+    if (
+      !window.confirm(
+        `Move "${name}" to Draft? It will be hidden from customers, and you can restore it any time.`
+      )
+    ) {
       return;
     }
 
@@ -90,7 +94,7 @@ export default function ProductTable({
 
       await productService.deleteProduct(id);
 
-      toast.success("Product deleted successfully");
+      toast.success("Product moved to Draft");
       setOpenDropdownId(null);
       onDeleteSuccess?.();
     } catch (error) {
@@ -102,6 +106,23 @@ export default function ProductTable({
   }
 
   
+async function handleRestore(id: string) {
+    try {
+      setActionLoadingId(id);
+
+      await productService.restoreProduct(id);
+
+      toast.success("Product restored to Draft");
+      setOpenDropdownId(null);
+      onDeleteSuccess?.();
+    } catch (error) {
+      console.error("Product restore failed:", error);
+      toast.error("Restore failed");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
 function getProductValues(product: Product) {
   const defaultVariant =
     product.variants?.[0] || (product as any).variant;
@@ -185,6 +206,22 @@ function getProductValues(product: Product) {
           <span>Images</span>
         </button>
 
+        {product.deletedAt ? (
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void handleRestore(product.id)}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+            aria-label={`Restore ${product.name}`}
+          >
+            {isLoading ? (
+              <LoaderCircle size={16} className="animate-spin" />
+            ) : (
+              <RotateCcw size={16} />
+            )}
+            <span>{isLoading ? "Please wait" : "Restore"}</span>
+          </button>
+        ) : (
         <button
           type="button"
           disabled={isLoading}
@@ -199,6 +236,7 @@ function getProductValues(product: Product) {
           )}
           <span>{isLoading ? "Please wait" : "Delete"}</span>
         </button>
+        )}
 
         <div className="relative">
           <button
@@ -328,6 +366,11 @@ function getProductValues(product: Product) {
                     >
                       {product.status}
                     </span>
+                    {product.deletedAt && (
+                      <span className="ml-1 mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                        DELETED
+                      </span>
+                    )}
 
                     {product.featured && (
                       <p className="mt-1 text-xs font-semibold text-amber-600">
@@ -471,6 +514,11 @@ function getProductValues(product: Product) {
                           >
                             {product.status}
                           </span>
+                    {product.deletedAt && (
+                      <span className="ml-1 mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                        DELETED
+                      </span>
+                    )}
                         </div>
                       </div>
                     </td>

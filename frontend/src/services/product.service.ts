@@ -6,6 +6,9 @@ export const productService = {
   async getProducts(params: {
     page?: number;
     limit?: number;
+    name?: string;
+    categoryId?: string;
+    status?: string;
   }): Promise<ProductResponse> {
     const response = await api.get("/products", {
       params,

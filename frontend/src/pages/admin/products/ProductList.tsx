@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -50,7 +49,8 @@ export default function ProductList() {
         limit: 10,
         name: debouncedSearch || undefined,
         categoryId: selectedCategory || undefined,
-      } as any);
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+      });
 
       setProducts(response.products ?? []);
       setTotalPages(response.pagination?.totalPages ?? 1);
@@ -74,7 +74,7 @@ export default function ProductList() {
 
   useEffect(() => {
     void loadProducts();
-  }, [page, debouncedSearch, selectedCategory]);
+  }, [page, debouncedSearch, selectedCategory, statusFilter]);
 
   useEffect(() => {
     void loadCategories();
@@ -83,6 +83,7 @@ export default function ProductList() {
   // Status filter currently applies to the products on this page.
   const filteredProducts = products.filter((product) => {
     if (statusFilter === "ALL") return true;
+    if (statusFilter === "DELETED") return Boolean(product.deletedAt);
     return product.status === statusFilter;
   });
 

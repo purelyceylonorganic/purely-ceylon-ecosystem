@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -546,7 +545,7 @@ export default function EditProduct() {
 
                 <div className="min-w-0">
                   <label className={labelClass} htmlFor={`cost-${index}`}>
-                    Cost Price *
+                    Cost Price (LKR) *
                   </label>
                   <input
                     id={`cost-${index}`}

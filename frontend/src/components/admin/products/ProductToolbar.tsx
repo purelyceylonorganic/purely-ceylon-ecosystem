@@ -1,4 +1,3 @@
-
 import {
   Search,
   Plus,
@@ -114,6 +113,7 @@ export default function ProductToolbar({
               <option value="DRAFT">Draft</option>
               <option value="HIDDEN">Hidden</option>
               <option value="ARCHIVED">Archived</option>
+              <option value="DELETED">Deleted (restore)</option>
             </select>
           </div>
         )}

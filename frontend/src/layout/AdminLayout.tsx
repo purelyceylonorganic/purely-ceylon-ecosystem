@@ -17,6 +17,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
+import NotificationBell from "../components/notifications/NotificationBell";
 
 const menu = [
   {
@@ -133,7 +134,9 @@ useEffect(() => {
           </p>
         </div>
 
-        <div className="h-11 w-11" />
+        <div className="flex h-11 w-11 items-center justify-center">
+          <NotificationBell />
+        </div>
       </header>
 
       {/* =====================================
@@ -281,8 +284,12 @@ useEffect(() => {
                 </h1>
               </div>
 
-              <div className="rounded-full border border-[#D4AF37]/30 bg-[#FFF8EE] px-4 py-2 text-xs font-bold text-[#0E4B32]">
-                Enterprise Management
+              <div className="flex items-center gap-3">
+                <NotificationBell />
+
+                <div className="rounded-full border border-[#D4AF37]/30 bg-[#FFF8EE] px-4 py-2 text-xs font-bold text-[#0E4B32]">
+                  Enterprise Management
+                </div>
               </div>
             </div>
           </div>

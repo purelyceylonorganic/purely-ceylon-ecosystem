@@ -42,6 +42,7 @@ export interface Product {
   weight: number;      // ✅ இதை சேர்க்க வேண்டும்
   sku: string;         // ✅ இதையும் சேர்க்க வேண்டும்
   isActive: boolean;
+  deletedAt?: string | null;
   createdAt:string;
   images: ProductImage[];
   videos: ProductVideo[];

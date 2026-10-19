@@ -51,6 +51,22 @@ export default function NotificationBell() {
     void loadNotifications();
   }, [loadNotifications]);
 
+  // 🔄 ஒவ்வொரு 30 விநாடிக்கும் புதிய அறிவிப்பு எண்ணிக்கையைச் சரிபார்க்கும்
+  useEffect(() => {
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await api.get("/notifications/unread-count");
+        if (response.data.success) {
+          setUnreadCount(response.data.data.count);
+        }
+      } catch {
+        // அடுத்த முறை மீண்டும் முயலும்
+      }
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   async function handleMarkRead(id: string) {
     try {
       await api.patch(`/notifications/${id}/read`);
