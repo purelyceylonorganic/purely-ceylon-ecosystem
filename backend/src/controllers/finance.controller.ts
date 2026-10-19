@@ -1,171 +1,85 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/prisma";
+import {
+  getLkrPerUsd,
+  getRevenueSummaryLKR,
+  receivedAmount,
+  round2,
+  toLKR,
+} from "../services/financeCalc.service";
 
-const prisma = new PrismaClient();
+// =====================================================
+// 💰 FINANCE — எல்லாத் தொகைகளும் LKR-ல்
+//
+// Revenue  = கைக்கு வந்த பணம் (PAID / PARTIAL orders) + Income (Add Revenue)
+// Expenses = Expense table (USD செலவு இருந்தால் LKR-க்கு மாற்றப்படும்)
+// =====================================================
+
+function parseDate(value: unknown): Date | undefined | "invalid" {
+  if (!value) return undefined;
+  const d = new Date(String(value));
+  return isNaN(d.getTime()) ? "invalid" : d;
+}
 
 // =====================================================
 // BUSINESS FINANCE ANALYTICS
 // =====================================================
-
-export const getFinanceAnalytics = async (
-  req: Request,
-  res: Response
-) => {
+export const getFinanceAnalytics = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate } = req.query;
+    const start = parseDate(req.query.startDate);
+    const end = parseDate(req.query.endDate);
 
-    const whereOrder: any = {
-      status: {
-        not: "CANCELLED",
-      },
-    };
-
-    const whereExpense: any = {};
-
-    // =================================================
-    // DATE FILTER
-    // =================================================
-
-    if (startDate || endDate) {
-      const start = startDate
-        ? new Date(String(startDate))
-        : undefined;
-
-      const end = endDate
-        ? new Date(String(endDate))
-        : undefined;
-
-      if (start && isNaN(start.getTime())) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid startDate",
-        });
-      }
-
-      if (end && isNaN(end.getTime())) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid endDate",
-        });
-      }
-
-      if (start || end) {
-        whereOrder.createdAt = {};
-
-        whereExpense.expenseDate = {};
-
-        if (start) {
-          whereOrder.createdAt.gte = start;
-          whereExpense.expenseDate.gte = start;
-        }
-
-        if (end) {
-          end!.setHours(23, 59, 59, 999);
-
-          whereOrder.createdAt.lte = end;
-          whereExpense.expenseDate.lte = end;
-        }
-      }
+    if (start === "invalid") {
+      return res.status(400).json({ success: false, message: "Invalid startDate" });
     }
+    if (end === "invalid") {
+      return res.status(400).json({ success: false, message: "Invalid endDate" });
+    }
+    if (end) end.setHours(23, 59, 59, 999);
 
-    // =================================================
-    // REVENUE
-    // =================================================
-
-    const orders = await prisma.order.findMany({
-  select: {
-    createdAt: true,
-    totalFinal: true,
-    exchangeRate: true,
-    currency: true,
-  },
-});
-
-    const revenue = orders.reduce((total, order) => {
-  const rate = Number(order.exchangeRate || 0);
-
-  if (!Number.isFinite(rate) || rate <= 0) {
-    return total;
-  }
-
-  return total + Number(order.totalFinal || 0) / rate;
-}, 0);
-
-    // =================================================
-    // EXPENSES
-    // =================================================
+    const summary = await getRevenueSummaryLKR({ from: start, to: end });
+    const lkrPerUsd = summary.lkrPerUsd;
 
     const expenses = await prisma.expense.findMany({
-      where: whereExpense,
-      select: {
-        category: true,
-        amount: true,
-        currency: true,
+      where: {
+        expenseDate: {
+          ...(start && { gte: start }),
+          ...(end && { lte: end }),
+        },
       },
+      select: { category: true, amount: true, currency: true },
     });
 
-    const totalExpenses = expenses.reduce(
-      (total, expense) =>
-        total + Number(expense.amount || 0),
-      0
-    );
-
-    // =================================================
-    // EXPENSE BY CATEGORY
-    // =================================================
-
+    let totalExpenses = 0;
     const expenseByCategory: Record<string, number> = {};
 
     for (const expense of expenses) {
-      const category = expense.category;
-
-      expenseByCategory[category] =
-        (expenseByCategory[category] || 0) +
-        Number(expense.amount || 0);
+      const amount = toLKR(expense.amount, expense.currency, lkrPerUsd);
+      totalExpenses += amount;
+      expenseByCategory[expense.category] =
+        (expenseByCategory[expense.category] || 0) + amount;
     }
 
-    // =================================================
-    // PRODUCT COST
-    // =================================================
+    for (const key of Object.keys(expenseByCategory)) {
+      expenseByCategory[key] = round2(expenseByCategory[key]);
+    }
+    totalExpenses = round2(totalExpenses);
 
-    const productCost =
-      expenseByCategory.PRODUCT_COST || 0;
-
-    // =================================================
-    // GROSS PROFIT
-    // =================================================
-
-    const grossProfit = revenue - productCost;
-
-    // =================================================
-    // NET PROFIT
-    // =================================================
-
-    const netProfit = revenue - totalExpenses;
-
-    // =================================================
-    // MARGINS
-    // =================================================
-
-    const grossProfitMargin =
-      revenue > 0
-        ? (grossProfit / revenue) * 100
-        : 0;
-
-    const netProfitMargin =
-      revenue > 0
-        ? (netProfit / revenue) * 100
-        : 0;
-
-    // =================================================
-    // RESPONSE
-    // =================================================
+    const revenue = summary.received;
+    const productCost = expenseByCategory.PRODUCT_COST || 0;
+    const grossProfit = round2(revenue - productCost);
+    const netProfit = round2(revenue - totalExpenses);
 
     return res.status(200).json({
       success: true,
-
       data: {
         revenue,
+
+        // 🆕 கூடுதல் விவரங்கள்
+        orderRevenue: summary.orderRevenue,
+        otherIncome: summary.otherIncome,
+        pendingRevenue: summary.pending,
+        sales: summary.sales,
 
         expenses: {
           total: totalExpenses,
@@ -173,28 +87,19 @@ export const getFinanceAnalytics = async (
         },
 
         productCost,
-
         grossProfit,
-
         netProfit,
-
-        grossProfitMargin,
-
-        netProfitMargin,
+        grossProfitMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
+        netProfitMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
 
         currency: "LKR",
       },
     });
   } catch (error) {
-    console.error(
-      "Finance Analytics Error:",
-      error
-    );
-
+    console.error("Finance Analytics Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        "Error calculating finance analytics",
+      message: "Error calculating finance analytics",
     });
   }
 };
@@ -202,100 +107,70 @@ export const getFinanceAnalytics = async (
 // =====================================================
 // MONTHLY FINANCE ANALYTICS
 // =====================================================
-
-export const getMonthlyFinanceAnalytics = async (
-  req: Request,
-  res: Response
-) => {
+export const getMonthlyFinanceAnalytics = async (req: Request, res: Response) => {
   try {
     const year = Number(req.query.year) || new Date().getFullYear();
 
     if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid year",
-      });
+      return res.status(400).json({ success: false, message: "Invalid year" });
     }
 
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year + 1, 0, 1);
 
-    // =================================================
-    // ORDERS
-    // =================================================
+    const lkrPerUsd = await getLkrPerUsd();
 
-    const orders = await prisma.order.findMany({
-      where: {
-        status: {
-          not: "CANCELLED",
+    const [orders, incomes, expenses] = await Promise.all([
+      prisma.order.findMany({
+        where: { createdAt: { gte: startDate, lt: endDate } },
+        select: {
+          totalFinal: true,
+          paidAmount: true,
+          paymentStatus: true,
+          status: true,
+          currency: true,
+          createdAt: true,
         },
-        createdAt: {
-          gte: startDate,
-          lt: endDate,
-        },
-      },
-      select: {
-        totalFinal: true,
-        exchangeRate: true,
-        createdAt: true,
-      },
-    });
+      }),
+      prisma.income.findMany({
+        where: { incomeDate: { gte: startDate, lt: endDate } },
+        select: { amount: true, currency: true, incomeDate: true },
+      }),
+      prisma.expense.findMany({
+        where: { expenseDate: { gte: startDate, lt: endDate } },
+        select: { category: true, amount: true, currency: true, expenseDate: true },
+      }),
+    ]);
 
-    // =================================================
-    // EXPENSES
-    // =================================================
-
-    const expenses = await prisma.expense.findMany({
-      where: {
-        expenseDate: {
-          gte: startDate,
-          lt: endDate,
-        },
-      },
-      select: {
-        category: true,
-        amount: true,
-        expenseDate: true,
-      },
-    });
-
-    // =================================================
-    // CREATE 12 MONTHS
-    // =================================================
-
-    const monthlyData = Array.from(
-      { length: 12 },
-      (_, index) => ({
-        month: `${year}-${String(index + 1).padStart(2, "0")}`,
-        revenue: 0,
-        productCost: 0,
-        operatingExpenses: 0,
-        expenses: 0,
-        grossProfit: 0,
-        netProfit: 0,
-      })
-    );
-
-    // =================================================
-    // MONTHLY REVENUE
-    // =================================================
+    const monthlyData = Array.from({ length: 12 }, (_, index) => ({
+      month: `${year}-${String(index + 1).padStart(2, "0")}`,
+      revenue: 0,
+      productCost: 0,
+      operatingExpenses: 0,
+      expenses: 0,
+      grossProfit: 0,
+      netProfit: 0,
+    }));
 
     for (const order of orders) {
-      const month = order.createdAt.getMonth();
-
-      monthlyData[month].revenue +=
-  Number(order.totalFinal || 0) /
-  Number(order.exchangeRate || 1);
+      monthlyData[order.createdAt.getMonth()].revenue += toLKR(
+        receivedAmount(order),
+        order.currency,
+        lkrPerUsd
+      );
     }
 
-    // =================================================
-    // MONTHLY EXPENSES
-    // =================================================
+    for (const income of incomes) {
+      monthlyData[income.incomeDate.getMonth()].revenue += toLKR(
+        income.amount,
+        income.currency,
+        lkrPerUsd
+      );
+    }
 
     for (const expense of expenses) {
       const month = expense.expenseDate.getMonth();
-
-      const amount = Number(expense.amount || 0);
+      const amount = toLKR(expense.amount, expense.currency, lkrPerUsd);
 
       monthlyData[month].expenses += amount;
 
@@ -306,33 +181,23 @@ export const getMonthlyFinanceAnalytics = async (
       }
     }
 
-    // =================================================
-    // PROFIT CALCULATIONS
-    // =================================================
-
-    for (const month of monthlyData) {
-      month.grossProfit =
-        month.revenue - month.productCost;
-
-      month.netProfit =
-        month.grossProfit -
-        month.operatingExpenses;
+    for (const m of monthlyData) {
+      m.revenue = round2(m.revenue);
+      m.productCost = round2(m.productCost);
+      m.operatingExpenses = round2(m.operatingExpenses);
+      m.expenses = round2(m.expenses);
+      m.grossProfit = round2(m.revenue - m.productCost);
+      m.netProfit = round2(m.grossProfit - m.operatingExpenses);
     }
 
-    // =================================================
-    // YEAR TOTALS
-    // =================================================
-
     const totals = monthlyData.reduce(
-      (acc, month) => {
-        acc.revenue += month.revenue;
-        acc.productCost += month.productCost;
-        acc.operatingExpenses +=
-          month.operatingExpenses;
-        acc.expenses += month.expenses;
-        acc.grossProfit += month.grossProfit;
-        acc.netProfit += month.netProfit;
-
+      (acc, m) => {
+        acc.revenue += m.revenue;
+        acc.productCost += m.productCost;
+        acc.operatingExpenses += m.operatingExpenses;
+        acc.expenses += m.expenses;
+        acc.grossProfit += m.grossProfit;
+        acc.netProfit += m.netProfit;
         return acc;
       },
       {
@@ -345,31 +210,25 @@ export const getMonthlyFinanceAnalytics = async (
       }
     );
 
-    // =================================================
-    // RESPONSE
-    // =================================================
-
     return res.status(200).json({
       success: true,
-
       year,
-
       data: monthlyData,
-
-      totals,
-
+      totals: {
+        revenue: round2(totals.revenue),
+        productCost: round2(totals.productCost),
+        operatingExpenses: round2(totals.operatingExpenses),
+        expenses: round2(totals.expenses),
+        grossProfit: round2(totals.grossProfit),
+        netProfit: round2(totals.netProfit),
+      },
       currency: "LKR",
     });
   } catch (error) {
-    console.error(
-      "Monthly Finance Analytics Error:",
-      error
-    );
-
+    console.error("Monthly Finance Analytics Error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        "Error calculating monthly finance analytics",
+      message: "Error calculating monthly finance analytics",
     });
   }
 };
