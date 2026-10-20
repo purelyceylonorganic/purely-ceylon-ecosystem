@@ -1,3 +1,4 @@
+
 name: Purely Ceylon Backend CI
 
 on:
@@ -13,30 +14,31 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
-      - name: 🔄 Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm' # வேகமான பில்டிற்கு கேச்சிங் (Caching)
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
-      - name: 📦 Install Dependencies
-        run: npm install
+      - name: Install Backend Dependencies
+        run: npm ci
 
-      - name: 🔍 Code Quality Check (ESLint)
-        run: npm run lint || echo "ESLint warnings found" # Task 4
-
-      - name: 🛡️ Security Audit Scan
-        run: npm audit --audit-level=high || echo "Security vulnerabilities found" # Task 5
-
-      - name: ⚗️ Generate Prisma Client
+      - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://mock:mock@localhost:5432/mock
 
-      - name: 🏗️ Production Build
+      - name: Verify Backend Build
         run: npm run build
 
-      - name: 🧪 Run Tests
-        run: npm test || echo "Tests skipped or setup pending"
+      - name: Run Backend Tests
+        run: npm test
