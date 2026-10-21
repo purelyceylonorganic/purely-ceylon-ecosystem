@@ -8,3 +8,5 @@ generated
 .env.local
 # Backend application logs
 backend/logs/
+*.dump
+*.backup
