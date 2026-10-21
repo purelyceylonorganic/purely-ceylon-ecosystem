@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatMoney } from "../../lib/money";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/order.service";
 import OrderTimeline from "../../components/orders/OrderTimeline";
@@ -474,7 +475,7 @@ const handleConfirm = async () => {
             </div>
             <div className="mt-5 pt-4 border-t border-gray-200 flex justify-between items-center">
               <span className="text-base font-semibold text-gray-600">Grand Total</span>
-              <span style={{ fontSize: "22px", color: "#0E4B32", fontWeight: "bold" }}>LKR {order.totalFinal || order.grandTotal || "2950"}</span>
+              <span style={{ fontSize: "22px", color: "#0E4B32", fontWeight: "bold" }}>{formatMoney(order.totalFinal ?? order.grandTotal ?? 0, order.currency)}</span>
             </div>
           </div>
 
@@ -490,11 +491,11 @@ const handleConfirm = async () => {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Paid</span>
-                <strong style={{ color: "#0E4B32" }}>LKR {paidAmount}</strong>
+                <strong style={{ color: "#0E4B32" }}>{formatMoney(paidAmount, order.currency)}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Balance</span>
-                <strong>{balanceAmount.toFixed(2)}</strong>
+                <strong>{formatMoney(balanceAmount, order.currency)}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span>Transaction</span>
@@ -560,7 +561,7 @@ const handleConfirm = async () => {
           {payments.map((payment) => (
             <tr key={payment.id} style={{ borderBottom: "1px solid #eee" }}>
               <td style={{ padding: "8px" }}>{payment.paymentMethod}</td>
-              <td style={{ padding: "8px" }}>LKR {payment.amount}</td>
+              <td style={{ padding: "8px" }}>{formatMoney(payment.amount, payment.currency || order.currency)}</td>
               <td style={{ padding: "8px", fontWeight: "bold", color: payment.paymentStatus === "VOID" ? "#dc3545" : "#28a745" }}>
                 {payment.paymentStatus || "PAID"}
               </td>
@@ -659,11 +660,11 @@ const handleConfirm = async () => {
                       SKU: {item.productVariant?.sku || item.productSku || item.sku || "CP001"}
                     </p>
                     <p style={{ margin: "0", fontSize: "14px", color: "#666" }}>
-                      Qty: {item.quantity} x LKR {item.price}
+                      Qty: {item.quantity} x {formatMoney(item.price, order.currency)}
                     </p>
                   </div>
                   <p style={{ margin: "0", fontWeight: "bold", color: "#0E4B32", fontSize: "16px" }}>
-                    LKR {item.quantity * item.price}
+                    {formatMoney(item.quantity * item.price, order.currency)}
                   </p>
                 </div>
               ))}

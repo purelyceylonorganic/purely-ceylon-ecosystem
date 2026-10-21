@@ -6,6 +6,7 @@ import QRCode from "react-qr-code";
 import Barcode from "react-barcode";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { formatMoney } from "../../../lib/money";
 
 export default function AdminOrderInvoice() {
   const { id } = useParams();
@@ -199,12 +200,10 @@ export default function AdminOrderInvoice() {
                     {item.quantity}
                   </td>
                   <td className="border px-4 py-3 text-right">
-                    {invoice.currency || "LKR"}{" "}
-                    {item.price.toFixed(2)}
+                    {formatMoney(item.price, invoice.currency)}
                   </td>
                   <td className="border px-4 py-3 text-right font-semibold">
-                    {invoice.currency || "LKR"}{" "}
-                    {(item.price * item.quantity).toFixed(2)}
+                    {formatMoney(item.price * item.quantity, invoice.currency)}
                   </td>
                 </tr>
               ))}
@@ -218,34 +217,35 @@ export default function AdminOrderInvoice() {
             <div className="flex justify-between py-2">
               <span>Subtotal</span>
               <span>
-                {invoice.currency || "LKR"} {invoice.totalFinal.toFixed(2)}
+                {formatMoney(
+                  Number(invoice.subtotal) > 0
+                    ? invoice.subtotal
+                    : invoice.items.reduce(
+                        (sum: number, item: any) => sum + item.price * item.quantity,
+                        0
+                      ),
+                  invoice.currency
+                )}
               </span>
             </div>
+            {Number(invoice.discountAmount) > 0 && (
+              <div className="flex justify-between py-2">
+                <span>Discount</span>
+                <span>-{formatMoney(invoice.discountAmount, invoice.currency)}</span>
+              </div>
+            )}
             <div className="flex justify-between py-2">
               <span>Shipping</span>
-              <span>
-                {invoice.currency || "LKR"}{" "}
-                {(invoice.shippingCost || 0).toFixed(2)}
-              </span>
+              <span>{formatMoney(invoice.shippingCost || 0, invoice.currency)}</span>
             </div>
             <div className="flex justify-between py-2">
               <span>Tax</span>
-              <span>
-                {invoice.currency || "LKR"}{" "}
-                {(invoice.taxAmount || 0).toFixed(2)}
-              </span>
+              <span>{formatMoney(invoice.taxAmount || 0, invoice.currency)}</span>
             </div>
             <hr className="my-3" />
             <div className="flex justify-between text-xl font-bold">
               <span>Grand Total</span>
-              <span>
-                {invoice.currency || "LKR"}{" "}
-                {(
-                  invoice.totalFinal +
-                  (invoice.shippingCost || 0) +
-                  (invoice.taxAmount || 0)
-                ).toFixed(2)}
-              </span>
+              <span>{formatMoney(invoice.totalFinal, invoice.currency)}</span>
             </div>
           </div>
         </div>

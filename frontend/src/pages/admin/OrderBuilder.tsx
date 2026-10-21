@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/order.service";
 import ProductSearch from "../../components/admin/order/ProductSearch";
+import { formatMoney } from "../../lib/money";
 
 export default function OrderBuilder() {
   const { orderId } = useParams();
@@ -25,9 +26,9 @@ export default function OrderBuilder() {
 
       const updated = await orderService.getOrderDetails(order.id);
       setOrder(updated);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Unable to add product");
+      alert(error?.response?.data?.message ?? "Unable to add product");
     }
   };
 
@@ -41,9 +42,9 @@ export default function OrderBuilder() {
       await orderService.updateOrderItemQuantity(itemId, newQuantity);
       const updated = await orderService.getOrderDetails(order.id);
       setOrder(updated);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Unable to update quantity");
+      alert(error?.response?.data?.message ?? "Unable to update quantity");
     }
   };
 
@@ -105,6 +106,14 @@ export default function OrderBuilder() {
     return <div className="p-8">Order not found</div>;
   }
 
+  // பழைய orders-ல் subtotal சேமிக்கப்படவில்லை — items-இலிருந்து கணக்கிடுகிறோம்
+  const itemsSubtotal = (order.items ?? []).reduce(
+    (sum: number, item: any) =>
+      sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
+  const subtotal = Number(order.subtotal) > 0 ? Number(order.subtotal) : itemsSubtotal;
+
   return (
     <div className="mx-auto w-full max-w-5xl min-w-0 space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:p-8">
       <h1 className="break-words text-2xl font-bold sm:text-3xl">
@@ -120,6 +129,9 @@ export default function OrderBuilder() {
         </p>
         <p>
           <strong>Payment :</strong> {order.paymentStatus}
+        </p>
+        <p>
+          <strong>Currency :</strong> {order.currency}
         </p>
       </div>
 
@@ -152,7 +164,7 @@ export default function OrderBuilder() {
 
         {/* Product Search Component */}
         <div className="w-full min-w-0 overflow-x-auto">
-          <ProductSearch onSelect={addProduct} />
+          <ProductSearch onSelect={addProduct} currency={order.currency} />
         </div>
 
         {
@@ -174,8 +186,8 @@ export default function OrderBuilder() {
                 {
                   order.items.map((item: any) => (
                     <tr key={item.id} className="border-t">
-                      <td className="py-3">{item.productVariant.product.name}</td>
-                      <td className="py-3">{item.productVariant.weight}</td>
+                      <td className="py-3">{item.productName || item.productVariant?.product?.name}</td>
+                      <td className="py-3">{item.variantLabel || item.productVariant?.weight}</td>
                       <td className="py-3">
                         <div className="flex items-center space-x-2">
                           <button
@@ -193,8 +205,8 @@ export default function OrderBuilder() {
                           </button>
                         </div>
                       </td>
-                      <td className="py-3">{item.price}</td>
-                      <td className="py-3">{item.lineTotal}</td>
+                      <td className="py-3">{formatMoney(item.price, order.currency)}</td>
+                      <td className="py-3">{formatMoney(item.lineTotal, order.currency)}</td>
                       <td className="py-3">
                         <button
                           onClick={() => removeProduct(item.id)}
@@ -213,12 +225,23 @@ export default function OrderBuilder() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
+        <div className="min-w-0">
+          <div className="mb-3 space-y-1 text-sm text-gray-700">
+            <p>
+              Subtotal: <strong>{formatMoney(subtotal, order.currency)}</strong>
+            </p>
+            <p>
+              Shipping: <strong>{formatMoney(order.shippingCost, order.currency)}</strong>
+            </p>
+            <p>
+              Tax: <strong>{formatMoney(order.taxAmount, order.currency)}</strong>
+            </p>
+          </div>
           <h2 className="text-2xl font-bold">
             Total
           </h2>
           <h2 className="break-words text-3xl font-bold sm:text-4xl">
-            {order.currency} {order.totalFinal}
+            {formatMoney(order.totalFinal, order.currency)}
           </h2>
         </div>
 

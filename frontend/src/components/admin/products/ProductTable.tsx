@@ -15,6 +15,7 @@ import {
   Package,
   RotateCcw,
 } from "lucide-react";
+import { formatMoney } from "../../../lib/money";
 
 import type { Product } from "../../../types/product.types";
 import { productService } from "../../../services/product.service";
@@ -137,6 +138,7 @@ function getProductValues(product: Product) {
   const sku = defaultVariant?.sku || product.sku || "N/A";
   const weight = defaultVariant?.weight ?? product.weight;
   const price = defaultVariant?.price ?? product.price ?? 0;
+  const priceLKR = defaultVariant?.priceLKR ?? 0;
   const stock = defaultVariant?.stock ?? product.stock ?? 0;
 
   const category =
@@ -149,6 +151,7 @@ function getProductValues(product: Product) {
     sku,
     weight,
     price,
+    priceLKR,
     stock,
     category,
   };
@@ -422,7 +425,14 @@ function getProductValues(product: Product) {
                   <div className="col-span-2 rounded-xl bg-[#FFF8EE] p-3">
                     <p className="text-xs text-gray-500">Price</p>
                     <p className="mt-1 break-words text-lg font-extrabold text-[#0E4B32]">
-                      Rs. {Number(values.price).toFixed(2)}
+                      {values.priceLKR > 0 ? (
+                        formatMoney(values.priceLKR, "LKR")
+                      ) : (
+                        <span className="text-red-600">LKR price not set</span>
+                      )}
+                    </p>
+                    <p className="text-xs font-medium text-gray-500">
+                      International: {formatMoney(values.price, "USD")}
                     </p>
                   </div>
                 </div>
@@ -540,7 +550,14 @@ function getProductValues(product: Product) {
                     </td>
 
                     <td className="whitespace-nowrap p-4 text-right font-semibold text-gray-900">
-                      Rs. {Number(values.price).toFixed(2)}
+                      {values.priceLKR > 0 ? (
+                        formatMoney(values.priceLKR, "LKR")
+                      ) : (
+                        <span className="text-red-600">LKR price not set</span>
+                      )}
+                      <span className="block text-xs font-medium text-gray-500">
+                        {formatMoney(values.price, "USD")}
+                      </span>
                     </td>
 
                     <td className="p-4 text-right">

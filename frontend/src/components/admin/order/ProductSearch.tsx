@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { productService } from "../../../services/product.service";
+import { formatMoney } from "../../../lib/money";
 
 interface Props {
   onSelect: (variantId: string) => void;
+  currency?: string; // Order-ன் currency (LKR / USD)
 }
 
-export default function ProductSearch({ onSelect }: Props) {
+export default function ProductSearch({ onSelect, currency = "LKR" }: Props) {
   const [keyword, setKeyword] = useState("");
   const [products, setProducts] = useState<any[]>([]);
 
@@ -50,7 +52,14 @@ export default function ProductSearch({ onSelect }: Props) {
             <div key={product.id} className="rounded border p-4 bg-gray-50 space-y-2">
               <h3 className="font-bold text-lg">{product.name}</h3>
 
-              {product.variants?.map((variant: any) => (
+              {product.variants?.map((variant: any) => {
+                // ✅ Order-ன் currency-க்கு ஏற்ற விலை (முன்பு எப்போதும் USD எண் "LKR" என்று காட்டப்பட்டது)
+                const unitPrice = Number(
+                  currency === "USD" ? variant.price : variant.priceLKR
+                );
+                const hasPrice = Number.isFinite(unitPrice) && unitPrice > 0;
+
+                return (
                 <div
                   key={variant.id}
                   className="flex items-center justify-between border-t pt-2 mt-2"
@@ -60,7 +69,16 @@ export default function ProductSearch({ onSelect }: Props) {
                       Weight: <span className="font-semibold">{variant.weight}</span>
                     </p>
                     <p className="text-sm text-gray-600">
-                      Price: <span className="font-semibold">LKR {variant.price}</span>
+                      Price:{" "}
+                      {hasPrice ? (
+                        <span className="font-semibold">
+                          {formatMoney(unitPrice, currency)}
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-red-600">
+                          {currency} price not set
+                        </span>
+                      )}
                     </p>
                     {variant.stock !== undefined && (
                       <p className="text-sm text-gray-600">
@@ -71,12 +89,14 @@ export default function ProductSearch({ onSelect }: Props) {
 
                   <button
                     onClick={() => onSelect(variant.id)}
-                    className="rounded bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700"
+                    disabled={!hasPrice}
+                    className="rounded bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Add
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ))
         )}
