@@ -113,6 +113,8 @@ app.use(cookieParser());
 
 // 4. CORS Setup
 const allowedOrigins = [
+  "https://purelyceylonorganic.com",
+  "https://www.purelyceylonorganic.com",
   'https://purely-ceylon-organic.vercel.app',
   'https://purely-ceylon-store.vercel.app',
   'http://localhost:3000',
