@@ -60,6 +60,34 @@ export function pickCurrencyForCountry(country: string): Currency {
   return isSriLanka(country) ? "LKR" : "USD";
 }
 
+// ---------- 🌐 Exchange rate / Tax ஏற்றுதல் ----------
+export async function loadLkrPerUsd(): Promise<number> {
+  const rateRow = await prisma.currencyRate.findUnique({ where: { code: "LKR" } });
+  const lkrPerUsd = Number(rateRow?.rate);
+
+  if (!Number.isFinite(lkrPerUsd) || lkrPerUsd <= 0) {
+    throw new Error("LKR exchange rate is missing. Please update the CurrencyRate table.");
+  }
+  if (lkrPerUsd < 100) {
+    console.warn(`⚠️ CurrencyRate LKR = ${lkrPerUsd} — இது தவறாக இருக்கலாம் (சுமார் 300 இருக்க வேண்டும்)`);
+  }
+  return lkrPerUsd;
+}
+
+async function loadTaxPercent(country: string): Promise<number> {
+  const taxRow = await prisma.taxRate.findFirst({
+    where: { country: { equals: country.trim(), mode: "insensitive" }, isActive: true },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (!taxRow) {
+    throw new Error(
+      `Tax rate is not configured for ${country.trim()}. Add an active row in the TaxRate table.`
+    );
+  }
+  return Number(taxRow.rate);
+}
+
 // ---------- 📦 Input வகை ----------
 export type PricingVariant = {
   id: string;
@@ -149,27 +177,11 @@ export async function calculateCheckoutPricing(input: PricingInput) {
   }
 
   // 1) Exchange rate (LKR per 1 USD)
-  const rateRow = await prisma.currencyRate.findUnique({ where: { code: "LKR" } });
-  const lkrPerUsd = Number(rateRow?.rate);
-  if (!Number.isFinite(lkrPerUsd) || lkrPerUsd <= 0) {
-    throw new Error("LKR exchange rate is missing. Please update the CurrencyRate table.");
-  }
-  if (lkrPerUsd < 100) {
-    console.warn(`⚠️ CurrencyRate LKR = ${lkrPerUsd} — இது தவறாக இருக்கலாம் (சுமார் 300 இருக்க வேண்டும்)`);
-  }
+  const lkrPerUsd = await loadLkrPerUsd();
   const exchangeRate = currency === "LKR" ? lkrPerUsd : 1;
 
   // 2) Tax (வாடிக்கையாளரின் நாடு)
-  const taxRow = await prisma.taxRate.findFirst({
-    where: { country: { equals: country.trim(), mode: "insensitive" }, isActive: true },
-    orderBy: { updatedAt: "desc" },
-  });
-  if (!taxRow) {
-    throw new Error(
-      `Tax rate is not configured for ${country.trim()}. Add an active row in the TaxRate table.`
-    );
-  }
-  const taxPercent = Number(taxRow.rate);
+  const taxPercent = await loadTaxPercent(country);
 
   // 3) Items + subtotal
   let subtotal = 0;
@@ -241,5 +253,41 @@ export async function calculateCheckoutPricing(input: PricingInput) {
     totalFinal,
     totalUSD,
     orderItems,
+  };
+}
+
+// ======================================================
+// 🧾 Admin (Draft) order-களுக்கு: subtotal ஏற்கனவே தெரியும்;
+// shipping, tax, மொத்தம் ஆகியவற்றை Checkout-ன் அதே விதிகளில் கணக்கிடும்.
+// ======================================================
+export async function calculateOrderCharges(input: {
+  country: string;
+  province?: string | null;
+  currency: Currency;
+  subtotal: number;
+  discountAmount?: number;
+}) {
+  const { country, province, currency, subtotal } = input;
+  const discountAmount = input.discountAmount ?? 0;
+
+  const lkrPerUsd = await loadLkrPerUsd();
+  const taxPercent = await loadTaxPercent(country);
+
+  const rule = pickShippingRule(country, province);
+  const shippingCost = round2(convert(rule.amount, rule.currency, currency, lkrPerUsd));
+
+  const taxable = Math.max(subtotal - discountAmount, 0);
+  const taxAmount = round2((taxable * taxPercent) / 100);
+
+  const totalFinal = round2(taxable + taxAmount + shippingCost);
+
+  return {
+    exchangeRate: currency === "LKR" ? lkrPerUsd : 1,
+    shippingCost,
+    estimatedDays: rule.days,
+    taxPercent,
+    taxAmount,
+    totalFinal,
+    totalUSD: round2(convert(totalFinal, currency, "USD", lkrPerUsd)),
   };
 }

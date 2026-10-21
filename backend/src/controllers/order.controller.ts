@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { generateTrackingId } from "../services/dhlSimulator"; 
+import { generateTrackingId } from "../services/dhlSimulator";
+import { PERMISSIONS } from "../constants/permissions";
+import { ROLES } from "../constants/roles";
+import { hasPermission } from "../utils/permission.helper"; 
 import {
   notifyAdminsNewOrder,
   notifyCustomer,
@@ -627,7 +630,7 @@ export const createAdminOrderController = async (
       });
     }
 
-    const order = await createAdminOrder(customerId, addressId);
+    const order = await createAdminOrder(customerId, addressId, req.body.currency);
 
     return res.status(201).json({
       success: true,
@@ -681,8 +684,22 @@ export const getOrderDetailsController = async (
 ) => {
   try {
     const { orderId } = req.params;
+    const user = (req as any).user;
 
     const order = await getOrderDetails(orderId);
+
+    // 🔐 Order-ன் உரிமையாளர் அல்லது ORDER_VIEW அனுமதி உள்ளவர் மட்டும் (முன்பு எந்த login user-உம் பார்க்கலாம்)
+    const isOwner = order.user?.id === user?.id;
+    const isStaff =
+      user?.role === ROLES.SUPER_ADMIN ||
+      (user?.role ? hasPermission(user.role, PERMISSIONS.ORDER_VIEW) : false);
+
+    if (!isOwner && !isStaff) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,

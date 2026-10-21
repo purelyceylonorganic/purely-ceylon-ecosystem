@@ -4,6 +4,9 @@ import { PrismaClient } from "@prisma/client";
 import { createAuditLog } from "../services/audit";
 import { AUDIT_ACTIONS } from "../constants/auditActions";
 import { MODULES } from "../constants/modules";
+import { PERMISSIONS } from "../constants/permissions";
+import { ROLES } from "../constants/roles";
+import { hasPermission } from "../utils/permission.helper";
 
 const prisma = new PrismaClient();
 
@@ -18,11 +21,14 @@ export const generateInvoice = async (req: Request, res: Response) => {
     // ===============================
     // 1. GET ORDER (SAFE + FULL DATA)
     // ===============================
+    // 🔐 ORDER_VIEW அனுமதி உள்ளவர்கள் எல்லா invoice-ஐயும்; மற்றவர்கள் தங்களுடையதை மட்டும்
+    const isStaff =
+      user.role === ROLES.SUPER_ADMIN || hasPermission(user.role, PERMISSIONS.ORDER_VIEW);
+
     const order = await prisma.order.findFirst({
       where: {
         id: orderId,
-        // 🚀 பயனர் CUSTOMER ஆக இருந்தால் சொந்த இன்வாய்ஸ் மட்டும், ADMIN/FINANCE எனில் எல்லாவற்றையும் பார்க்கலாம்
-        userId: user.role === "CUSTOMER" ? (user.id || user.userId) : undefined
+        userId: isStaff ? undefined : (user.id || user.userId)
       },
       include: {
         items: {
@@ -90,7 +96,7 @@ export const generateInvoice = async (req: Request, res: Response) => {
 
     order.items.forEach((item: any) => {
       doc.fontSize(12).text(
-        `${item.productVariant?.sku || "Unknown SKU"} | Qty: ${item.quantity} | Price: ${item.price}`
+        `${item.productVariant?.sku || "Unknown SKU"} | Qty: ${item.quantity} | Price: ${order.currency} ${item.price}`
       );
     });
 
@@ -104,15 +110,24 @@ export const generateInvoice = async (req: Request, res: Response) => {
 
     doc.fontSize(12);
 
-    doc.text(`Subtotal (USD): ${order.totalUSD}`);
-    doc.text(`Tax: ${order.taxAmount}`);
-    doc.text(`Shipping: ${order.shippingCost}`);
-    doc.text(`Exchange Rate: ${order.exchangeRate}`);
+    // பழைய orders-ல் subtotal சேமிக்கப்படவில்லை — items-இலிருந்து கணக்கிடுகிறோம்
+    const itemsSubtotal = order.items.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    );
+    const subtotal = order.subtotal > 0 ? order.subtotal : itemsSubtotal;
+
+    doc.text(`Subtotal: ${order.currency} ${subtotal.toFixed(2)}`);
+    if (order.discountAmount > 0) {
+      doc.text(`Discount: -${order.currency} ${order.discountAmount.toFixed(2)}`);
+    }
+    doc.text(`Shipping: ${order.currency} ${order.shippingCost.toFixed(2)}`);
+    doc.text(`Tax: ${order.currency} ${order.taxAmount.toFixed(2)}`);
 
     doc.moveDown();
 
     doc.fontSize(16).text(
-      `TOTAL: ${order.totalFinal} ${order.currency}`
+      `TOTAL: ${order.currency} ${order.totalFinal.toFixed(2)}`
     );
 
     doc.moveDown(2);

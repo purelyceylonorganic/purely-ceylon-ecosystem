@@ -1,10 +1,85 @@
-import {prisma} from "../config/prisma";
+import { Prisma } from "@prisma/client";
+import { prisma } from "../config/prisma";
+import {
+  calculateOrderCharges,
+  loadLkrPerUsd,
+  pickCurrencyForCountry,
+  type Currency,
+} from "./checkoutPricing.service";
 
+type Tx = Prisma.TransactionClient;
+
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+// ======================================================
+// 🧮 Order-ன் மொத்தத்தை மீண்டும் கணக்கிடுதல்
+// Items-ன் விலை (order currency-ல்) + shipping + tax = மொத்தம்
+// ======================================================
+async function recalculateOrderTotals(tx: Tx, orderId: string) {
+  const order = await tx.order.findUniqueOrThrow({
+    where: { id: orderId },
+    include: { items: true, address: true },
+  });
+
+  const subtotal = round2(
+    order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  );
+
+  // Items இல்லையென்றால் எல்லாம் 0
+  if (order.items.length === 0) {
+    return tx.order.update({
+      where: { id: orderId },
+      data: {
+        subtotal: 0,
+        shippingCost: 0,
+        taxAmount: 0,
+        totalFinal: 0,
+        totalUSD: 0,
+        balance: 0,
+      },
+      select: { id: true, status: true, paymentStatus: true, totalFinal: true },
+    });
+  }
+
+  const charges = await calculateOrderCharges({
+    country: order.address?.country ?? "Sri Lanka",
+    province: order.address?.province,
+    currency: order.currency as Currency,
+    subtotal,
+    discountAmount: order.discountAmount ?? 0,
+  });
+
+  return tx.order.update({
+    where: { id: orderId },
+    data: {
+      subtotal,
+      exchangeRate: charges.exchangeRate,
+      shippingCost: charges.shippingCost,
+      taxAmount: charges.taxAmount,
+      totalFinal: charges.totalFinal,
+      totalUSD: charges.totalUSD,
+      balance: Math.max(round2(charges.totalFinal - (order.paidAmount ?? 0)), 0),
+    },
+    select: { id: true, status: true, paymentStatus: true, totalFinal: true },
+  });
+}
+
+// Draft order-ஐ edit செய்யலாமா? (PENDING மட்டும்)
+function assertEditable(status: string) {
+  if (status !== "PENDING") {
+    throw new Error("Only PENDING orders can be edited");
+  }
+}
+
+// ======================================================
+// 🆕 Admin order உருவாக்கம்
+// Currency: கொடுத்தால் அது; இல்லையென்றால் முகவரியின் நாட்டைப் பொறுத்து (இலங்கை → LKR)
+// ======================================================
 export const createAdminOrder = async (
   customerId: string,
-  addressId: string
+  addressId: string,
+  currency?: string
 ) => {
-  // Check Customer
   const customer = await prisma.user.findUnique({
     where: {
       id: customerId,
@@ -16,7 +91,6 @@ export const createAdminOrder = async (
     throw new Error("Customer not found");
   }
 
-  // Check Address
   const address = await prisma.address.findFirst({
     where: {
       id: addressId,
@@ -28,15 +102,24 @@ export const createAdminOrder = async (
     throw new Error("Address not found");
   }
 
-  // Create Empty Order
+  const requested = String(currency || "").toUpperCase();
+  const orderCurrency: Currency =
+    requested === "LKR" || requested === "USD"
+      ? requested
+      : pickCurrencyForCountry(address.country);
+
+  const lkrPerUsd = await loadLkrPerUsd();
+
   const order = await prisma.order.create({
     data: {
       userId: customerId,
       addressId,
-      currency: "LKR",
-      exchangeRate: 1,
+      currency: orderCurrency,
+      exchangeRate: orderCurrency === "LKR" ? lkrPerUsd : 1,
       totalUSD: 0,
       totalFinal: 0,
+      subtotal: 0,
+      balance: 0,
     },
     select: {
       id: true,
@@ -51,105 +134,93 @@ export const createAdminOrder = async (
   return order;
 };
 
+// ======================================================
+// ➕ Product சேர்த்தல் — Order-ன் currency-க்கு ஏற்ற விலை
+// ======================================================
 export const addProductToOrder = async (
   orderId: string,
   productVariantId: string,
   quantity: number
 ) => {
-  return await prisma.$transaction(async (tx) => {
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    throw new Error("Quantity must be at least 1");
+  }
 
-    // 1. Find Product Variant
+  return await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, status: true, currency: true },
+    });
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    assertEditable(order.status);
+
     const variant = await tx.productVariant.findUnique({
-      where: {
-        id: productVariantId,
-      },
+      where: { id: productVariantId },
+      include: { product: { select: { name: true, isActive: true, deletedAt: true } } },
     });
 
     if (!variant) {
       throw new Error("Product variant not found");
     }
+    if (!variant.product.isActive || variant.product.deletedAt) {
+      throw new Error(`${variant.product.name} is no longer available`);
+    }
 
-    // 2. Stock Check
-    if (variant.stock < quantity) {
+    // ✅ முன்பு எப்போதும் USD விலை (variant.price) எடுக்கப்பட்டது — இப்போது order currency-க்கு ஏற்ப
+    const unitPrice = order.currency === "LKR" ? variant.priceLKR : variant.price;
+
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      throw new Error(
+        `${order.currency} price is not set for ${variant.product.name} (${variant.weight}). Set it in Edit Product first.`
+      );
+    }
+
+    // Stock-ஐ பாதுகாப்பாக ஒதுக்குதல்
+    const reserved = await tx.productVariant.updateMany({
+      where: { id: productVariantId, stock: { gte: quantity } },
+      data: { stock: { decrement: quantity } },
+    });
+
+    if (reserved.count === 0) {
       throw new Error("Insufficient stock");
     }
 
-    // 3. Existing Item
     const existingItem = await tx.orderItem.findFirst({
-      where: {
-        orderId,
-        productVariantId,
-      },
+      where: { orderId, productVariantId },
     });
 
     if (existingItem) {
-
       await tx.orderItem.update({
-        where: {
-          id: existingItem.id,
-        },
-        data: {
-          quantity: existingItem.quantity + quantity,
-        },
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + quantity },
       });
-
     } else {
-
       await tx.orderItem.create({
         data: {
           orderId,
           productVariantId,
           quantity,
-          price: variant.price,
+          price: unitPrice,
+          unitPrice,
+          productName: variant.product.name,
+          variantLabel: variant.weight,
+          sku: variant.sku,
+          costPriceLKR: variant.costPrice ?? 0,
+          currency: order.currency,
         },
       });
-
     }
 
-    // 4. Reduce Stock
-    await tx.productVariant.update({
-      where: {
-        id: productVariantId,
-      },
-      data: {
-        stock: {
-          decrement: quantity,
-        },
-      },
-    });
-
-    // 5. Recalculate Order Total
-    const items = await tx.orderItem.findMany({
-      where: {
-        orderId,
-      },
-    });
-
-    const total = items.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-
-    // 6. Update Order
-    const order = await tx.order.update({
-      where: {
-        id: orderId,
-      },
-      data: {
-        totalFinal: total,
-      },
-      select: {
-        id: true,
-        status: true,
-        paymentStatus: true,
-        totalFinal: true,
-      },
-    });
-
-    return order;
-
+    return recalculateOrderTotals(tx, orderId);
   });
 };
 
+// ======================================================
+// 🔍 Order விவரம் (Order Builder / Admin Order Details)
+// ======================================================
 export const getOrderDetails = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: {
@@ -159,8 +230,15 @@ export const getOrderDetails = async (orderId: string) => {
       id: true,
       status: true,
       paymentStatus: true,
+      paymentMethod: true,
       currency: true,
       totalFinal: true,
+      subtotal: true,
+      discountAmount: true,
+      shippingCost: true,
+      taxAmount: true,
+      totalUSD: true,
+      exchangeRate: true,
       createdAt: true,
 
       user: {
@@ -190,6 +268,9 @@ export const getOrderDetails = async (orderId: string) => {
           id: true,
           quantity: true,
           price: true,
+          productName: true,
+          variantLabel: true,
+          sku: true,
 
           productVariant: {
             select: {
@@ -216,7 +297,7 @@ export const getOrderDetails = async (orderId: string) => {
 
   const items = order.items.map((item) => ({
     ...item,
-    lineTotal: item.price * item.quantity,
+    lineTotal: round2(item.price * item.quantity),
   }));
 
   return {
@@ -225,186 +306,100 @@ export const getOrderDetails = async (orderId: string) => {
   };
 };
 
+// ======================================================
+// 🔢 அளவு மாற்றம்
+// ======================================================
 export const updateOrderItemQuantity = async (
   orderItemId: string,
   quantity: number
 ) => {
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    throw new Error("Quantity must be at least 1");
+  }
+
   return await prisma.$transaction(async (tx) => {
-
-    if (quantity < 1) {
-      throw new Error("Quantity must be at least 1");
-    }
-
-    // Existing Order Item
     const orderItem = await tx.orderItem.findUnique({
-      where: {
-        id: orderItemId,
-      },
+      where: { id: orderItemId },
+      include: { order: { select: { id: true, status: true } } },
     });
 
     if (!orderItem) {
       throw new Error("Order item not found");
     }
+    assertEditable(orderItem.order.status);
 
-    // Product Variant
-    const variant = await tx.productVariant.findUnique({
-      where: {
-        id: orderItem.productVariantId,
-      },
-    });
-
-    if (!variant) {
-      throw new Error("Product variant not found");
-    }
-
-    // Difference
     const difference = quantity - orderItem.quantity;
 
-    // Increase Quantity
     if (difference > 0) {
+      const reserved = await tx.productVariant.updateMany({
+        where: { id: orderItem.productVariantId, stock: { gte: difference } },
+        data: { stock: { decrement: difference } },
+      });
 
-      if (variant.stock < difference) {
+      if (reserved.count === 0) {
         throw new Error("Insufficient stock");
       }
-
+    } else if (difference < 0) {
       await tx.productVariant.update({
-        where: {
-          id: variant.id,
-        },
-        data: {
-          stock: {
-            decrement: difference,
-          },
-        },
+        where: { id: orderItem.productVariantId },
+        data: { stock: { increment: Math.abs(difference) } },
       });
-
     }
 
-    // Decrease Quantity
-    if (difference < 0) {
-
-      await tx.productVariant.update({
-        where: {
-          id: variant.id,
-        },
-        data: {
-          stock: {
-            increment: Math.abs(difference),
-          },
-        },
-      });
-
-    }
-
-    // Update Order Item
     await tx.orderItem.update({
-      where: {
-        id: orderItemId,
-      },
-      data: {
-        quantity,
-      },
+      where: { id: orderItemId },
+      data: { quantity },
     });
 
-    // Recalculate Total
-    const items = await tx.orderItem.findMany({
-      where: {
-        orderId: orderItem.orderId,
-      },
-    });
-
-    const total = items.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-
-    const order = await tx.order.update({
-      where: {
-        id: orderItem.orderId,
-      },
-      data: {
-        totalFinal: total,
-      },
-      select: {
-        id: true,
-        totalFinal: true,
-        status: true,
-        paymentStatus: true,
-      },
-    });
-
-    return order;
-
+    return recalculateOrderTotals(tx, orderItem.orderId);
   });
 };
 
-export const removeProductFromOrder = async (
-  orderItemId: string
-) => {
+// ======================================================
+// ➖ Product நீக்குதல்
+// ======================================================
+export const removeProductFromOrder = async (orderItemId: string) => {
   return await prisma.$transaction(async (tx) => {
-
-    // 1. Find Order Item
     const orderItem = await tx.orderItem.findUnique({
-      where: {
-        id: orderItemId,
-      },
+      where: { id: orderItemId },
+      include: { order: { select: { id: true, status: true } } },
     });
 
     if (!orderItem) {
       throw new Error("Order item not found");
     }
+    assertEditable(orderItem.order.status);
 
-    // 2. Return Stock
     await tx.productVariant.update({
-      where: {
-        id: orderItem.productVariantId,
-      },
-      data: {
-        stock: {
-          increment: orderItem.quantity,
-        },
-      },
+      where: { id: orderItem.productVariantId },
+      data: { stock: { increment: orderItem.quantity } },
     });
 
-    // 3. Delete Order Item
-    await tx.orderItem.delete({
-      where: {
-        id: orderItemId,
-      },
-    });
+    await tx.orderItem.delete({ where: { id: orderItemId } });
 
-    // 4. Calculate New Order Total
-    const items = await tx.orderItem.findMany({
-      where: {
-        orderId: orderItem.orderId,
-      },
-    });
-
-    const total = items.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-
-    // 5. Update Order
-    const order = await tx.order.update({
-      where: {
-        id: orderItem.orderId,
-      },
-      data: {
-        totalFinal: total,
-      },
-      select: {
-        id: true,
-        totalFinal: true,
-        status: true,
-        paymentStatus: true,
-      },
-    });
-
-    return order;
-
+    return recalculateOrderTotals(tx, orderItem.orderId);
   });
 };
 
+// ======================================================
+// ✅ Order உறுதி
+// ======================================================
 export const confirmOrder = async (orderId: string) => {
+  const existing = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true, _count: { select: { items: true } } },
+  });
+
+  if (!existing) {
+    throw new Error("Order not found");
+  }
+  if (existing._count.items === 0) {
+    throw new Error("Add at least one product before confirming the order");
+  }
+  if (existing.status !== "PENDING") {
+    throw new Error("Only PENDING orders can be confirmed");
+  }
+
   const order = await prisma.order.update({
     where: {
       id: orderId,
