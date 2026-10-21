@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Navbar from "./Navbar";
+import PageLoader from "../components/PageLoader";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,7 +12,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Navbar />
 
       <main className="w-full overflow-x-hidden">
-        {children}
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
       </main>
     </div>
   );

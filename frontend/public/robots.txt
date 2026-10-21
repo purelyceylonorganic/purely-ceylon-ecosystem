@@ -1,5 +1,21 @@
-
 User-agent: *
 Allow: /
 
+# தனிப்பட்ட / நிர்வாகப் பக்கங்கள் Google-ல் வரக்கூடாது
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+Disallow: /wishlist
+Disallow: /addresses
+Disallow: /payment
+Disallow: /login
+Disallow: /register
+Disallow: /verify-
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /change-password
+
 Sitemap: https://purely-ceylon-organic.vercel.app/sitemap.xml
+Sitemap: https://purely-ceylon-organic.vercel.app/sitemap-products.xml

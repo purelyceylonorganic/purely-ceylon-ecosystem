@@ -1,4 +1,3 @@
-
 export interface SEOConfig {
   title: string;
   description: string;
@@ -7,7 +6,7 @@ export interface SEOConfig {
 }
 
 const SITE_NAME = "Purely Ceylon Organic";
-const DEFAULT_IMAGE = "/logo/pco-logo.png";
+const DEFAULT_IMAGE = "/og-image.png"; // 1200x630 பகிர்வுப் படம்
 
 export function setSEO({
   title,
@@ -86,4 +85,23 @@ function setCanonical(url: string): void {
   }
 
   element.href = url;
+}
+
+// 🧾 Google-க்கான structured data (JSON-LD). data = null என்றால் நீக்கும்.
+export function setJsonLd(id: string, data: object | null): void {
+  const existing = document.getElementById(id);
+
+  if (!data) {
+    existing?.remove();
+    return;
+  }
+
+  const script = existing ?? document.createElement("script");
+  script.id = id;
+  script.setAttribute("type", "application/ld+json");
+  script.textContent = JSON.stringify(data);
+
+  if (!existing) {
+    document.head.appendChild(script);
+  }
 }

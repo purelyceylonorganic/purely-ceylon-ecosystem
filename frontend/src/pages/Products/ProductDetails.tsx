@@ -9,7 +9,7 @@ import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { reviewService } from "../../services/review.service"; 
 import { useAuth } from "../../context/AuthContext"; 
-import { setSEO } from "../../utils/seo";
+import { setJsonLd, setSEO } from "../../utils/seo";
 import type { Product } from "../../types/product.types";
 import { useCurrency } from "../../context/CurrencyContext";
 import { formatMoney, variantPrice } from "../../lib/money";
@@ -126,6 +126,52 @@ useEffect(() => {
     image: productImage,
     url: productUrl,
   });
+
+  // 🧾 Product structured data — Google-ல் விலை மற்றும் கிடைக்கும் நிலை காட்ட உதவும்
+  const offers = (product.variants ?? []).flatMap((v: any) => {
+    const list: object[] = [];
+    const availability =
+      Number(v.stock) > 0
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock";
+
+    if (Number(v.priceLKR) > 0) {
+      list.push({
+        "@type": "Offer",
+        priceCurrency: "LKR",
+        price: Number(v.priceLKR),
+        availability,
+        sku: v.sku,
+        url: productUrl,
+      });
+    }
+    if (Number(v.price) > 0) {
+      list.push({
+        "@type": "Offer",
+        priceCurrency: "USD",
+        price: Number(v.price),
+        availability,
+        sku: v.sku,
+        url: productUrl,
+      });
+    }
+    return list;
+  });
+
+  setJsonLd("product-jsonld", {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description,
+    image: (product.images?.length
+      ? product.images.map((img) => img.url)
+      : [productImage]
+    ).map((src) => new URL(src, window.location.origin).href),
+    brand: { "@type": "Brand", name: "Purely Ceylon Organic" },
+    ...(offers.length > 0 && { offers }),
+  });
+
+  return () => setJsonLd("product-jsonld", null);
 }, [product]);
 
 

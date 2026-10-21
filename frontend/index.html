@@ -1,83 +1,103 @@
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Purely Ceylon Organic | PCO PRODUCTION</title>
-
+    <!-- 🔎 தலைப்பு & விளக்கம் (Google தேடல் முடிவில் தெரிவது) -->
+    <title>Purely Ceylon Organic (PCO) | Premium Sri Lankan Organic Products</title>
     <meta
       name="description"
-      content="Discover premium Sri Lankan spices, Ceylon tea, natural powders and selected organic products from Purely Ceylon Organic. Explore PCO PRODUCTION products and product traceability."
+      content="Purely Ceylon Organic (PCO): premium Sri Lankan organic spices, Ceylon tea & natural products with full traceability. Shop online, wholesale & export."
     />
-
     <meta
       name="keywords"
-      content="Purely Ceylon Organic, PCO PRODUCTION, PCO, Sri Lankan spices, Ceylon tea, organic products Sri Lanka, spice powders"
+      content="Purely Ceylon Organic, PCO, PCO Production, Sri Lankan organic products, Ceylon spices, Ceylon tea, organic spices, Sri Lanka"
     />
+    <meta name="author" content="Purely Ceylon Organic (Pvt) Ltd" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
 
-    <meta
-      name="author"
-      content="Purely Ceylon Organic (Pvt) Ltd"
-    />
-
-    <meta name="application-name" content="PCO PRODUCTION" />
-    <meta name="theme-color" content="#0E4B32" />
-
-    <!-- Google Search Console Verification -->
+    <!-- ✅ Google Search Console சரிபார்ப்பு (ஏற்கனவே உள்ளது — நீக்க வேண்டாம்) -->
     <meta
       name="google-site-verification"
       content="QcKI5JGWwNlMQjDUWev5XnYqeoTzGKgbRSo_w0agUL4"
     />
 
-    <!-- Canonical URL -->
-    <link
-      rel="canonical"
-      href="https://purely-ceylon-organic.vercel.app/"
-    />
+    <!-- 📱 App / தீம் -->
+    <meta name="theme-color" content="#0E4B32" />
+    <meta name="application-name" content="Purely Ceylon Organic" />
+    <meta name="apple-mobile-web-app-title" content="PCO Production" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
 
-    <!-- Open Graph / Social Sharing -->
+    <!-- 🖼️ Icons / Favicon (Google-ன் தேடல் முடிவிலும் இது தெரியும்) -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- 🔗 WhatsApp / Facebook / Twitter பகிர்வு -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Purely Ceylon Organic" />
-    <meta
-      property="og:title"
-      content="Purely Ceylon Organic | PCO PRODUCTION"
-    />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Purely Ceylon Organic (PCO) | Premium Sri Lankan Organic Products" />
     <meta
       property="og:description"
-      content="Explore premium Sri Lankan spices, Ceylon tea and natural products from Purely Ceylon Organic."
+      content="Premium Sri Lankan organic spices, Ceylon tea and natural products with full traceability."
     />
-    <meta
-      property="og:url"
-      content="https://purely-ceylon-organic.vercel.app/"
-    />
-    <meta
-      property="og:image"
-      content="https://purely-ceylon-organic.vercel.app/logo/pco-logo.png"
-    />
+    <meta property="og:url" content="https://purely-ceylon-organic.vercel.app/" />
+    <meta property="og:image" content="https://purely-ceylon-organic.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Purely Ceylon Organic (PCO) logo" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/logo/pco-logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Purely Ceylon Organic (PCO)" />
+    <meta
+      name="twitter:description"
+      content="Premium Sri Lankan organic spices, Ceylon tea and natural products."
+    />
+    <meta name="twitter:image" content="https://purely-ceylon-organic.vercel.app/og-image.png" />
 
-    <!-- Google site name structured data -->
+    <!-- 🧾 Google-க்கு: நிறுவனம் யார்? "PCO" என்பது இவர்கள்தான் என்று அறிவிக்கிறது -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Purely Ceylon Organic",
-        "alternateName": [
-          "PCO PRODUCTION",
-          "PCO",
-          "Purely Ceylon"
-        ],
-        "url": "https://purely-ceylon-organic.vercel.app/"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://purely-ceylon-organic.vercel.app/#organization",
+            "name": "Purely Ceylon Organic",
+            "legalName": "Purely Ceylon Organic (Pvt) Ltd",
+            "alternateName": ["PCO", "PCO Production"],
+            "url": "https://purely-ceylon-organic.vercel.app/",
+            "logo": "https://purely-ceylon-organic.vercel.app/logo/pco-logo.png",
+            "description": "Premium Sri Lankan organic spices, Ceylon tea and natural products with farm-to-table traceability.",
+            "address": { "@type": "PostalAddress", "addressCountry": "LK" }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://purely-ceylon-organic.vercel.app/#website",
+            "url": "https://purely-ceylon-organic.vercel.app/",
+            "name": "Purely Ceylon Organic",
+            "alternateName": ["PCO", "PCO Production"],
+            "publisher": { "@id": "https://purely-ceylon-organic.vercel.app/#organization" }
+          }
+        ]
       }
     </script>
   </head>
-
   <body>
     <div id="root"></div>
+
+    <!-- JavaScript இல்லாமல் படிக்கும் தேடல் இயந்திரங்களுக்கு -->
+    <noscript>
+      <h1>Purely Ceylon Organic (PCO)</h1>
+      <p>
+        Premium Sri Lankan organic spices, Ceylon tea and natural products with
+        farm-to-table traceability. Please enable JavaScript to shop online.
+      </p>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

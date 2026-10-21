@@ -16,7 +16,8 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import PageLoader from "../components/PageLoader";
 import NotificationBell from "../components/notifications/NotificationBell";
 
 const menu = [
@@ -309,7 +310,9 @@ useEffect(() => {
           {/* Page */}
           <div className="w-full px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
             <div className="mx-auto w-full max-w-7xl">
-              <Outlet />
+              <Suspense fallback={<PageLoader />}>
+                <Outlet />
+              </Suspense>
             </div>
           </div>
         </main>
