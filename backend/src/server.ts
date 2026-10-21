@@ -67,6 +67,8 @@ import financeRoutes from "./routes/finance.routes";
 import newsletterRoutes from "./routes/newsletter.route";
 import notificationRoutes from "./routes/notification.routes";
 import incomeRoutes from "./routes/income.routes";
+import sitemapRoutes from "./routes/sitemap.routes";
+
 
 process.on("uncaughtException", (err) => {
   logger.error("💥 Uncaught Exception:", err);
@@ -216,7 +218,7 @@ app.use("/api/v1/finance", financeRoutes);
 app.use("/api/v1/newsletter", newsletterRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/income", incomeRoutes); 
-
+app.use("/api/v1/sitemap", sitemapRoutes);
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
 app.get('/api/v1/verify-email-connection', async (_req, res) => {
   try {
