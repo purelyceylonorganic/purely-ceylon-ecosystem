@@ -10,6 +10,7 @@ import {
   Mail,
   ChevronRight,
   FolderPlus,
+  Truck,
 } from "lucide-react";
 import {
   NavLink,
@@ -38,7 +39,13 @@ const menu = [
     path: "/admin/products",
     icon: Package,
   },
-
+  
+  {
+  name: "Delivery Routes",
+  path: "/admin/delivery-routes",
+  icon: Truck,
+  },
+  
   {
   name: "Categories",
   path: "/admin/categories",

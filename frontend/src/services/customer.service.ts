@@ -223,4 +223,24 @@ async quickCreate(data: {
 
     return response.data;
   },
+
+    // ==========================================
+  // ASSIGN CUSTOMER TO DELIVERY ROUTE
+  // PUT /api/v1/customers/:id/delivery
+  // ==========================================
+
+  async updateCustomerDelivery(
+    customerId: string,
+    data: {
+      deliveryRouteId: string | null;
+      dailyQuantity: number | null;
+    }
+  ) {
+    const response = await api.put(
+      `${API}/${encodeURIComponent(customerId)}/delivery`,
+      data
+    );
+
+    return response.data;
+  },
 };

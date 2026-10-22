@@ -507,6 +507,13 @@ export const findCustomerProfile = async (id: string) => {
       createdAt: true,
       updatedAt: true,
 
+      // Delivery
+      dailyQuantity: true,
+      deliveryRouteId: true,
+      deliveryRoute: {
+        select: { id: true, name: true },
+      },
+
       // ==========================================
       // ADDRESSES
       // ==========================================

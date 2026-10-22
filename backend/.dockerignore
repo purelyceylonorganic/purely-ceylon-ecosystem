@@ -6,3 +6,4 @@ logs
 coverage
 *.dump
 *.backup
+backend/staging-before-reset.dump

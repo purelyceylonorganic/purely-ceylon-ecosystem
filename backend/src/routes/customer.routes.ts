@@ -15,6 +15,7 @@ import {
   getCustomers,
   updateCustomerNote,
   deleteCustomerNote,
+  updateCustomerDelivery,
 } from "../controllers/customer.controller";
 
 import { protect } from "../middlewares/auth.middleware";
@@ -63,6 +64,13 @@ router.get(
   protect,
   authorizePermissions(PERMISSIONS.CUSTOMER_VIEW),
   customerProfile
+);
+
+router.put(
+  "/:id/delivery",
+  protect,
+  authorizePermissions(PERMISSIONS.CUSTOMER_UPDATE),
+  updateCustomerDelivery
 );
 
 router.post(

@@ -5,6 +5,7 @@ import { logger } from "../config/logger";
 import { normalizePhoneNumber } from "../utils/phoneNormalizer";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { z } from "zod";
 import {
   findCustomerProfile,
   updateCustomerAddressService,
@@ -326,11 +327,22 @@ export const getCustomers = async (
     const {
       search = "",
       status = "ALL",
+      routeId = "ALL",
     } = req.query;
 
     const where: any = {
       role: ROLES.CUSTOMER,
     };
+
+    // ==========================================
+    // ROUTE FILTER  (ALL | NONE | route id)
+    // ==========================================
+
+    if (routeId === "NONE") {
+      where.deliveryRouteId = null;
+    } else if (typeof routeId === "string" && routeId !== "ALL" && routeId) {
+      where.deliveryRouteId = routeId;
+    }
 
     // ==========================================
     // STATUS FILTER
@@ -390,6 +402,15 @@ export const getCustomers = async (
           isActive: true,
           isVerified: true,
           createdAt: true,
+
+          // ================================
+          // DELIVERY (Route + Daily Quantity)
+          // ================================
+          dailyQuantity: true,
+          deliveryRouteId: true,
+          deliveryRoute: {
+            select: { id: true, name: true },
+          },
 
           // ================================
           // ADDRESS
@@ -516,10 +537,11 @@ export const getCustomers = async (
               }
             : null,
 
-          // These will be added
-          // when Delivery system is created
-          deliveryRoute: null,
-          dailyQuantity: null,
+          // Delivery
+          deliveryRoute:
+            (customer.deliveryRoute as { name: string } | null)?.name ?? null,
+          deliveryRouteId: customer.deliveryRouteId,
+          dailyQuantity: customer.dailyQuantity,
           lastDelivery: null,
         };
       });
@@ -991,5 +1013,94 @@ async (
       message: error.message
     });
 
+  }
+};
+
+// =====================================================
+// 🚚 CUSTOMER DELIVERY SETTINGS (Route + Daily Quantity)
+// PUT /api/v1/customers/:id/delivery
+// =====================================================
+
+const deliverySchema = z.object({
+  deliveryRouteId: z.string().min(1).nullable().optional(),
+  dailyQuantity: z.number().min(0).max(100000).nullable().optional(),
+});
+
+export const updateCustomerDelivery = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+
+    const parsed = deliverySchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid route or daily quantity",
+      });
+    }
+
+    const { deliveryRouteId, dailyQuantity } = parsed.data;
+
+    const customer = await prisma.user.findFirst({
+      where: { id, role: ROLES.CUSTOMER },
+      select: { id: true },
+    });
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if (deliveryRouteId) {
+      const route = await prisma.deliveryRoute.findUnique({
+  where: { id: deliveryRouteId },
+});
+
+      if (!route) {
+        return res.status(400).json({
+          success: false,
+          message: "Route not found",
+        });
+      }
+
+      if (!route.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: "This route is inactive. Activate it first.",
+        });
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(deliveryRouteId !== undefined && { deliveryRouteId }),
+        ...(dailyQuantity !== undefined && { dailyQuantity }),
+      },
+      select: {
+        id: true,
+        dailyQuantity: true,
+        deliveryRouteId: true,
+        deliveryRoute: { select: { id: true, name: true } },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery settings saved",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Update delivery error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save delivery settings",
+    });
   }
 };

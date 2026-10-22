@@ -10,3 +10,4 @@ generated
 backend/logs/
 *.dump
 *.backup
+backend/staging-before-reset.dump

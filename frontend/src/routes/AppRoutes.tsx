@@ -65,6 +65,9 @@ const B2B = lazy(() => import("../pages/public/B2B"));
 const Export = lazy(() => import("../pages/public/Export"));
 const Traceability = lazy(() => import("../pages/public/Traceability"));
 const CategoryManagement = lazy(() => import("../pages/admin/categories/CategoryManagement"));
+const DeliveryRoutes = lazy(
+  () => import("../pages/admin/DeliveryRoutes")
+);
 
 export default function AppRoutes() {
   return (
@@ -207,6 +210,10 @@ export default function AppRoutes() {
 <Route
   path="finance/income"
   element={<IncomeManagement />}
+/>
+  <Route
+  path="delivery-routes"
+  element={<DeliveryRoutes />}
 />
 
   {/* ============================= */}

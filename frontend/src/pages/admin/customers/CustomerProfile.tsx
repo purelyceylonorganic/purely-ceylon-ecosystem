@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { customerService } from "../../../services/customer.service";
+import { deliveryRouteService } from "../../../services/deliveryRoute.service";
 
 // ==========================================
 // TYPES
@@ -90,6 +91,13 @@ interface Customer {
   isVerified: boolean;
   createdAt: string;
   updatedAt?: string | null;
+  
+  deliveryRouteId?: string | null;
+dailyQuantity?: number | null;
+deliveryRoute?: {
+  id: string;
+  name: string;
+} | null;
 
   addresses: Address[];
   orders: Order[];
@@ -111,6 +119,13 @@ export default function CustomerProfile() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deliveryRoutes, setDeliveryRoutes] = useState<
+  { id: string; name: string; isActive: boolean }[]
+>([]);
+
+const [selectedRouteId, setSelectedRouteId] = useState("");
+const [dailyQuantityInput, setDailyQuantityInput] = useState("");
+const [savingDelivery, setSavingDelivery] = useState(false);
 
   // ==========================================
   // NOTE STATE
@@ -151,7 +166,8 @@ export default function CustomerProfile() {
       return;
     }
 
-    loadCustomer();
+   loadCustomer();
+loadDeliveryRoutes();
   }, [id]);
 
   const loadCustomer = async () => {
@@ -174,6 +190,14 @@ export default function CustomerProfile() {
       if (!customerData) {
         throw new Error("Customer data not found");
       }
+     
+      setSelectedRouteId(customerData.deliveryRouteId ?? "");
+setDailyQuantityInput(
+  customerData.dailyQuantity == null
+    ? ""
+    : String(customerData.dailyQuantity)
+);
+
 
       setCustomer({
         ...customerData,
@@ -201,6 +225,57 @@ export default function CustomerProfile() {
       setLoading(false);
     }
   };
+ 
+  const loadDeliveryRoutes = async () => {
+  try {
+    const routes = await deliveryRouteService.getAll();
+
+    setDeliveryRoutes(
+      (Array.isArray(routes) ? routes : []).filter(
+        (route) => route.isActive
+      )
+    );
+  } catch (error) {
+    console.error("Failed to load delivery routes:", error);
+  }
+};
+  
+
+const handleSaveDeliveryRoute = async () => {
+  if (!id) return;
+
+  const quantityText = dailyQuantityInput.trim();
+  const quantity =
+    quantityText === "" ? null : Number(quantityText);
+
+  if (
+    quantity !== null &&
+    (!Number.isFinite(quantity) || quantity < 0 || quantity > 100000)
+  ) {
+    alert("Daily quantity 0 முதல் 100000 வரை இருக்க வேண்டும்.");
+    return;
+  }
+
+  try {
+    setSavingDelivery(true);
+
+    await customerService.updateCustomerDelivery(id, {
+      deliveryRouteId: selectedRouteId || null,
+      dailyQuantity: quantity,
+    });
+
+    await loadCustomer();
+    alert("Customer delivery route updated successfully.");
+  } catch (error: any) {
+    alert(
+      error?.response?.data?.message ||
+        "Failed to update delivery route."
+    );
+  } finally {
+    setSavingDelivery(false);
+  }
+}; 
+
 
   // ==========================================
   // ADD CUSTOMER NOTE
@@ -847,6 +922,68 @@ export default function CustomerProfile() {
           </div>
         </div>
       </div>
+
+
+    <section className="rounded-xl border bg-white p-5 shadow-sm">
+  <h2 className="text-xl font-semibold text-gray-900">
+    Delivery Route Assignment
+  </h2>
+
+  <p className="mt-1 text-sm text-gray-500">
+    Assign this customer to a delivery route and set the daily quantity.
+  </p>
+
+  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">
+        Delivery Route
+      </label>
+
+      <select
+        value={selectedRouteId}
+        onChange={(e) => setSelectedRouteId(e.target.value)}
+        disabled={savingDelivery}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+      >
+        <option value="">No route assigned</option>
+
+        {deliveryRoutes.map((route) => (
+          <option key={route.id} value={route.id}>
+            {route.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">
+        Daily Quantity
+      </label>
+
+      <input
+        type="number"
+        min="0"
+        max="100000"
+        step="any"
+        value={dailyQuantityInput}
+        onChange={(e) => setDailyQuantityInput(e.target.value)}
+        disabled={savingDelivery}
+        placeholder="Enter daily quantity"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2.5"
+      />
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={handleSaveDeliveryRoute}
+    disabled={savingDelivery}
+    className="mt-5 rounded-lg bg-[#0E4B32] px-5 py-2.5 font-semibold text-white hover:bg-[#0b3d29] disabled:opacity-50"
+  >
+    {savingDelivery ? "Saving..." : "Save Delivery Assignment"}
+  </button>
+</section>
+
 
       {/* ===================================== */}
       {/* ADDRESSES */}

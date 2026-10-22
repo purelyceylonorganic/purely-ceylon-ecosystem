@@ -8,101 +8,68 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-
-  // =========================
-  // Account Information
-  // =========================
-  email    String? @unique
-  phone    String? @unique
-  fullName String
-
-  passwordHash       String
-  mustChangePassword Boolean @default(false)
-
-  role UserRole @default(CUSTOMER)
-
-  // =========================
-  // Account Status
-  // =========================
-  isActive   Boolean @default(false)
-  isVerified Boolean @default(false)
-
-  // =========================
-  // Email Verification
-  // =========================
-  pendingEmail      String?
-  verificationToken String?
-  verificationOtp   String?
-  otpExpiresAt      DateTime?
-  otpLastSentAt     DateTime?
-  otpAttempts       Int       @default(0)
-  otpLockedUntil    DateTime?
-
-  // =========================
-  // Phone Verification
-  // =========================
-  phoneVerificationOtp String?
-  phoneOtpExpiresAt    DateTime?
-  phoneOtpLastSentAt   DateTime?
-  phoneOtpAttempts     Int       @default(0)
-  phoneOtpLockedUntil  DateTime?
-
-  // =========================
-  // Login Security
-  // =========================
-  accountLockedUntil  DateTime?
-  failedLoginAttempts Int       @default(0)
-
-  // =========================
-  // Password Reset
-  // =========================
-  passwordResetExpire DateTime?
-  passwordResetToken  String?
-
-  // =========================
-  // Phone Password Reset
-  // =========================
-  phonePasswordResetOtp         String?
-  phonePasswordResetExpiresAt   DateTime?
-  phonePasswordResetLastSentAt  DateTime?
-  phonePasswordResetAttempts    Int       @default(0)
-  phonePasswordResetLockedUntil DateTime?
-
-  // =========================
-  // Phone Password Reset
-  // =========================
-
-  phonePasswordResetOtpHash        String?
+  id                               String               @id @default(uuid())
+  email                            String?              @unique
+  createdAt                        DateTime             @default(now())
+  fullName                         String
+  isActive                         Boolean              @default(false)
+  passwordHash                     String
+  updatedAt                        DateTime             @updatedAt
+  verificationToken                String?
+  accountLockedUntil               DateTime?
+  failedLoginAttempts              Int                  @default(0)
+  otpAttempts                      Int                  @default(0)
+  otpExpiresAt                     DateTime?
+  otpLastSentAt                    DateTime?
+  otpLockedUntil                   DateTime?
+  verificationOtp                  String?
+  phone                            String?              @unique
+  role                             UserRole             @default(CUSTOMER)
+  profileImage                     String?
+  passwordResetExpire              DateTime?
+  passwordResetToken               String?
+  isVerified                       Boolean              @default(false)
+  phoneOtpAttempts                 Int                  @default(0)
+  phoneOtpExpiresAt                DateTime?
+  phoneOtpLastSentAt               DateTime?
+  phoneOtpLockedUntil              DateTime?
+  phoneVerificationOtp             String?
+  phonePasswordResetAttempts       Int                  @default(0)
+  phonePasswordResetExpiresAt      DateTime?
+  phonePasswordResetLastSentAt     DateTime?
+  phonePasswordResetLockedUntil    DateTime?
+  phonePasswordResetOtp            String?
+  phonePasswordResetOtpAttempts    Int                  @default(0)
   phonePasswordResetOtpExpiresAt   DateTime?
-  phonePasswordResetOtpAttempts    Int       @default(0)
+  phonePasswordResetOtpHash        String?
   phonePasswordResetOtpLockedUntil DateTime?
-
   phonePasswordResetToken          String?
   phonePasswordResetTokenExpiresAt DateTime?
+  pendingEmail                     String?
+  mustChangePassword               Boolean              @default(false)
+  dailyQuantity                    Float?
+  deliveryRouteId                  String?
+  addresses                        Address[]
+  auditLogs                        AuditLog[]
+  cart                             Cart?
+  notes                            CustomerNote[]
+  notifications                    Notification[]
+  orders                           Order[]
+  questions                        Question[]           @relation("UserQuestions")
+  reviews                          Review[]             @relation("UserReviews")
+  savedCards                       SavedPaymentMethod[]
+  deliveryRoute                    DeliveryRoute?       @relation(fields: [deliveryRouteId], references: [id])
+  sessions                         UserSession[]
+  wishlist                         Wishlist?
+}
 
-  // =========================
-  // Profile
-  // =========================
-  profileImage String?
-
+model DeliveryRoute {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // =========================
-  // Relations
-  // =========================
-  addresses     Address[]
-  auditLogs     AuditLog[]
-  cart          Cart?
-  orders        Order[]
-  questions     Question[]           @relation("UserQuestions")
-  reviews       Review[]             @relation("UserReviews")
-  savedCards    SavedPaymentMethod[]
-  sessions      UserSession[]
-  notes         CustomerNote[]
-  notifications Notification[]
-  wishlist      Wishlist?
+  users     User[]
 }
 
 model UserSession {
@@ -118,19 +85,18 @@ model UserSession {
 }
 
 model Product {
-  id          String        @id @default(uuid())
-  name        String
+  id          String           @id @default(uuid())
   description String
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime         @default(now())
   categoryId  String
-  isActive    Boolean       @default(true)
-  status      ProductStatus @default(DRAFT)
-  slug        String        @unique
-  updatedAt   DateTime      @updatedAt
-  moq         Int           @default(1)
-
-  featured    Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  name        String
+  slug        String           @unique
+  updatedAt   DateTime         @updatedAt
+  moq         Int              @default(1)
   publishedAt DateTime?
+  status      ProductStatus    @default(DRAFT)
+  featured    Boolean          @default(false)
   deletedAt   DateTime?
   category    Category         @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
@@ -153,11 +119,11 @@ model ProductVariant {
   sku           String         @unique
   weight        String
   price         Float
-  priceLKR      Float          @default(0)
   costPrice     Float          @default(0.0)
   stock         Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  priceLKR      Float          @default(0)
   cartItems     CartItem[]
   inventory     Inventory[]
   orderItems    OrderItem[]
@@ -190,44 +156,33 @@ model Category {
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  userId    String
-  createdAt DateTime @default(now())
-
-  paymentMethod String?
-  paymentStatus PaymentStatus @default(UNPAID)
-
-  paidAmount Float     @default(0)
-  balance    Float     @default(0)
-  paidAt     DateTime?
-
-  shippingCost   Float          @default(0)
-  shippingStatus ShippingStatus @default(PENDING)
-
-  taxAmount Float @default(0)
-
-  trackingId String?
-
-  updatedAt DateTime @updatedAt
-
-  status OrderStatus @default(PENDING)
-
-  currency     String
-  exchangeRate Float
-  totalFinal   Float
-  totalUSD     Float
-
-  addressId String?
-  address   Address? @relation(fields: [addressId], references: [id])
-
-  user User @relation(fields: [userId], references: [id])
-
-  items    OrderItem[]
-  payments Payment[]
-  subtotal       Float @default(0)
-  discountAmount Float @default(0)
-  couponCode     String?
+  id                      String         @id @default(uuid())
+  userId                  String
+  createdAt               DateTime       @default(now())
+  paymentMethod           String?
+  paymentStatus           PaymentStatus  @default(UNPAID)
+  shippingCost            Float          @default(0)
+  shippingStatus          ShippingStatus @default(PENDING)
+  taxAmount               Float          @default(0)
+  trackingId              String?
+  updatedAt               DateTime       @updatedAt
+  status                  OrderStatus    @default(PENDING)
+  currency                String
+  exchangeRate            Float
+  totalFinal              Float
+  totalUSD                Float
+  addressId               String?
+  balance                 Float          @default(0)
+  paidAmount              Float          @default(0)
+  paidAt                  DateTime?
+  couponCode              String?
+  discountAmount          Float          @default(0)
   shippingAddressSnapshot Json?
+  subtotal                Float          @default(0)
+  address                 Address?       @relation(fields: [addressId], references: [id])
+  user                    User           @relation(fields: [userId], references: [id])
+  items                   OrderItem[]
+  payments                Payment[]
 }
 
 model OrderItem {
@@ -237,67 +192,45 @@ model OrderItem {
   price            Float
   productVariantId String
   createdAt        DateTime       @default(now())
+  costPriceLKR     Float          @default(0)
+  currency         String         @default("LKR")
+  productName      String         @default("")
+  sku              String         @default("")
+  unitPrice        Float          @default(0)
+  variantLabel     String?
   order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
-    productName  String   @default("")
-  variantLabel String?
-  sku          String   @default("")
-  unitPrice    Float    @default(0)
-  costPriceLKR Float    @default(0)
-  currency     String   @default("LKR")
 }
 
 model Payment {
-  id String @id @default(uuid())
-
-  orderId String
-
-  order Order @relation(fields: [orderId], references: [id])
-
-  transactionId String? @unique
-
-  amount Float
-
-  currency String @default("LKR")
-
-  paymentMethod PaymentMethod @default(CASH)
-
-  gateway String?
-
-  paymentStatus PaymentStatus @default(UNPAID)
-
-  notes String?
-
+  id            String        @id @default(uuid())
+  orderId       String
+  transactionId String?       @unique
+  amount        Float
+  gateway       String?
   rawWebhookLog String?
-
-  paidAt DateTime?
-
-  refunds Refund[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime      @default(now())
+  currency      String        @default("LKR")
+  notes         String?
+  paidAt        DateTime?
+  paymentMethod PaymentMethod @default(CASH)
+  paymentStatus PaymentStatus @default(UNPAID)
+  updatedAt     DateTime      @updatedAt
+  order         Order         @relation(fields: [orderId], references: [id])
+  refunds       Refund[]
 }
 
 model Refund {
-  id String @id @default(uuid())
-
-  paymentId String
-  payment   Payment @relation(fields: [paymentId], references: [id])
-
-  transactionId String @unique
-
-  amount Float
-
-  reason String?
-
-  status RefundStatus @default(PENDING)
-
-  createdBy String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  id            String       @id @default(uuid())
+  paymentId     String
+  transactionId String       @unique
+  amount        Float
+  reason        String?
+  status        RefundStatus @default(PENDING)
+  createdBy     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  payment       Payment      @relation(fields: [paymentId], references: [id])
 }
 
 model Address {
@@ -508,20 +441,17 @@ model CompanyProfile {
 }
 
 model RFQ {
-  id          String    @id @default(cuid())
+  id          String         @id @default(cuid())
   buyerId     String
-  status      String    @default("PENDING")
-  createdAt   DateTime  @default(now())
+  status      String         @default("PENDING")
+  createdAt   DateTime       @default(now())
   quoteNote   String?
   quotedAt    DateTime?
   quotedPrice Float?
-
-  // BulkOrder Relation (Relation key இங்கே வேண்டாம், BulkOrder பக்கம் வைக்கலாம்)
-  bulkOrderId String?    @unique
-  bulkOrder   BulkOrder? @relation(fields: [bulkOrderId], references: [id])
-
-  buyer WholesaleBuyer @relation(fields: [buyerId], references: [id])
-  items RFQItem[]
+  bulkOrderId String?        @unique
+  bulkOrder   BulkOrder?     @relation(fields: [bulkOrderId], references: [id])
+  buyer       WholesaleBuyer @relation(fields: [buyerId], references: [id])
+  items       RFQItem[]
 }
 
 model RFQItem {
@@ -533,37 +463,33 @@ model RFQItem {
 }
 
 model BulkOrder {
-  id            String    @id @default(cuid())
-  buyerId       String
-  status        String    @default("PENDING")
-  createdAt     DateTime  @default(now())
-  rfqId         String    @unique
-  totalAmount   Float
-  updatedAt     DateTime  @updatedAt
-  paidAt        DateTime?
-  paymentMethod String?
-  paymentStatus String    @default("UNPAID")
-  transactionId String?
-
-  // Relations
+  id             String                   @id @default(cuid())
+  buyerId        String
+  status         String                   @default("PENDING")
+  createdAt      DateTime                 @default(now())
+  rfqId          String                   @unique
+  totalAmount    Float
+  updatedAt      DateTime                 @updatedAt
+  paidAt         DateTime?
+  paymentMethod  String?
+  paymentStatus  String                   @default("UNPAID")
+  transactionId  String?
   buyer          WholesaleBuyer           @relation(fields: [buyerId], references: [id])
   items          BulkOrderItem[]
   statusHistory  BulkOrderStatusHistory[]
   exportDocument ExportDocument?
   invoice        ExportInvoice?
+  RFQ            RFQ?
   shipment       Shipment?
-
-  // RFQ உடன் Back-relation (இங்கிருந்து RFQ[] நீக்கப்பட்டுள்ளது)
-  RFQ RFQ?
 }
 
 model BulkOrderItem {
   id          String    @id @default(cuid())
   productId   String
   quantity    Int
-  price       Float? // Optional ஆக மாற்றப்பட்டுள்ளது (RFQ-ல் price இல்லாவிட்டால் error வராது)
-  totalPrice  Float?
+  price       Float?
   bulkOrderId String
+  totalPrice  Float?
   bulkOrder   BulkOrder @relation(fields: [bulkOrderId], references: [id], onDelete: Cascade)
 }
 
@@ -664,18 +590,14 @@ model AuditLog {
 }
 
 model Notification {
-  id String @id @default(uuid())
-
-  userId  String
-  title   String
-  message String
-  type    String
-
-  isRead Boolean @default(false)
-
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isRead])
@@ -698,14 +620,12 @@ model SavedPaymentMethod {
 }
 
 model CustomerNote {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   customerId String
   note       String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  customer User @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
@@ -721,7 +641,6 @@ model Expense {
   updatedAt   DateTime        @updatedAt
 }
 
-// 📧 Newsletter Subscribers
 model NewsletterSubscriber {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -799,12 +718,12 @@ enum OrderStatus {
 
 enum PaymentStatus {
   UNPAID
-  PARTIAL
   PAID
-  VOIDED
   REFUNDED
-  REVERSED
   FAILED
+  PARTIAL
+  VOIDED
+  REVERSED
 }
 
 enum PaymentMethod {

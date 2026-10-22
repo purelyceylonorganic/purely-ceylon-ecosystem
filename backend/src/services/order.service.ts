@@ -215,7 +215,7 @@ export const addProductToOrder = async (
     }
 
     return recalculateOrderTotals(tx, orderId);
-  });
+  }, { maxWait: 10_000, timeout: 15_000 });
 };
 
 // ======================================================
@@ -352,7 +352,7 @@ export const updateOrderItemQuantity = async (
     });
 
     return recalculateOrderTotals(tx, orderItem.orderId);
-  });
+  }, { maxWait: 10_000, timeout: 15_000 });
 };
 
 // ======================================================
@@ -378,7 +378,7 @@ export const removeProductFromOrder = async (orderItemId: string) => {
     await tx.orderItem.delete({ where: { id: orderItemId } });
 
     return recalculateOrderTotals(tx, orderItem.orderId);
-  });
+  }, { maxWait: 10_000, timeout: 15_000 });
 };
 
 // ======================================================
