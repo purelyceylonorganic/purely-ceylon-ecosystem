@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { generateTrackingId } from "../services/dhlSimulator";
+import {
+  getOrderShippingInfo,
+  setOrderShippingMethod,
+  setOrderShippingOverride,
+  updateOrderShipping,
+} from "../services/order.service";
 import { PERMISSIONS } from "../constants/permissions";
 import { ROLES } from "../constants/roles";
 import { hasPermission } from "../utils/permission.helper"; 
@@ -91,6 +96,7 @@ async function buildPricing(userId: string, body: any) {
       id: variant.id,
       sku: variant.sku,
       weight: variant.weight,
+      weightGrams: variant.weightGrams,
       productName: variant.product.name,
       price: variant.price,
       priceLKR: variant.priceLKR,
@@ -106,6 +112,7 @@ async function buildPricing(userId: string, body: any) {
       currency,
       userId,
       couponCode,
+      shippingMethodCode: body.shippingMethodCode,
       variants: pricingVariants,
     });
     return { pricing, address };
@@ -195,11 +202,18 @@ export const placeOrder = async (req: Request, res: Response) => {
           couponCode: pricing.couponCode,
           taxAmount: pricing.taxAmount,
           shippingCost: pricing.shippingCost,
+          shippingDiscount: pricing.shippingDiscount,
+          shippingBaseCost: pricing.shippingBaseCost,
+          shippingMethodCode: pricing.shippingMethodCode,
+          shippingMethodName: pricing.shippingMethodName,
+          shippingCarrier: pricing.shippingCarrier,
+          shippingMinDays: pricing.shippingMinDays,
+          shippingMaxDays: pricing.shippingMaxDays,
+          shippingWeightGrams: pricing.shippingWeightGrams,
           totalFinal: pricing.totalFinal,
           totalUSD: pricing.totalUSD,
           balance: pricing.totalFinal,
 
-          trackingId: generateTrackingId(),
           shippingStatus: "PENDING",
           status: "PENDING",
           paymentMethod,
@@ -330,6 +344,7 @@ export const getSingleOrder = async (
       },
 
       include: {
+        shippingEvents: { orderBy: { createdAt: "asc" } },
         address: true,
 
         items: {
@@ -503,56 +518,79 @@ export const getAllOrders = async (
   }
 };
 
+const shippingError = (res: Response, error: any, fallback: string) => {
+  const message = error?.message || fallback;
+  const status = message === "Order not found" ? 404 : 400;
+
+  if (status === 400 && !error?.message) console.error(error);
+
+  return res.status(status).json({ success: false, message });
+};
+
+// PUT /orders/:id/shipping  — Shipping நிலை + Tracking எண் (நிகழ்வுப் பதிவுடன்)
 export const updateShippingController = async (
   req: Request,
   res: Response
 ) => {
   try {
     const { id } = req.params;
-    const { shippingStatus, trackingId } = req.body;
+    const body = req.body;
 
-    const allowed = ["PENDING", "PACKED", "SHIPPED", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"];
-    if (shippingStatus !== undefined && !allowed.includes(shippingStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid shipping status",
-      });
-    }
-
-    const order = await prisma.order.update({
-      where: { id },
-      data: {
-        ...(shippingStatus !== undefined && { shippingStatus }),
-        ...(trackingId !== undefined && { trackingId }),
+    const order = await updateOrderShipping(
+      id,
+      {
+        shippingStatus: body.shippingStatus,
+        // பழைய admin பக்கம் "trackingId" என்றும் அனுப்பும்
+        trackingNumber: body.trackingNumber !== undefined ? body.trackingNumber : body.trackingId,
+        trackingCarrier: body.trackingCarrier,
+        trackingUrl: body.trackingUrl,
+        location: body.location,
+        note: body.note,
       },
-    });
+      (req as any).user?.id
+    );
 
-    // 🔔 வாடிக்கையாளருக்கு அறிவிப்பு
-    if (shippingStatus !== undefined) {
-      void notifyCustomer(
-        order.userId,
-        "Shipping update",
-        `Order #${orderShortId(order.id)}: ${String(shippingStatus)
-          .replace(/_/g, " ")
-          .toLowerCase()}${order.trackingId ? ` (Tracking: ${order.trackingId})` : ""}`
-      );
+    return res.json({ success: true, order });
+  } catch (error) {
+    return shippingError(res, error, "Failed to update shipping");
+  }
+};
+
+// GET /orders/:orderId/shipping — Admin panel-க்கான முழு விவரம்
+export const getOrderShippingController = async (req: Request, res: Response) => {
+  try {
+    const data = await getOrderShippingInfo(req.params.orderId);
+    return res.json({ success: true, data });
+  } catch (error) {
+    return shippingError(res, error, "Failed to load shipping details");
+  }
+};
+
+// PUT /orders/:orderId/shipping-method — { methodCode }
+export const setOrderShippingMethodController = async (req: Request, res: Response) => {
+  try {
+    const { methodCode } = req.body;
+
+    if (!methodCode || typeof methodCode !== "string") {
+      return res.status(400).json({ success: false, message: "methodCode is required" });
     }
 
-    return res.json({
-      success: true,
-      order,
-    });
-  } catch (error: any) {
-    if (error?.code === "P2025") {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    const order = await setOrderShippingMethod(req.params.orderId, methodCode);
+    return res.json({ success: true, message: "Shipping method updated", order });
+  } catch (error) {
+    return shippingError(res, error, "Failed to update shipping method");
+  }
+};
 
-    console.error(error);
+// PUT /orders/:orderId/shipping-cost — { mode: MANUAL|FREE|DISCOUNT|RESET, value?, reason? }
+export const setOrderShippingOverrideController = async (req: Request, res: Response) => {
+  try {
+    const { mode, value, reason } = req.body;
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update shipping",
-    });
+    const order = await setOrderShippingOverride(req.params.orderId, { mode, value, reason });
+    return res.json({ success: true, message: "Shipping charge updated", order });
+  } catch (error) {
+    return shippingError(res, error, "Failed to update shipping charge");
   }
 };
 

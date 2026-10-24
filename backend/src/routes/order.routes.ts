@@ -2,6 +2,9 @@ import { Router } from "express";
 import {
   placeOrder,
   previewCheckout,
+  getOrderShippingController,
+  setOrderShippingMethodController,
+  setOrderShippingOverrideController,
   getMyOrders,
   getSingleOrder,
   updateOrderStatusController,
@@ -92,6 +95,11 @@ router.get("/my-orders", protect, getMyOrders);
 router.get("/:orderId/details",protect,getOrderDetailsController);
 router.get("/:orderId/invoice", protect, generateInvoice);
 router.put("/:id/shipping", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), updateShippingController);
+
+// 🚚 Shipping கட்டுப்பாடு (Admin)
+router.get("/:orderId/shipping", protect, authorizePermissions(PERMISSIONS.ORDER_VIEW), getOrderShippingController);
+router.put("/:orderId/shipping-method", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), setOrderShippingMethodController);
+router.put("/:orderId/shipping-cost", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), setOrderShippingOverrideController);
 router.put("/:id/status", protect, authorizePermissions(PERMISSIONS.ORDER_UPDATE), updateOrderStatusController);
 
 // ======================================================

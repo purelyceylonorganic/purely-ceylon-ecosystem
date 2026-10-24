@@ -69,7 +69,7 @@ import notificationRoutes from "./routes/notification.routes";
 import incomeRoutes from "./routes/income.routes";
 import sitemapRoutes from "./routes/sitemap.routes";
 import deliveryRouteRoutes from "./routes/deliveryroute.routes";
-
+import shippingSettingsRoutes from "./routes/ShippingSettings.routes";
 process.on("uncaughtException", (err) => {
   logger.error("💥 Uncaught Exception:", err);
   // ப்ரொடக்‌ஷனில் இருந்தால் ப்ராசஸை பாதுகாப்பாக நிறுத்தலாம்: process.exit(1);
@@ -222,7 +222,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/income", incomeRoutes); 
 app.use("/api/v1/sitemap", sitemapRoutes);
 app.use("/api/v1/delivery-routes", deliveryRouteRoutes);
-
+app.use("/api/v1/shipping-settings", shippingSettingsRoutes);
 app.get('/api/v1/b2b/bulk-orders/pay/:bulkOrderId', payBulkOrder);
 app.get('/api/v1/verify-email-connection', async (_req, res) => {
   try {

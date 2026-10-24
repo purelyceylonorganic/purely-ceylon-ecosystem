@@ -1,4 +1,9 @@
 import { prisma } from "../config/prisma";
+import { loadLkrPerUsd } from "./exchangeRate.service";
+import { getShippingOptions, type ShippingOption } from "./ShippingRates.service";
+
+// பழைய இடங்கள் இங்கிருந்தே இறக்குமதி செய்வதால் மீண்டும் ஏற்றுமதி
+export { loadLkrPerUsd };
 
 // ======================================================
 // 💰 CHECKOUT PRICING  (ஒரே இடத்தில் எல்லாக் கணக்கும்)
@@ -61,19 +66,6 @@ export function pickCurrencyForCountry(country: string): Currency {
 }
 
 // ---------- 🌐 Exchange rate / Tax ஏற்றுதல் ----------
-export async function loadLkrPerUsd(): Promise<number> {
-  const rateRow = await prisma.currencyRate.findUnique({ where: { code: "LKR" } });
-  const lkrPerUsd = Number(rateRow?.rate);
-
-  if (!Number.isFinite(lkrPerUsd) || lkrPerUsd <= 0) {
-    throw new Error("LKR exchange rate is missing. Please update the CurrencyRate table.");
-  }
-  if (lkrPerUsd < 100) {
-    console.warn(`⚠️ CurrencyRate LKR = ${lkrPerUsd} — இது தவறாக இருக்கலாம் (சுமார் 300 இருக்க வேண்டும்)`);
-  }
-  return lkrPerUsd;
-}
-
 async function loadTaxPercent(country: string): Promise<number> {
   const taxRow = await prisma.taxRate.findFirst({
     where: { country: { equals: country.trim(), mode: "insensitive" }, isActive: true },
@@ -93,6 +85,7 @@ export type PricingVariant = {
   id: string;
   sku: string;
   weight: string;
+  weightGrams: number;
   productName: string;
   price: number; // USD விலை
   priceLKR: number; // LKR விலை
@@ -106,6 +99,7 @@ export type PricingInput = {
   currency: Currency;
   userId: string;
   couponCode?: string | null;
+  shippingMethodCode?: string | null;
   variants: PricingVariant[];
 };
 
@@ -167,10 +161,99 @@ async function resolveCoupon(
 }
 
 // ======================================================
+// 🚚 Shipping தீர்மானம் (Checkout-ம் Admin Draft Order-ம் இதையே பயன்படுத்தும்)
+// strict = true  → தேர்ந்த முறை இல்லையென்றால் பிழை (Checkout)
+// strict = false → இல்லையென்றால் இயல்பு முறைக்கு மாறும் (Admin order மாற்றங்கள்)
+// ======================================================
+async function resolveShipping(input: {
+  country: string;
+  province?: string | null;
+  currency: Currency;
+  subtotalAfterDiscount: number;
+  totalGrams: number;
+  shippingMethodCode?: string | null;
+  strict: boolean;
+  lkrPerUsd: number;
+}) {
+  const { country, province, currency, subtotalAfterDiscount, totalGrams, shippingMethodCode, strict, lkrPerUsd } = input;
+
+  const { options } = await getShippingOptions({
+    country,
+    currency,
+    subtotal: subtotalAfterDiscount,
+    totalGrams,
+  });
+
+  let selected: ShippingOption | null = null;
+  let base: number;
+  let systemCost: number;
+  let estimatedDays: number;
+
+  if (options.length > 0) {
+    if (shippingMethodCode) {
+      selected = options.find((o) => o.methodCode === shippingMethodCode) ?? null;
+
+      if (!selected && strict) {
+        throw new Error("The selected shipping method is not available for this address");
+      }
+    }
+
+    // தேர்வு இல்லை / கிடைக்கவில்லை → வரிசையில் முதலாவது (பொதுவாக Economy)
+    if (!selected) selected = options[0];
+
+    base = selected.originalCost;
+    systemCost = selected.cost;
+    estimatedDays = selected.maxDays;
+  } else {
+    // Rate Table இல்லை → பழைய நிலையான விலை (Checkout உடையாமல் இருக்க)
+    const rule = pickShippingRule(country, province);
+    base = round2(convert(rule.amount, rule.currency, currency, lkrPerUsd));
+    systemCost = base;
+    estimatedDays = rule.days;
+  }
+
+  return { options, selected, base, systemCost, estimatedDays };
+}
+
+// ======================================================
+// 🛠️ Admin கையால் மாற்றும் Shipping கட்டணம்
+//   FREE     → 0
+//   DISCOUNT → கணக்கிட்ட விலையிலிருந்து குறிப்பிட்ட தொகை குறைப்பு
+//   MANUAL   → Admin குறிப்பிடும் தொகை
+//   (இல்லை)  → கணக்கிட்ட விலை (இலவச வரம்பு இருந்தால் அதுவும் பொருந்தும்)
+// ======================================================
+export function applyShippingOverride(
+  base: number,
+  systemCost: number,
+  mode: string | null | undefined,
+  value: number | null | undefined
+) {
+  const amount = Number(value) || 0;
+
+  switch (mode) {
+    case "FREE":
+      return { cost: 0, discount: round2(base) };
+
+    case "DISCOUNT": {
+      const discount = Math.min(Math.max(amount, 0), base);
+      return { cost: round2(base - discount), discount: round2(discount) };
+    }
+
+    case "MANUAL": {
+      const cost = Math.max(amount, 0);
+      return { cost: round2(cost), discount: round2(Math.max(base - cost, 0)) };
+    }
+
+    default:
+      return { cost: systemCost, discount: round2(base - systemCost) };
+  }
+}
+
+// ======================================================
 // 🧾 முக்கிய function
 // ======================================================
 export async function calculateCheckoutPricing(input: PricingInput) {
-  const { country, province, currency, userId, couponCode, variants } = input;
+  const { country, province, currency, userId, couponCode, shippingMethodCode, variants } = input;
 
   if (!SUPPORTED_CURRENCIES.includes(currency)) {
     throw new Error("Unsupported currency");
@@ -225,11 +308,37 @@ export async function calculateCheckoutPricing(input: PricingInput) {
     appliedCode = c.code;
   }
 
-  // 5) Shipping
-  const rule = pickShippingRule(country, province);
-  const shippingCost = freeShipping
-    ? 0
-    : round2(convert(rule.amount, rule.currency, currency, lkrPerUsd));
+  // 5) Shipping — Admin-ன் Rate Table (Zone × Method × எடை); இல்லையென்றால் பழைய நிலையான விலை
+  const totalGrams = variants.reduce(
+    (sum, v) => sum + (Number(v.weightGrams) || 0) * v.quantity,
+    0
+  );
+  const missingWeight = variants.some((v) => !(Number(v.weightGrams) > 0));
+
+  if (missingWeight) {
+    console.warn("⚠️ சில products-க்கு எடை (weightGrams) அமைக்கப்படவில்லை — shipping குறைவாகக் கணக்கிடப்படலாம்");
+  }
+
+  const resolved = await resolveShipping({
+    country,
+    province,
+    currency,
+    subtotalAfterDiscount: Math.max(subtotal - discountAmount, 0),
+    totalGrams,
+    shippingMethodCode,
+    strict: true,
+    lkrPerUsd,
+  });
+
+  const { options, selected, base: shippingOriginal, estimatedDays } = resolved;
+
+  // 🎟️ Coupon (FREE_SHIPPING) அல்லது Rate Table-ன் இலவச வரம்பு
+  const shippingCost = freeShipping ? 0 : resolved.systemCost;
+  const shippingDiscount = round2(shippingOriginal - shippingCost);
+
+  const shippingOptions = freeShipping
+    ? options.map((o) => ({ ...o, cost: 0, isFree: true }))
+    : options;
 
   // 6) Tax (தள்ளுபடிக்குப் பின் உள்ள தொகை மீது)
   const taxable = Math.max(subtotal - discountAmount, 0);
@@ -247,7 +356,17 @@ export async function calculateCheckoutPricing(input: PricingInput) {
     couponId,
     couponCode: appliedCode,
     shippingCost,
-    estimatedDays: rule.days,
+    shippingDiscount,
+    shippingBaseCost: shippingOriginal,
+    shippingMethodCode: selected?.methodCode ?? null,
+    shippingMethodName: selected?.name ?? "Standard shipping",
+    shippingCarrier: selected?.carrier ?? null,
+    shippingMinDays: selected?.minDays ?? null,
+    shippingMaxDays: selected?.maxDays ?? null,
+    shippingWeightGrams: totalGrams,
+    shippingOptions,
+    missingWeight,
+    estimatedDays,
     taxPercent,
     taxAmount,
     totalFinal,
@@ -257,8 +376,8 @@ export async function calculateCheckoutPricing(input: PricingInput) {
 }
 
 // ======================================================
-// 🧾 Admin (Draft) order-களுக்கு: subtotal ஏற்கனவே தெரியும்;
-// shipping, tax, மொத்தம் ஆகியவற்றை Checkout-ன் அதே விதிகளில் கணக்கிடும்.
+// 🧾 Admin (Draft) order-களுக்கு: subtotal, எடை ஏற்கனவே தெரியும்;
+// shipping (Rate Table + Admin override), tax, மொத்தம் ஆகியவற்றைக் கணக்கிடும்.
 // ======================================================
 export async function calculateOrderCharges(input: {
   country: string;
@@ -266,15 +385,34 @@ export async function calculateOrderCharges(input: {
   currency: Currency;
   subtotal: number;
   discountAmount?: number;
+  totalGrams: number;
+  shippingMethodCode?: string | null;
+  overrideMode?: string | null;
+  overrideValue?: number | null;
 }) {
-  const { country, province, currency, subtotal } = input;
+  const { country, province, currency, subtotal, totalGrams } = input;
   const discountAmount = input.discountAmount ?? 0;
 
   const lkrPerUsd = await loadLkrPerUsd();
   const taxPercent = await loadTaxPercent(country);
 
-  const rule = pickShippingRule(country, province);
-  const shippingCost = round2(convert(rule.amount, rule.currency, currency, lkrPerUsd));
+  const resolved = await resolveShipping({
+    country,
+    province,
+    currency,
+    subtotalAfterDiscount: Math.max(subtotal - discountAmount, 0),
+    totalGrams,
+    shippingMethodCode: input.shippingMethodCode,
+    strict: false,
+    lkrPerUsd,
+  });
+
+  const { cost: shippingCost, discount: shippingDiscount } = applyShippingOverride(
+    resolved.base,
+    resolved.systemCost,
+    input.overrideMode,
+    input.overrideValue
+  );
 
   const taxable = Math.max(subtotal - discountAmount, 0);
   const taxAmount = round2((taxable * taxPercent) / 100);
@@ -284,7 +422,14 @@ export async function calculateOrderCharges(input: {
   return {
     exchangeRate: currency === "LKR" ? lkrPerUsd : 1,
     shippingCost,
-    estimatedDays: rule.days,
+    shippingDiscount,
+    shippingBaseCost: resolved.base,
+    shippingMethodCode: resolved.selected?.methodCode ?? null,
+    shippingMethodName: resolved.selected?.name ?? "Standard shipping",
+    shippingCarrier: resolved.selected?.carrier ?? null,
+    shippingMinDays: resolved.selected?.minDays ?? null,
+    shippingMaxDays: resolved.selected?.maxDays ?? null,
+    estimatedDays: resolved.estimatedDays,
     taxPercent,
     taxAmount,
     totalFinal,

@@ -4,7 +4,9 @@ import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { ROLES } from '../constants/roles';
 import { PERMISSIONS } from '../constants/permissions';
 import { hasPermission } from '../utils/permission.helper';
-
+import {
+  sanitizeProductDescription,
+} from "../utils/sanitizeProductDescription";
 const prisma = new PrismaClient();
 
 // 🔐 Admin / Product நிர்வாகியா? (Draft, Deleted, costPrice பார்க்கலாம்)
@@ -131,7 +133,7 @@ item.stock < 0
         data: {
           name: name.trim(),
           slug: slug.trim().toLowerCase(),
-          description: description ?? "",
+          description: sanitizeProductDescription(description),
           categoryId,
           moq: Number(moq ?? 1),
           status: status || "DRAFT",

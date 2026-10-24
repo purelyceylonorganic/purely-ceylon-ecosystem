@@ -121,7 +121,20 @@ export const generateInvoice = async (req: Request, res: Response) => {
     if (order.discountAmount > 0) {
       doc.text(`Discount: -${order.currency} ${order.discountAmount.toFixed(2)}`);
     }
-    doc.text(`Shipping: ${order.currency} ${order.shippingCost.toFixed(2)}`);
+    const shippingLabel = order.shippingMethodName
+      ? `Shipping (${order.shippingMethodName}${order.shippingCarrier ? ` - ${order.shippingCarrier}` : ""})`
+      : "Shipping";
+
+    doc.text(
+      `${shippingLabel}: ${order.currency} ${order.shippingCost.toFixed(2)}${
+        order.shippingDiscount > 0 ? " (free shipping applied)" : ""
+      }`
+    );
+    if (order.trackingId) {
+      doc.text(
+        `Tracking: ${order.trackingId}${order.trackingCarrier ? ` (${order.trackingCarrier})` : ""}`
+      );
+    }
     doc.text(`Tax: ${order.currency} ${order.taxAmount.toFixed(2)}`);
 
     doc.moveDown();

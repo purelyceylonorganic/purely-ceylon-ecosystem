@@ -24,7 +24,7 @@ export const getDeliveryRoutes = async (
       orderBy: { name: "asc" },
       include: {
         _count: {
-          select: { users: true },
+          select: { customers: true },
         },
       },
     });
@@ -35,7 +35,7 @@ export const getDeliveryRoutes = async (
         id: route.id,
         name: route.name,
         isActive: route.isActive,
-        customerCount: route._count.users,
+        customerCount: route._count.customers,
         createdAt: route.createdAt,
         updatedAt: route.updatedAt,
       })),
@@ -181,7 +181,7 @@ export const deleteDeliveryRoute = async (
       where: { id },
       include: {
         _count: {
-          select: { users: true },
+          select: { customers: true },
         },
       },
     });
@@ -200,8 +200,8 @@ export const deleteDeliveryRoute = async (
     return res.json({
       success: true,
       message:
-        existing._count.users > 0
-          ? `Route deleted. ${existing._count.users} customer(s) no longer have this route.`
+        existing._count.customers > 0
+          ? `Route deleted. ${existing._count.customers} customer(s) no longer have this route.`
           : "Route deleted successfully",
     });
   } catch (error) {

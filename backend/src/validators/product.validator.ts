@@ -17,6 +17,9 @@ const productVariantSchema = z.object({
   costPrice: z.number().min(0, "Cost price cannot be negative"),
 
   stock: z.number().int().min(0, "Stock cannot be negative"),
+
+  // Package weight (product + packaging) in grams — shipping கணக்குக்கு
+  weightGrams: z.number().int().min(0, "Weight cannot be negative").optional(),
 });
 
 
