@@ -111,3 +111,73 @@ th {
     font-size: 14px;
   }
 }
+
+
+.product-description-content {
+  color: #222;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.product-description-content h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.65rem;
+  color: #0E4B32;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.product-description-content h3 {
+  margin-top: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #0E4B32;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+
+.product-description-content p {
+  margin: 0.75rem 0;
+}
+
+.product-description-content ul,
+.product-description-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.product-description-content ul {
+  list-style: disc;
+}
+
+.product-description-content ol {
+  list-style: decimal;
+}
+
+.product-description-content blockquote {
+  margin: 1rem 0;
+  border-left: 4px solid #D4AF37;
+  padding-left: 1rem;
+  color: #555;
+}
+
+.product-description-content strong {
+  color: #0E4B32;
+  font-weight: 700;
+}
+
+.ProseMirror {
+  min-height: 220px;
+  outline: none;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #999;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

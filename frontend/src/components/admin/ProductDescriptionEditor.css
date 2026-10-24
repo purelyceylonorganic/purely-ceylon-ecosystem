@@ -1,0 +1,73 @@
+
+.pco-description-editor {
+  border: 1px solid #d8ded7;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff8ee;
+}
+
+.pco-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: #0e4b32;
+}
+
+.pco-editor-toolbar button {
+  border: 1px solid #d4af37;
+  border-radius: 6px;
+  padding: 7px 11px;
+  color: #fff8ee;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pco-editor-toolbar button[aria-pressed="true"] {
+  color: #111111;
+  background: #d4af37;
+}
+
+.pco-editor-toolbar button:hover {
+  background: #176342;
+}
+
+.pco-description-editor .tiptap {
+  min-height: 260px;
+  padding: 20px;
+  outline: none;
+  color: #222;
+  line-height: 1.8;
+}
+
+.pco-description-editor .tiptap h2 {
+  margin: 22px 0 10px;
+  color: #0e4b32;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pco-description-editor .tiptap p {
+  margin: 10px 0;
+}
+
+.pco-description-editor .tiptap ul,
+.pco-description-editor .tiptap ol {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+
+.pco-description-editor .tiptap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 16px auto;
+  border-radius: 8px;
+}
+
+.pco-editor-help {
+  padding: 0 16px 12px;
+  color: #666;
+  font-size: 12px;
+}

@@ -13,7 +13,7 @@ import { setJsonLd, setSEO } from "../../utils/seo";
 import type { Product } from "../../types/product.types";
 import { useCurrency } from "../../context/CurrencyContext";
 import { formatMoney, variantPrice } from "../../lib/money";
-
+import ProductDescription from"../../components/product/ProductDescription";
 import ProductGallery from "../../components/product/ProductGallery";
 import QuantitySelector from "../../components/product/QuantitySelector";
 import StockBadge from "../../components/product/StockBadge";
@@ -391,9 +391,11 @@ useEffect(() => {
   {product.name}
 </h1>
 
-          <p className="mt-5 text-sm leading-7 text-gray-600 sm:text-base">
-            {product.description}
-          </p>
+          
+<ProductDescription
+  description={product.description ?? ""}
+/>
+
 
           <VariantSelector
             variants={product.variants ?? []}

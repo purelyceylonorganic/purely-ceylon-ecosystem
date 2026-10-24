@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import api from "../../api/axios";
 import { useCurrency } from "../../context/CurrencyContext";
 import { formatMoney } from "../../lib/money";
+import type { ShippingOption } from "../../services/shippingsettings.service";
 
 // Server கணக்கிட்டுத் தரும் மொத்தங்கள்
 type Pricing = {
@@ -19,6 +20,11 @@ type Pricing = {
   taxPercent: number;
   taxAmount: number;
   totalFinal: number;
+  shippingMethodCode: string | null;
+  shippingMethodName: string;
+  shippingCarrier: string | null;
+  shippingDiscount: number;
+  shippingOptions: ShippingOption[];
 };
 
 function toCheckoutItems(cart: any) {
@@ -37,6 +43,7 @@ export default function Checkout() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [shippingMethod, setShippingMethod] = useState(""); // வாடிக்கையாளர் தேர்ந்த முறை ("" = இயல்பு)
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
 
@@ -76,15 +83,18 @@ export default function Checkout() {
           addressId: selectedAddress,
           currency,
           couponCode: couponCode || null,
+          shippingMethodCode: shippingMethod || null,
         });
 
         if (!cancelled) setPricing(result.pricing);
       } catch (err: any) {
         if (!cancelled) {
           setPricing(null);
-          setPricingError(
-            err?.response?.data?.message ?? "Could not calculate totals"
-          );
+          const message = err?.response?.data?.message ?? "Could not calculate totals";
+          setPricingError(message);
+
+          // தேர்ந்த shipping முறை இந்த முகவரிக்கு இல்லை → இயல்புக்குத் திரும்பு
+          if (/shipping method/i.test(message)) setShippingMethod("");
         }
       } finally {
         if (!cancelled) setPricingLoading(false);
@@ -96,7 +106,7 @@ export default function Checkout() {
     return () => {
       cancelled = true;
     };
-  }, [cart, selectedAddress, couponCode, currency]);
+  }, [cart, selectedAddress, couponCode, currency, shippingMethod]);
 
   // 📍 Default முகவரியைக் கண்டறிந்து அதைத் தானாகத் தேர்ந்தெடுத்தல்
   async function loadAddresses() {
@@ -140,6 +150,9 @@ export default function Checkout() {
     localStorage.removeItem("appliedCoupon");
   }
 
+  // தேர்ந்த (அல்லது இயல்பு) shipping முறை
+  const activeMethod = shippingMethod || pricing?.shippingMethodCode || "";
+
   // Checkout Validation & Backend API Trigger
   async function handleCheckout() {
     if (placing) return;
@@ -164,6 +177,7 @@ export default function Checkout() {
         paymentMethod,
         currency,
         couponCode: couponCode || null,
+        shippingMethodCode: activeMethod || null,
       });
 
       // ✅ Get Order ID from Backend Response
@@ -286,7 +300,10 @@ if (paymentData.success && paymentData.paymentUrl) {
 
                 <select
                   value={selectedAddress}
-                  onChange={(e) => setSelectedAddress(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedAddress(e.target.value);
+                    setShippingMethod(""); // புதிய நாடு → shipping தேர்வை மீட்டமை
+                  }}
                   className="min-h-[50px] w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
                 >
                   <option value="">
@@ -312,11 +329,107 @@ if (paymentData.success && paymentData.paymentUrl) {
             </button>
           </section>
 
-          {/* 2. PAYMENT METHOD */}
+                    {/* 2. SHIPPING METHOD */}
           <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
                 2
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-[#111111] sm:text-xl">
+                  Shipping Method
+                </h2>
+                <p className="text-xs text-gray-500 sm:text-sm">
+                  Choose how you want your order delivered
+                </p>
+              </div>
+            </div>
+
+            {!selectedAddress ? (
+              <p className="text-sm text-gray-500">
+                Select a delivery address to see shipping options.
+              </p>
+            ) : !pricing ? (
+              <p className="text-sm text-gray-500">
+                {pricingLoading ? "Loading shipping options..." : "Shipping options are not available yet."}
+              </p>
+            ) : pricing.shippingOptions.length === 0 ? (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-[#0E4B32] bg-[#F4FBF7] p-4">
+                <div>
+                  <p className="font-bold text-gray-900">{pricing.shippingMethodName}</p>
+                  <p className="text-xs text-gray-500">About {pricing.estimatedDays} days</p>
+                </div>
+                <p className="font-extrabold text-[#0E4B32]">
+                  {formatMoney(pricing.shippingCost, currency)}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pricing.shippingOptions.map((option) => {
+                  const selected = activeMethod === option.methodCode;
+
+                  return (
+                    <label
+                      key={option.methodCode}
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                        selected
+                          ? "border-[#0E4B32] bg-[#F4FBF7]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="shippingMethod"
+                        checked={selected}
+                        onChange={() => setShippingMethod(option.methodCode)}
+                        className="mt-1 h-4 w-4"
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900">
+                          {option.name}{" "}
+                          {option.hasTracking && (
+                            <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                              TRACKED
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {option.carrier ? `${option.carrier} • ` : ""}
+                          {option.minDays}-{option.maxDays} days
+                        </p>
+                        {option.description && (
+                          <p className="mt-1 text-xs text-gray-500">{option.description}</p>
+                        )}
+                      </div>
+
+                      <div className="shrink-0 text-right font-extrabold text-[#0E4B32]">
+                        {option.isFree ? (
+                          <>
+                            FREE
+                            {option.originalCost > 0 && (
+                              <span className="block text-xs font-medium text-gray-400 line-through">
+                                {formatMoney(option.originalCost, currency)}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          formatMoney(option.cost, currency)
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+{/* 3. PAYMENT METHOD */}
+          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
+                3
               </div>
 
               <div>
@@ -355,10 +468,10 @@ if (paymentData.success && paymentData.paymentUrl) {
         <div className="min-w-0">
           <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 lg:sticky lg:top-24">
             
-            {/* 3. ORDER SUMMARY */}
+            {/* 4. ORDER SUMMARY */}
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E4B32] font-bold text-white">
-                3
+                4
               </div>
 
               <div>
@@ -463,7 +576,9 @@ if (paymentData.success && paymentData.paymentUrl) {
               )}
 
               <div className="flex items-center justify-between gap-4 py-1">
-                <span className="text-sm text-gray-600">Shipping</span>
+                <span className="text-sm text-gray-600">
+                  Shipping{pricing ? ` (${pricing.shippingMethodName})` : ""}
+                </span>
                 <span className="text-sm font-semibold text-gray-900">
                   {pricing ? formatMoney(pricing.shippingCost, currency) : "—"}
                 </span>

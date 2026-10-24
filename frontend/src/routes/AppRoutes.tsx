@@ -52,6 +52,8 @@ const InventoryTransactions = lazy(() => import("../pages/admin/InventoryTransac
 const ChangePassword = lazy(() => import("../auth/ChangePassword"));
 const CustomerList = lazy(() => import("../pages/admin/customers/CustomerList"));
 const CustomerProfile = lazy(() => import("../pages/admin/customers/CustomerProfile"));
+const DeliveryRoutes = lazy(() => import("../pages/admin/customers/DeliveryRoutes"));
+const ShippingSettings = lazy(() => import("../pages/admin/shipping/ShippingSettings"));
 const CreateDraftOrder = lazy(() => import("../pages/admin/CreateDraftOrder"));
 const FinanceDashboard = lazy(() => import("../pages/admin/finance/FinanceDashboard"));
 const ExpenseManagement = lazy(() => import("../pages/admin/finance/ExpenseManagement"));
@@ -65,9 +67,6 @@ const B2B = lazy(() => import("../pages/public/B2B"));
 const Export = lazy(() => import("../pages/public/Export"));
 const Traceability = lazy(() => import("../pages/public/Traceability"));
 const CategoryManagement = lazy(() => import("../pages/admin/categories/CategoryManagement"));
-const DeliveryRoutes = lazy(
-  () => import("../pages/admin/DeliveryRoutes")
-);
 
 export default function AppRoutes() {
   return (
@@ -211,10 +210,6 @@ export default function AppRoutes() {
   path="finance/income"
   element={<IncomeManagement />}
 />
-  <Route
-  path="delivery-routes"
-  element={<DeliveryRoutes />}
-/>
 
   {/* ============================= */}
 {/* 👥 CUSTOMER MANAGEMENT */}
@@ -223,6 +218,16 @@ export default function AppRoutes() {
 <Route
   path="customers"
   element={<CustomerList />}
+/>
+
+<Route
+  path="delivery-routes"
+  element={<DeliveryRoutes />}
+/>
+
+<Route
+  path="shipping-settings"
+  element={<ShippingSettings />}
 />
 
 <Route

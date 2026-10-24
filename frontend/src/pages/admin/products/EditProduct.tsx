@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
-
+import ProductDescriptionEditor from
+  "../../../components/admin/ProductDescriptionEditor";
 import { productService } from "../../../services/product.service";
 import { categoryService } from "../../../services/category.service";
 import type { Category } from "../../../types/category";
@@ -396,21 +397,18 @@ export default function EditProduct() {
             </div>
           </div>
 
-          <div>
-            <label className={labelClass} htmlFor="product-description">
-              Description
-            </label>
-            <textarea
-              id="product-description"
-              className={`${inputClass} min-h-32 resize-y`}
-              value={form.description}
-              onChange={(e) =>
-                handleChange("description", e.target.value)
-              }
-              placeholder="Describe the product..."
-              rows={4}
-            />
-          </div>
+          
+<div>
+  <label className={labelClass} htmlFor="product-description">
+    Product Description
+  </label>
+
+  <ProductDescriptionEditor
+    value={form.description ?? ""}
+    onChange={(html) => handleChange("description", html)}
+  />
+</div>
+
         </section>
 
         <section className="space-y-4">

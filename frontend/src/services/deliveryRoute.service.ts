@@ -1,40 +1,41 @@
-
 import api from "../api/axios";
 
 export interface DeliveryRoute {
   id: string;
   name: string;
+  description: string | null;
   isActive: boolean;
-  customerCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  customerCount: number;
 }
 
-export interface DeliveryRouteInput {
+export interface DeliveryRoutePayload {
   name: string;
+  description?: string | null;
   isActive?: boolean;
 }
 
-const API = "/delivery-routes";
-
 export const deliveryRouteService = {
+  // GET /api/v1/delivery-routes
   async getAll(): Promise<DeliveryRoute[]> {
-    const response = await api.get(API);
-    return response.data.data;
+    const response = await api.get("/delivery-routes");
+    return response.data.data || [];
   },
 
-  async create(data: DeliveryRouteInput) {
-    const response = await api.post(API, data);
+  // POST /api/v1/delivery-routes
+  async create(payload: DeliveryRoutePayload) {
+    const response = await api.post("/delivery-routes", payload);
     return response.data;
   },
 
-  async update(id: string, data: Partial<DeliveryRouteInput>) {
-    const response = await api.put(`${API}/${id}`, data);
+  // PUT /api/v1/delivery-routes/:id
+  async update(id: string, payload: Partial<DeliveryRoutePayload>) {
+    const response = await api.put(`/delivery-routes/${id}`, payload);
     return response.data;
   },
 
-  async delete(id: string) {
-    const response = await api.delete(`${API}/${id}`);
+  // DELETE /api/v1/delivery-routes/:id
+  async remove(id: string) {
+    const response = await api.delete(`/delivery-routes/${id}`);
     return response.data;
   },
 };

@@ -279,9 +279,68 @@ export default function OrderTracking() {
                 </p>
 
                 <p className="mt-1 break-all text-sm font-bold text-gray-800">
-                  {order.trackingId || "Not Assigned"}
+                  {order.trackingId || "Not assigned yet"}
                 </p>
+
+                {order.trackingId && order.trackingCarrier && (
+                  <p className="mt-1 text-xs text-gray-500">Carrier: {order.trackingCarrier}</p>
+                )}
+
+                {order.trackingId && order.trackingUrl && (
+                  <a
+                    href={order.trackingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-xs font-bold text-[#0E4B32] underline"
+                  >
+                    Track on the carrier website
+                  </a>
+                )}
               </div>
+
+              {/* SHIPPING METHOD */}
+              {order.shippingMethodName && (
+                <div className="rounded-xl bg-gray-50 p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    Shipping Method
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold text-gray-800">
+                    {order.shippingMethodName}
+                    {order.shippingCarrier ? ` • ${order.shippingCarrier}` : ""}
+                  </p>
+
+                  {order.shippingMinDays && order.shippingMaxDays && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Estimated {order.shippingMinDays}-{order.shippingMaxDays} days
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* SHIPMENT UPDATES */}
+              {Array.isArray(order.shippingEvents) && order.shippingEvents.length > 0 && (
+                <div className="rounded-xl bg-gray-50 p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    Shipment Updates
+                  </p>
+
+                  <ol className="mt-2 space-y-2">
+                    {[...order.shippingEvents].reverse().map((event: any) => (
+                      <li key={event.id} className="text-sm">
+                        <p className="font-bold text-gray-800">
+                          {String(event.status).replace(/_/g, " ")}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(event.createdAt).toLocaleString()}
+                          {event.location ? ` • ${event.location}` : ""}
+                        </p>
+                        {event.note && <p className="text-xs text-gray-600">{event.note}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
 
               {/* PAYMENT METHOD */}
               <div className="rounded-xl bg-gray-50 p-3">

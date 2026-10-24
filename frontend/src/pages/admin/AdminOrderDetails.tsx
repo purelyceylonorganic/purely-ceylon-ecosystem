@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { formatMoney } from "../../lib/money";
+import ShippingPanel from "../../components/admin/order/Shippingpanel";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/order.service";
 import OrderTimeline from "../../components/orders/OrderTimeline";
@@ -25,8 +26,6 @@ export default function AdminOrderDetails() {
   const [loading, setLoading] = useState(true);
   
   // Tracking ID-க்கான State
-  const [trackingInput, setTrackingInput] = useState("");
-  const [updatingShipping, setUpdatingShipping] = useState(false);
 
   // 💳 POS Payment-க்கான States
   const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -89,7 +88,6 @@ const [refundLoading, setRefundLoading] =
       const response = await orderService.getOrderDetails(targetId);
       const fetchedOrder = response.order || response;
       setOrder(fetchedOrder);
-      setTrackingInput(fetchedOrder.trackingId || "");
       
       const history = await paymentService.getPaymentHistory(targetId);
       setPayments(history.data || []);
@@ -321,30 +319,6 @@ const handleConfirm = async () => {
     setConfirming(false);
   }
 };
-
-  // 🚛 Shipping Details Update Function
-  const handleShippingUpdate = async (updatedStatus: string, updatedTracking: string) => {
-    setUpdatingShipping(true);
-    try {
-      await api.put(`/orders/${order.id}/shipping`, {
-  shippingStatus: updatedStatus,
-  trackingId: updatedTracking,
-});
-
-      setOrder({
-        ...order,
-        shippingStatus: updatedStatus,
-        trackingId: updatedTracking
-      });
-
-      alert("Shipping Details Updated Successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update shipping details");
-    } finally {
-      setUpdatingShipping(false);
-    }
-  };
 
   if (loading) {
     return <div style={{ padding: "40px", textAlign: "center", color: "#0E4B32", fontWeight: "bold" }}>Loading...</div>;
@@ -678,94 +652,9 @@ const handleConfirm = async () => {
               <OrderTimeline status={order.status} />
             </div>
 
-            {/* 🚛 Shipping Information Card */}
-            <div
-              style={{
-                marginTop: "25px",
-                padding: "20px",
-                background: "#f8f9fa",
-                borderRadius: "8px",
-                border: "1px solid #edf2f7",
-              }}
-            >
-              <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", color: "#2d3748" }}>Shipping Information</h3>
-              
-              {/* Shipping Status Dropdown */}
-              <div style={{ marginBottom: "15px" }}>
-                <label style={{ display: "block", marginBottom: "5px", fontWeight: "600", fontSize: "14px", color: "#4a5568" }}>
-                  Shipping Status
-                </label>
-                <select
-                  value={order.shippingStatus || "PENDING"}
-                  onChange={(e) => handleShippingUpdate(e.target.value, trackingInput)}
-                  disabled={updatingShipping}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e0",
-                    backgroundColor: "#fff",
-                    fontSize: "14px",
-                    outline: "none"
-                  }}
-                >
-                  <option value="PENDING">
-PENDING
-</option>
-
-<option value="PACKED">
-PACKED
-</option>
-
-<option value="SHIPPED">
-SHIPPED
-</option>
-
-<option value="IN_TRANSIT">
-IN TRANSIT
-</option>
-
-<option value="OUT_FOR_DELIVERY">
-OUT FOR DELIVERY
-</option>
-
-<option value="DELIVERED">
-DELIVERED
-</option>
-
-                </select>
-              </div>
-
-              {/* Tracking ID Input Field */}
-<div className="w-full min-w-0">
-  <label className="mb-2 block text-sm font-medium text-gray-700">
-    Tracking ID
-  </label>
-
-  <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-    <input
-      type="text"
-      placeholder="Enter Tracking ID"
-      value={trackingInput}
-      onChange={(e) => setTrackingInput(e.target.value)}
-      className="w-full min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-green-700 focus:ring-1 focus:ring-green-500"
-    />
-
-    <button
-      type="button"
-      onClick={() =>
-        handleShippingUpdate(
-          order.shippingStatus || "PENDING",
-          trackingInput
-        )
-      }
-      disabled={updatingShipping}
-      className="w-full shrink-0 rounded-md bg-[#0E4B32] px-4 py-2 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-    >
-      {updatingShipping ? "Updating..." : "Update"}
-    </button>
-  </div>
-</div>
+            {/* 🚛 Shipping (முறை, கட்டணம், Tracking, வரலாறு) */}
+            <div style={{ marginTop: "25px" }}>
+              <ShippingPanel orderId={order.id} onChanged={() => loadOrder(order.id)} />
             </div>
 
           </div>

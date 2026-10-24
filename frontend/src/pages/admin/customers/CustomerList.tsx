@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 import { customerService } from "../../../services/customer.service";
+import { deliveryRouteService } from "../../../services/deliveryRoute.service";
+import type { DeliveryRoute } from "../../../services/deliveryRoute.service";
 
 interface CustomerAddress {
   id: string;
@@ -67,6 +69,8 @@ export default function CustomerList() {
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
+  const [routeFilter, setRouteFilter] = useState("ALL");
+  const [routes, setRoutes] = useState<DeliveryRoute[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -78,12 +82,19 @@ export default function CustomerList() {
     try {
       setLoading(true);
 
-      const response = await customerService.getCustomers(
-        search,
-        status
-      );
+      const response = await customerService.getCustomers(search, status);
+      const results: Customer[] = response?.data || [];
+      const selectedRoute = routes.find((route) => route.id === routeFilter);
 
-      setCustomers(response?.data || []);
+      setCustomers(
+        routeFilter === "ALL"
+          ? results
+          : routeFilter === "NONE"
+            ? results.filter((customer) => !customer.deliveryRoute)
+            : results.filter(
+                (customer) => customer.deliveryRoute === selectedRoute?.name
+              )
+      );
     } catch (error) {
       console.error("Customer List Error:", error);
     } finally {
@@ -97,7 +108,15 @@ export default function CustomerList() {
 
   useEffect(() => {
     loadCustomers();
-  }, [status]);
+  }, [status, routeFilter]);
+
+  // Route வடிகட்டிக்கான பட்டியல்
+  useEffect(() => {
+    deliveryRouteService
+      .getAll()
+      .then(setRoutes)
+      .catch(() => setRoutes([]));
+  }, []);
 
   // ==========================================
   // SEARCH
@@ -195,6 +214,16 @@ export default function CustomerList() {
           </p>
         </div>
 
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            onClick={() => navigate("/admin/delivery-routes")}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#0E4B32] px-4 py-3 text-[#0E4B32] hover:bg-[#F4FBF7] sm:w-auto"
+          >
+            <RouteIcon size={18} />
+
+            Manage Routes
+          </button>
+
         <button
           onClick={() =>
             navigate("/admin/customers/quick-create")
@@ -205,6 +234,7 @@ export default function CustomerList() {
 
           Add Customer
         </button>
+        </div>
 
       </div>
 
@@ -260,6 +290,24 @@ export default function CustomerList() {
             <option value="INACTIVE">
               Inactive
             </option>
+          </select>
+
+          {/* Route */}
+
+          <select
+            value={routeFilter}
+            onChange={(e) => setRouteFilter(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none sm:w-auto"
+          >
+            <option value="ALL">All Routes</option>
+
+            <option value="NONE">No Route</option>
+
+            {routes.map((route) => (
+              <option key={route.id} value={route.id}>
+                {route.name}
+              </option>
+            ))}
           </select>
 
           {/* Search Button */}

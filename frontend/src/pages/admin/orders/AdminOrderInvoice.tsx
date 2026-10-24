@@ -235,7 +235,12 @@ export default function AdminOrderInvoice() {
               </div>
             )}
             <div className="flex justify-between py-2">
-              <span>Shipping</span>
+              <span>
+                Shipping
+                {invoice.shippingMethodName
+                  ? ` (${invoice.shippingMethodName}${invoice.shippingCarrier ? ` • ${invoice.shippingCarrier}` : ""})`
+                  : ""}
+              </span>
               <span>{formatMoney(invoice.shippingCost || 0, invoice.currency)}</span>
             </div>
             <div className="flex justify-between py-2">
@@ -319,9 +324,9 @@ export default function AdminOrderInvoice() {
           <p className="font-semibold text-base">Thank You</p>
           <p className="font-bold text-green-700 mt-1">Purely Ceylon Organic</p>
           <p className="text-xs text-gray-500 mt-1">Organic • Authentic • Premium</p>
-          <p className="mt-2">www.purelyceylon.com</p>
-          <p>Email: info@purelyceylon.com</p>
-          <p>Phone: +94 77 123 4567</p>
+          <p className="mt-2">www.purelyceylonorganic.com</p>
+          <p>Email: musabmohammed678@gmail.com</p>
+          <p>Phone: +94 76 8989 027</p>
           <p className="mt-4 text-xs text-gray-400">
             ---------------------------------------------------
           </p>

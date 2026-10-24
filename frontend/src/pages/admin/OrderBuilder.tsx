@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/order.service";
 import ProductSearch from "../../components/admin/order/ProductSearch";
 import { formatMoney } from "../../lib/money";
+import ShippingPanel from "../../components/admin/order/Shippingpanel";
 
 export default function OrderBuilder() {
   const { orderId } = useParams();
@@ -223,6 +224,10 @@ export default function OrderBuilder() {
           )
         }
       </div>
+
+      {order.items.length > 0 && (
+        <ShippingPanel orderId={order.id} mode="draft" onChanged={loadOrder} />
+      )}
 
       <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="min-w-0">

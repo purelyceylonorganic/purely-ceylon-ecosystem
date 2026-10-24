@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import type { Category } from "../../../types/category";
+import ProductDescriptionEditor from "../ProductDescriptionEditor";
 
 export interface ProductVariantFormData {
   id?: string;
@@ -53,6 +54,8 @@ export default function ProductForm({
   register,
   control,
   handleSubmit,
+  watch,
+  setValue,
   formState: { errors },
 } = useForm<ProductFormData>({
   defaultValues: {
@@ -60,8 +63,8 @@ export default function ProductForm({
     slug: "",
     description: "",
     status: "DRAFT",
-    categoryId: "",
-    moq: 1,
+  // import ProductDescriptionEditor from
+  //   "./components/admin/ProductDescriptionEditor";
     variants: [
       {
         sku: "",
@@ -84,6 +87,7 @@ const {
   control,
   name: "variants",
 });
+
 
   const submitForm = async (data: ProductFormData) => {
     try {
@@ -208,25 +212,49 @@ const {
             )}
           </div>
 
-          <div className="min-w-0 md:col-span-2">
-            <label htmlFor="product-description" className={labelClass}>
-              Product Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="product-description"
-              rows={5}
-              placeholder="Describe the product, its origin and key features..."
-              className={`${inputClass} min-h-32 resize-y`}
-              {...register("description", {
-                required: "Description is required",
-              })}
-            />
-            {errors.description && (
-              <p role="alert" className="mt-1.5 text-sm text-red-600">
-                {errors.description.message}
-              </p>
-            )}
-          </div>
+<div className="min-w-0 md:col-span-2">
+  <label htmlFor="product-description" className={labelClass}>
+    Product Description <span className="text-red-500">*</span>
+  </label>
+
+  {/* Register description in React Hook Form */}
+  <input
+    type="hidden"
+    {...register("description", {
+      validate: (value) => {
+        const text = value
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .trim();
+
+        const hasImage = /<img\b/i.test(value);
+
+        return (
+          text.length > 0 ||
+          hasImage ||
+          "Description is required"
+        );
+      },
+    })}
+  />
+
+  <ProductDescriptionEditor
+    value={watch("description") ?? ""}
+    onChange={(html) =>
+      setValue("description", html, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+  />
+
+  {errors.description && (
+    <p role="alert" className="mt-1.5 text-sm text-red-600">
+      {errors.description.message}
+    </p>
+  )}
+</div>
+
 
           <div className="min-w-0 md:col-span-2">
             <label htmlFor="product-status" className={labelClass}>

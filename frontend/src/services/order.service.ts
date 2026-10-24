@@ -61,6 +61,7 @@ export interface CheckoutPreviewRequest {
   addressId: string;
   currency: string;
   couponCode?: string | null;
+  shippingMethodCode?: string | null;
 }
 
 export interface PlaceOrderRequest extends CheckoutPreviewRequest {
@@ -79,6 +80,40 @@ export const orderService = {
   // ✅ Checkout Preview (server கணக்கிடும் மொத்தம்)
   async previewCheckout(data: CheckoutPreviewRequest) {
     const response = await api.post("/orders/preview", data);
+    return response.data;
+  },
+
+  // 🚚 Shipping கட்டுப்பாடு (Admin)
+  async getShippingInfo(orderId: string) {
+    const response = await api.get(`/orders/${orderId}/shipping`);
+    return response.data;
+  },
+
+  async setShippingMethod(orderId: string, methodCode: string) {
+    const response = await api.put(`/orders/${orderId}/shipping-method`, { methodCode });
+    return response.data;
+  },
+
+  async setShippingCost(
+    orderId: string,
+    data: { mode: string; value?: number | null; reason?: string | null }
+  ) {
+    const response = await api.put(`/orders/${orderId}/shipping-cost`, data);
+    return response.data;
+  },
+
+  async updateShippingDetails(
+    orderId: string,
+    data: {
+      shippingStatus?: string;
+      trackingNumber?: string | null;
+      trackingCarrier?: string | null;
+      trackingUrl?: string | null;
+      location?: string | null;
+      note?: string | null;
+    }
+  ) {
+    const response = await api.put(`/orders/${orderId}/shipping`, data);
     return response.data;
   },
 
