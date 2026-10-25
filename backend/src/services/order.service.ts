@@ -240,9 +240,14 @@ export const addProductToOrder = async (
       });
     }
 
+   
     return recalculateOrderTotals(tx, orderId);
+  }, {
+    maxWait: 10000,
+    timeout: 20000,
   });
 };
+
 
 // ======================================================
 // 🔍 Order விவரம் (Order Builder / Admin Order Details)
