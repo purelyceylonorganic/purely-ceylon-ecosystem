@@ -3,7 +3,8 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { customerService } from "../../services/customer.service";
 import type { Customer } from "../../types/customer.types";
-import { orderService } from "../../services/order.service";
+
+
 
 type AddressFormData = {
   fullName: string;
@@ -190,13 +191,11 @@ export default function AddCustomerAddress() {
         );
       }
 
-      // 3. Create a draft order for the address that was just added.
-      // This follows the existing application flow.
-      await orderService.createDraftOrder(customerId, createdAddress.id);
-
-      // 4. Navigate back to the customer profile after both operations succeed.
-      window.alert("Address added and draft order created successfully.");
+      
+      // Address saved successfully. Do not create an order here.
+      window.alert("Address added successfully.");
       navigate(`/admin/customers/${customerId}`);
+
     } catch (submitError: any) {
       const detail = getErrorMessage(
         submitError,
