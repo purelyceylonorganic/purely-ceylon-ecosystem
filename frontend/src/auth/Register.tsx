@@ -190,7 +190,7 @@ export default function Register() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-green-100">
-            Join Purely Ceylon 🌿
+            Join Purely Ceylon Organic 🌿
           </p>
         </div>
 

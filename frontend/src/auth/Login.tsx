@@ -40,8 +40,6 @@ export default function Login() {
         password
       );
 
-      console.log("Login Response:", response);
-
       if (!response?.token) {
         alert("Login failed. Authentication token was not received.");
         return;
@@ -49,11 +47,6 @@ export default function Login() {
 
       // Save JWT through AuthContext
       login(response.token);
-
-      console.log(
-        "Saved Token:",
-        localStorage.getItem("token")
-      );
 
       // Force password change
       if (
@@ -108,7 +101,7 @@ export default function Login() {
           </div>
 
           <h1 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Purely Ceylon
+            Purely Ceylon Organic
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-green-100">

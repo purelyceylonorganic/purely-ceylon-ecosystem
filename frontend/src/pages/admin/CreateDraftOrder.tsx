@@ -134,11 +134,6 @@ export default function CreateDraftOrder() {
             selectedAddressId
           );
 
-        console.log(
-          "Draft Order Created:",
-          draftOrder
-        );
-
         navigate(
           `/admin/order-builder/${draftOrder.id}`
         );
