@@ -111,27 +111,50 @@ app.use(express.json({
 
 app.use(cookieParser());
 
-// 4. CORS Setup
-const allowedOrigins = [
+
+const allowedOrigins = new Set([
   "https://purelyceylonorganic.com",
   "https://www.purelyceylonorganic.com",
-  'https://purely-ceylon-organic.vercel.app',
-  'https://purely-ceylon-store.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://10.234.74.19:5173'
-];
+  "http://localhost:3000",
+  "http://localhost:5173",
+]);
 
-app.use(cors({
+const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('❌ Security Restriction: CORS Blocked!'));
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
     }
+
+    logger.warn(`CORS rejected origin: ${origin}`);
+    return callback(new Error(`CORS blocked origin: ${origin}`));
   },
-  credentials: true
-}));
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "Origin",
+    "X-Requested-With",
+  ],
+
+  optionsSuccessStatus: 204,
+};
+
+// Register before rate limiting and ALL API routes.
+app.use(cors(corsOptions));
+
 
 // 5. Rate Limiter
 const apiLimiter = rateLimit({
