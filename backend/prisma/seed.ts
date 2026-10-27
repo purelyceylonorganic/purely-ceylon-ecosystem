@@ -4,7 +4,6 @@ import * as bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 PCO தரவுத்தள seed ஆரம்பிக்கப்படுகிறது...");
 
   // 1. Password Hashing
   const adminPassword = await bcrypt.hash("SecureAdminPassword123!", 10);

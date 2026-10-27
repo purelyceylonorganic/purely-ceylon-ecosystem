@@ -78,7 +78,7 @@ export const registerUser = async (req: Request, res: Response) => {
         return res.status(400).json({
           success: false,
           message:
-            "This email is already registered but not verified. Please use Resend OTP.",
+            "This email is already registered but not verified. Please use Forgot Password .",
         });
       }
 
@@ -237,7 +237,7 @@ export const registerWithPhone = async (
         return res.status(400).json({
           success: false,
           message:
-            "This phone number is already registered but not verified. Please use Resend OTP.",
+            "This phone number is already registered but not verified. Please use Forgot Password.",
         });
       }
 
