@@ -278,23 +278,5 @@ app.use('*', (_req, res) => {
 // 7. Global Error Handler (இது எப்போதுமே ரூட்டிங்கிற்கு அடுத்து கடைசியில் வர வேண்டும்)
 app.use(globalErrorHandler);
 
-// 8. Server Start
-const PORT = Number(process.env.PORT) || 5000;
-
-if (require.main === module) {
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    logger.info(
-      `🚀 Server running on port ${PORT}`
-    );
-
-    // Start Background Workers
-    startAllJobs();
-
-    logger.info(
-      "⚙️ Background Jobs Started"
-    );
-  });
-}
-
 // FINAL EXPORT
 export default app;
