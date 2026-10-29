@@ -1,31 +1,58 @@
 import axios from "axios";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../config/prisma"; // உங்கள் shared prisma path-ஐ இங்கே மாற்றுங்கள்
+import { logger } from "../config/logger";
 
-const prisma = new PrismaClient();
+const RATE_URL = "https://open.er-api.com/v6/latest/USD";
 
-export const updateCurrencyRates = async () => {
+// தேவையான நாணயங்கள் மட்டும் (1 USD = எத்தனை LKR)
+const WANTED_CODES = ["LKR"];
 
- const response = await axios.get(
-   "https://open.er-api.com/v6/latest/USD"
- );
+// நியாயமான வரம்பு: தவறான API தரவைத் தடுக்க
+const SANE_RANGE: Record<string, { min: number; max: number }> = {
+  LKR: { min: 100, max: 1000 },
+};
 
- const rates = response.data.rates;
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
- for (const code in rates) {
+export const updateCurrencyRates = async (): Promise<void> => {
+  let rates: Record<string, number> | undefined;
 
-   await prisma.currencyRate.upsert({
-      where: { code },
+  try {
+    const response = await axios.get(RATE_URL, { timeout: 10000 });
+    rates = response.data?.rates;
+  } catch (error) {
+    logger.error(`Currency API request failed: ${errMsg(error)}`);
+    return; // பழைய rate DB-ல் அப்படியே இருக்கும்
+  }
 
-      update: {
-        rate: rates[code]
-      },
+  if (!rates || typeof rates !== "object") {
+    logger.error("Currency API: rates data இல்லை");
+    return;
+  }
 
-      create: {
-        code,
-        rate: rates[code]
-      }
-   });
+  for (const code of WANTED_CODES) {
+    const rate = rates[code];
+    const range = SANE_RANGE[code];
 
- }
+    if (typeof rate !== "number" || !Number.isFinite(rate)) {
+      logger.error(`Currency API: ${code} rate கிடைக்கவில்லை`);
+      continue;
+    }
 
+    if (range && (rate < range.min || rate > range.max)) {
+      logger.error(`Currency API: ${code} மதிப்பு சந்தேகமானது (${rate}). புறக்கணிக்கப்பட்டது.`);
+      continue;
+    }
+
+    try {
+      await prisma.currencyRate.upsert({
+        where: { code },
+        update: { rate },
+        create: { code, rate },
+      });
+      logger.info(`💱 ${code} rate updated: 1 USD = ${rate} ${code}`);
+    } catch (error) {
+      logger.error(`Currency DB save failed (${code}): ${errMsg(error)}`);
+    }
+  }
 };
