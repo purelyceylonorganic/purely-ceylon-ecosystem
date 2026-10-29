@@ -8,6 +8,7 @@ import {
 
 import type { Category } from "../../../types/category";
 import ProductDescriptionEditor from "../ProductDescriptionEditor";
+import { toSlug } from "../../../utils/slug";
 
 export interface ProductVariantFormData {
   id?: string;
@@ -50,12 +51,13 @@ export default function ProductForm({
   loading = false,
   submitText = "Save Product",
 }: ProductFormProps) {
- const {
+const {
   register,
   control,
   handleSubmit,
   watch,
   setValue,
+  getValues,
   formState: { errors },
 } = useForm<ProductFormData>({
   defaultValues: {
@@ -124,15 +126,22 @@ const {
               Product Name <span className="text-red-500">*</span>
             </label>
             <input
-              id="product-name"
-              type="text"
-              autoComplete="off"
-              placeholder="Enter product name"
-              className={inputClass}
-              {...register("name", {
-                required: "Product name is required",
-              })}
-            />
+  id="product-name"
+  type="text"
+  autoComplete="off"
+  placeholder="Enter product name"
+  className={inputClass}
+  {...register("name", {
+    required: "Product name is required",
+    onBlur: (e) => {
+      if (!getValues("slug")) {
+        setValue("slug", toSlug(e.target.value), {
+          shouldValidate: true,
+        });
+      }
+    },
+  })}
+/>
             {errors.name && (
               <p role="alert" className="mt-1.5 text-sm text-red-600">
                 {errors.name.message}
@@ -145,15 +154,20 @@ const {
               Product Slug <span className="text-red-500">*</span>
             </label>
             <input
-              id="product-slug"
-              type="text"
-              autoComplete="off"
-              placeholder="ceylon-tea"
-              className={inputClass}
-              {...register("slug", {
-                required: "Slug is required",
-              })}
-            />
+  id="product-slug"
+  type="text"
+  autoComplete="off"
+  placeholder="ceylon-tea"
+  className={inputClass}
+  {...register("slug", {
+    required: "Slug is required",
+    setValueAs: (v: string) => v.trim().toLowerCase(),
+    pattern: {
+      value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      message: "சிறிய ஆங்கில எழுத்துகள், எண்கள், இடைக்கோடு (-) மட்டும்",
+    },
+  })}
+/>
             {errors.slug && (
               <p role="alert" className="mt-1.5 text-sm text-red-600">
                 {errors.slug.message}

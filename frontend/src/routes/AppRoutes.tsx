@@ -67,6 +67,7 @@ const B2B = lazy(() => import("../pages/public/B2B"));
 const Export = lazy(() => import("../pages/public/Export"));
 const Traceability = lazy(() => import("../pages/public/Traceability"));
 const CategoryManagement = lazy(() => import("../pages/admin/categories/CategoryManagement"));
+const AdminTaxRates = lazy(() => import("../pages/admin/tax/AdminTaxRates"));
 
 export default function AppRoutes() {
   return (
@@ -137,14 +138,7 @@ export default function AppRoutes() {
         <Route path="/payment-methods" element={<ProtectedRoute><MainLayout><PaymentMethodsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/customer-dashboard" element={<ProtectedRoute><MainLayout><CustomerDashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
-        <Route
-  path="/contact"
-  element={
-    <MainLayout>
-      <Contact />
-    </MainLayout>
-  }
-/>
+        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
 
         {/* 💳 Public Payment Success */}
         <Route path="/payment-success" element={<MainLayout><PaymentSuccess /></MainLayout>} />
@@ -161,7 +155,7 @@ export default function AppRoutes() {
   <Route path="dashboard" element={<AdminDashboard />} />
 
   <Route path="categories" element={<CategoryManagement />} />
-
+  <Route path="tax-rates" element={<AdminTaxRates />} />
   
   {/* Orders */}
   <Route path="orders" element={<AdminOrders />} />

@@ -10,6 +10,7 @@ import {
   Mail,
   ChevronRight,
   FolderPlus,
+  Percent,   
   Route as RouteIcon,
   Truck as ShippingTruckIcon,
 } from "lucide-react";
@@ -45,6 +46,12 @@ const menu = [
     name: "Shipping Settings",
     path: "/admin/shipping-settings",
     icon: ShippingTruckIcon,
+  },
+  
+  {
+    name: "Tax Rates",
+    path: "/admin/tax-rates",
+    icon: Percent,
   },
   
   {

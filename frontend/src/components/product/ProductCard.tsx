@@ -15,6 +15,13 @@ import { wishlistService } from "../../services/wishlist.service";
 import { useCurrency } from "../../context/CurrencyContext";
 import { formatMoney, variantPrice } from "../../lib/money";
 
+const stripHtml = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 type Props = {
   product: Product;
 };
@@ -118,10 +125,10 @@ export default function ProductCard({ product }: Props) {
         </h3>
 
         {product.description && (
-          <p className="product-description">
-            {product.description}
-          </p>
-        )}
+  <p className="product-description">
+    {stripHtml(product.description)}
+  </p>
+)}
 
         {/* ================= PRICE ================= */}
         <div className="product-price-row">
