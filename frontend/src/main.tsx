@@ -13,13 +13,13 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { AddressProvider } from "./context/AddressContext";
 import { Toaster } from "react-hot-toast";
 
-// Google Analytics Measurement ID from frontend/.env
+// Google Analytics Measurement ID
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
 
 declare global {
   interface Window {
     dataLayer: unknown[][];
-    gtag?: (...args: unknown[]) => void;
+    gtag?: (...args: any[]) => void;
   }
 }
 
@@ -41,7 +41,8 @@ function initializeGoogleAnalytics(): void {
 
   window.dataLayer = window.dataLayer || [];
 
-  window.gtag = function (...args: unknown[]): void {
+  // Initialize gtag
+  window.gtag = function (...args: any[]): void {
     window.dataLayer.push(args);
   };
 
@@ -54,7 +55,7 @@ function initializeGoogleAnalytics(): void {
 
   document.head.appendChild(script);
 
-  // Initialize Google Analytics
+  // Configure Google Analytics
   window.gtag("js", new Date());
 
   window.gtag("config", GA_MEASUREMENT_ID, {
@@ -62,10 +63,17 @@ function initializeGoogleAnalytics(): void {
   });
 }
 
-// Initialize once when the application starts
+// Initialize Google Analytics once
 initializeGoogleAnalytics();
 
-createRoot(document.getElementById("root")!).render(
+// Render React application
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Root element not found.");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <CurrencyProvider>
       <AuthProvider>
@@ -73,7 +81,6 @@ createRoot(document.getElementById("root")!).render(
           <WishlistProvider>
             <AddressProvider>
               <App />
-
               <Toaster
                 position="top-right"
                 reverseOrder={false}
