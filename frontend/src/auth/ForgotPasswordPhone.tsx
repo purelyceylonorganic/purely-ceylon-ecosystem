@@ -18,7 +18,6 @@ export default function ForgotPasswordPhone() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     setError("");
 
     const trimmedPhone = phone.trim();
@@ -28,26 +27,24 @@ export default function ForgotPasswordPhone() {
       return;
     }
 
+    // இலக்கங்கள், +, இடைவெளி மட்டும்; 9-13 இலக்கம்
+    const digits = trimmedPhone.replace(/[\s-]/g, "");
+    if (!/^\+?\d{9,13}$/.test(digits)) {
+      setError("Please enter a valid phone number (e.g. 0771234567).");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      await authService.forgotPasswordWithPhone(
-        trimmedPhone
-      );
+      await authService.forgotPasswordWithPhone(trimmedPhone);
 
       navigate("/verify-phone-password-reset-otp", {
         replace: true,
-        state: {
-          phone: trimmedPhone,
-        },
+        state: { phone: trimmedPhone },
       });
     } catch (err: any) {
-      console.error(err);
-
-      setError(
-        err?.response?.data?.message ||
-          "Unable to send OTP."
-      );
+      setError(err?.response?.data?.message || "Unable to send OTP.");
     } finally {
       setLoading(false);
     }
@@ -56,18 +53,14 @@ export default function ForgotPasswordPhone() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#FFF8EE] px-4 py-8 sm:px-6">
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-
         {/* Header */}
         <div className="bg-[#0E4B32] px-6 py-8 text-center text-white sm:px-8 sm:py-10">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-            <KeyRound
-              size={38}
-              className="text-[#D4AF37]"
-            />
+            <KeyRound size={38} className="text-[#D4AF37]" />
           </div>
 
           <h1 className="mt-5 text-2xl font-extrabold sm:text-3xl">
-            Forgot Password
+            Forgot Password?
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-green-100">
@@ -77,22 +70,17 @@ export default function ForgotPasswordPhone() {
 
         {/* Form */}
         <div className="p-5 sm:p-8">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-5"
-          >
-            {/* Error */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              >
                 <span className="mt-0.5 shrink-0">⚠️</span>
-
-                <p className="leading-6">
-                  {error}
-                </p>
+                <p className="leading-6">{error}</p>
               </div>
             )}
 
-            {/* Phone */}
             <div>
               <label
                 htmlFor="reset-phone"
@@ -113,10 +101,8 @@ export default function ForgotPasswordPhone() {
                   inputMode="tel"
                   autoComplete="tel"
                   value={phone}
-                  onChange={(e) =>
-                    setPhone(e.target.value)
-                  }
-                  placeholder="0767686670"
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0771234567"
                   disabled={loading}
                   required
                   className="min-h-[52px] w-full rounded-xl border border-gray-200 bg-white px-11 py-3 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10 disabled:bg-gray-50"
@@ -124,11 +110,11 @@ export default function ForgotPasswordPhone() {
               </div>
 
               <p className="mt-2 text-xs leading-5 text-gray-500">
-                Enter the phone number registered with your Purely Ceylon ORGANIC (PVT) LTD account.
+                Enter the phone number registered with your Purely Ceylon
+                Organic (PVT) LTD account.
               </p>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -154,20 +140,29 @@ export default function ForgotPasswordPhone() {
               size={20}
               className="mt-0.5 shrink-0 text-[#0E4B32]"
             />
-
             <div>
               <p className="text-sm font-bold text-[#0E4B32]">
                 Secure Password Reset
               </p>
-
               <p className="mt-1 text-xs leading-5 text-gray-600">
-                We will send a verification OTP to your registered phone number.
+                We will send a verification OTP to your registered phone
+                number.
               </p>
             </div>
           </div>
 
+          {/* Switch to email */}
+          <div className="mt-5 text-center text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-bold text-[#0E4B32] hover:underline"
+            >
+              Use email instead
+            </Link>
+          </div>
+
           {/* Back */}
-          <div className="mt-6 border-t border-gray-100 pt-5 text-center">
+          <div className="mt-5 border-t border-gray-100 pt-5 text-center">
             <Link
               to="/login"
               className="inline-flex min-h-[44px] items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-[#0E4B32] hover:underline"

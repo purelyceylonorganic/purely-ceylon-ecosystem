@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import {
@@ -14,46 +14,53 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setLoading(true);
-    setMessage("");
+    try {
+      setLoading(true);
+      setMessage("");
+      setIsError(false);
 
-    const response = await api.post(
-      "/auth/forgot-password",
-      {
+      const response = await api.post("/auth/forgot-password", {
         email: email.trim().toLowerCase(),
+      });
+
+      const result = response.data;
+
+      setMessage(result.message);
+
+      if (result.success) {
+        redirectTimer.current = setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+      } else {
+        setIsError(true);
       }
-    );
-
-    const result = response.data;
-
-    setMessage(result.message);
-
-    if (result.success) {
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+    } catch (error: any) {
+      setIsError(true);
+      setMessage(
+        error?.response?.data?.message ||
+          "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.error("Forgot Password Error:", error);
-
-    setMessage(
-      error?.response?.data?.message ||
-        "Something went wrong. Please try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#FFF8EE] px-4 py-8 sm:px-6">
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-
         <div className="bg-[#0E4B32] px-6 py-8 text-center text-white sm:px-8 sm:py-10">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
             <KeyRound size={38} className="text-[#D4AF37]" />
@@ -64,13 +71,13 @@ export default function ForgotPasswordPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-green-100">
-            Don't worry. Enter your registered email and we'll help you reset your password.
+            Don't worry. Enter your registered email and we'll help you reset
+            your password.
           </p>
         </div>
 
         <div className="p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-
             <div>
               <label
                 htmlFor="forgot-email"
@@ -92,8 +99,9 @@ export default function ForgotPasswordPage() {
                   autoComplete="email"
                   placeholder="Enter your email"
                   value={email}
+                  disabled={loading}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-h-[52px] w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10"
+                  className="min-h-[52px] w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#0E4B32] focus:ring-2 focus:ring-[#0E4B32]/10 disabled:bg-gray-50"
                 />
               </div>
             </div>
@@ -108,13 +116,34 @@ export default function ForgotPasswordPage() {
           </form>
 
           {message && (
-            <div className="mt-5 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-              <CheckCircle2 size={19} className="mt-0.5 shrink-0" />
+            <div
+              role={isError ? "alert" : "status"}
+              className={`mt-5 flex gap-3 rounded-xl border p-4 text-sm ${
+                isError
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+              }`}
+            >
+              {isError ? (
+                <span className="mt-0.5 shrink-0">⚠️</span>
+              ) : (
+                <CheckCircle2 size={19} className="mt-0.5 shrink-0" />
+              )}
               <p className="leading-6">{message}</p>
             </div>
           )}
 
-          <div className="mt-7 border-t border-gray-100 pt-6 text-center">
+          {/* Switch to phone */}
+          <div className="mt-5 text-center text-sm">
+            <Link
+              to="/forgot-password-phone"
+              className="font-bold text-[#0E4B32] hover:underline"
+            >
+              Use phone number instead
+            </Link>
+          </div>
+
+          <div className="mt-5 border-t border-gray-100 pt-5 text-center">
             <Link
               to="/login"
               className="inline-flex items-center gap-2 text-sm font-bold text-[#0E4B32] hover:underline"

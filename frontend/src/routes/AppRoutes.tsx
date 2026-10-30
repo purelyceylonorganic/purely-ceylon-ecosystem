@@ -7,6 +7,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import AdminLayout from "../layout/AdminLayout";
 import PageLoader from "../components/PageLoader";
+import Analytics from "../components/Analytics";
 
 const Login = lazy(() => import("../auth/Login"));
 const Register = lazy(() => import("../auth/Register"));
@@ -71,8 +72,9 @@ const AdminTaxRates = lazy(() => import("../pages/admin/tax/AdminTaxRates"));
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
+        <BrowserRouter>
       <Toaster />
+      <Analytics />
 
       <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -85,7 +87,6 @@ export default function AppRoutes() {
 <Route path="/b2b" element={<B2B />} />
 <Route path="/export" element={<Export />} /> 
 <Route path="/traceability" element={<Traceability />} />
-
 
 
         <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
@@ -204,6 +205,8 @@ export default function AppRoutes() {
   path="finance/income"
   element={<IncomeManagement />}
 />
+
+
 
   {/* ============================= */}
 {/* 👥 CUSTOMER MANAGEMENT */}
